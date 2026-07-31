@@ -1,0 +1,375 @@
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>EIASS · 환경영향평가 통합정보지원시스템</title>
+<meta name="description" content="환경영향평가의 시작과 끝, 통합 정보플랫폼 EIASS. 평가정보 조회, 협의통계, 국민참여 공람·공청회를 한 곳에서.">
+<link rel="stylesheet" href="assets/eiass.css">
+<link rel="stylesheet" href="assets/layout.css">
+<link rel="stylesheet" href="assets/home.css">
+<style>
+  .hero-shortcuts { display: grid; grid-template-columns: repeat(5, 1fr); gap: 18px; max-width: 1100px; margin: 26px auto 0; }
+  .hs-card { position: relative; border: 0; border-radius: 18px; padding: 26px 16px 20px; cursor: pointer; text-align: center; color: #fff; box-shadow: 0 14px 30px rgba(8,22,48,.22); transition: transform .16s, box-shadow .16s; font-family: inherit; }
+  .hs-card:hover { transform: translateY(-4px); box-shadow: 0 20px 40px rgba(8,22,48,.3); }
+  .hs-card .hs-ico { width: 52px; height: 52px; margin: 0 auto 14px; display: flex; align-items: center; justify-content: center; }
+  .hs-card .hs-ico svg { width: 46px; height: 46px; stroke: rgba(255,255,255,.95); }
+  .hs-card .hs-name { display: block; font-size: 17px; font-weight: 800; letter-spacing: -.02em; }
+  .hs-card .hs-go { display: inline-flex; align-items: center; gap: 4px; margin-top: 14px; font-size: 11.5px; font-weight: 700; padding: 5px 14px; border-radius: 999px; background: rgba(255,255,255,.22); border: 1px solid rgba(255,255,255,.5); }
+  .hs-c1 { background: linear-gradient(150deg, #4db3e6, #2f8fd6); }
+  .hs-c2 { background: linear-gradient(150deg, #2bb5a6, #189e8f); }
+  .hs-c3 { background: linear-gradient(150deg, #6d7ce8, #4a5ad8); }
+  .hs-c4 { background: linear-gradient(150deg, #f0a63c, #e8730c); }
+  .hs-c5 { background: linear-gradient(150deg, #9d6fe0, #7d4fd0); }
+  @media (max-width: 900px) { .hero-shortcuts { grid-template-columns: repeat(2, 1fr); max-width: 460px; } }
+</style>
+</head>
+<body data-active="" data-hero="photo">
+<a class="skip" href="#main">본문 바로가기</a>
+<div id="site-header-slot"></div>
+
+<main id="main">
+
+  <!-- ===================== HERO ===================== -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+    <div class="hero-grid"></div>
+    <div class="wrap hero-inner">
+      <form class="searchbar reveal" id="heroSearch" data-delay="160" role="search" style="margin-inline:auto">
+        <svg class="lead-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+        <input type="text" aria-label="통합검색" placeholder="사업명 / 지역 / 사업유형 / 기술자명 / 평가업체명을 입력해 주세요">
+        <button class="btn btn--primary btn--pill" type="submit">검색</button>
+      </form>
+
+      <div class="kw-row reveal" data-delay="200" style="justify-content:center">
+        <span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4l3 2" stroke-linecap="round"></path></svg>추천검색어</span>
+        <button class="kw-chip" data-kw="전략환경영향평가">전략환경영향평가</button>
+        <button class="kw-chip" data-kw="환경영향평가">환경영향평가</button>
+        <button class="kw-chip" data-kw="소규모평가">소규모평가</button>
+        <button class="kw-chip" data-kw="사후환경조사">사후환경조사</button>
+        <button class="kw-chip" data-kw="평가업체">평가업체</button>
+      </div>
+
+      <div class="hero-shortcuts reveal" data-delay="220">
+        <a class="hs-card hs-c1" href="사업조회.html?type=전략환경영향평가">
+          <span class="hs-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"></path></svg></span>
+          <span class="hs-name">전략환경영향평가</span>
+          <span class="hs-go">바로가기</span>
+        </a>
+        <a class="hs-card hs-c2" href="사업조회.html?type=소규모환경영향평가">
+          <span class="hs-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"></path><path d="M5 10v10h14V10"></path><path d="M9 20v-6h6v6"></path></svg></span>
+          <span class="hs-name">소규모환경영향평가</span>
+          <span class="hs-go">바로가기</span>
+        </a>
+        <a class="hs-card hs-c3" href="사업조회.html?type=환경영향평가">
+          <span class="hs-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"></path><path d="M12 8c-2 2-2 5 0 7 2-2 2-5 0-7z"></path></svg></span>
+          <span class="hs-name">환경영향평가</span>
+          <span class="hs-go">바로가기</span>
+        </a>
+        <a class="hs-card hs-c4" href="사업조회.html?type=사후환경영향조사">
+          <span class="hs-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20c6-1 9-5 10-13"></path><path d="M14 7c3 0 5-1 6-3 0 4-1 7-6 8-3 .6-5-1-5-3 0-1.5 2-2 5-2z"></path></svg></span>
+          <span class="hs-name">사후환경영향조사</span>
+          <span class="hs-go">바로가기</span>
+        </a>
+        <a class="hs-card hs-c5" href="사업조회.html?type=기후변화영향평가">
+          <span class="hs-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18"></path></svg></span>
+          <span class="hs-name">기후변화영향평가</span>
+          <span class="hs-go">바로가기</span>
+        </a>
+      </div>
+    </div>
+
+
+  </section>
+
+  <!-- ===================== STAT DASHBOARD ===================== -->
+  <div class="wrap dash-wrap">
+    <div class="dash reveal">
+      <div class="dash-top">
+        <div class="stat feat">
+          <span class="lab">등록 평가사업</span>
+          <span class="num"><span data-count="48231">0</span><small>건</small></span>
+          <span class="delta up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 14l6-6 6 6"></path></svg>전월 대비 1,204건</span>
+        </div>
+        <div class="stat">
+          <span class="lab">협의 진행 중</span>
+          <span class="num"><span data-count="326">0</span><small>건</small></span>
+          <span class="delta"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 10l-6 6-6-6"></path></svg>12건</span>
+        </div>
+        <div class="stat">
+          <span class="lab">등록 평가업</span>
+          <span class="num"><span data-count="1842">0</span><small>개사</small></span>
+          <span class="delta up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 14l6-6 6 6"></path></svg>8개사</span>
+        </div>
+        <div class="stat">
+          <span class="lab">등록 기술자</span>
+          <span class="num"><span data-count="12580">0</span><small>명</small></span>
+          <span class="delta up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 14l6-6 6 6"></path></svg>54명</span>
+        </div>
+        <div class="stat">
+          <span class="lab">공람 진행 중</span>
+          <span class="num"><span data-count="40">0</span><small>건</small></span>
+          <span class="delta up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 14l6-6 6 6"></path></svg>3건</span>
+        </div>
+        <a class="dash-cta" href="평가정보조회.html">
+          <svg class="pin" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg>
+          <b><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"></path><path d="M9 4v14M15 6v14"></path></svg>권역별 통계 GIS</b>
+          <span>지역별 평가사업 분포와 협의 현황을 지도에서 한눈에</span>
+          <span style="display:inline-flex;align-items:center;gap:7px;margin-top:10px;font-weight:700;color:#9fc0ff">지도로 보기 <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span>
+        </a>
+      </div>
+      <div class="dash-tick">
+        <a class="tick" href="공지사항.html">
+          <span class="tag em" style="color:var(--primary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5" stroke-linecap="round"></path><circle cx="12" cy="16.5" r="1" fill="currentColor"></circle></svg>공지사항</span>
+          <span class="msg">환경영향평가 통합정보플랫폼 개편 오픈 안내 — 2026년 상반기 기술자 경력관리 서비스 신규 개통</span>
+          <span class="date">2026.05.28</span>
+        </a>
+        <div class="tick">
+          <span class="tag" style="color:var(--primary)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2"></rect><path d="M3.5 9.5h17M8 3v4M16 3v4"></path></svg>교육일정</span>
+          <span class="msg">2026 환경영향평가 기술자 역량강화 교육 (기초) — 신청 접수 중</span>
+          <span class="date">2026.04.14</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== 설명회·공청회 일정 ===================== -->
+  <section class="section bg-1">
+    <div class="wrap">
+      <div class="section-head section-head--row reveal">
+        <div>
+          <span class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3.5" y="5" width="17" height="16" rx="2"></rect><path d="M3.5 9.5h17M8 3v4M16 3v4"></path></svg>예정 설명회·공청회 일정</span>
+          <h2 class="h-l" style="margin-top:10px">현장의 목소리, 가까운 <span class="em">공청회 일정</span>을 확인하세요.</h2>
+        </div>
+        <div class="carousel-ctrl" data-carousel data-autoplay>
+          <span class="car-count"><b data-cur>01</b> / <span data-tot>00</span></span>
+          <button class="car-btn" data-prev aria-label="이전"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg></button>
+          <button class="car-btn" data-play aria-label="자동재생"></button>
+          <button class="car-btn" data-next aria-label="다음"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></button>
+        </div>
+      </div>
+
+      <div class="carousel" data-carousel data-autoplay>
+        <div class="carousel-track">
+          <article class="sch-card"><div class="badges"><span class="badge badge--navy badge--dot">설명회</span><span class="badge badge--line">D-18</span></div><p class="ttl">○○신도시 개발사업 환경영향평가 주민설명회</p><div class="loc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg>경기 하남시 문화예술회관 대강당</div><div class="when"><span class="day">10</span><span class="ym">2026.04.<br>14:00–17:00</span></div></article>
+          <article class="sch-card"><div class="badges"><span class="badge badge--blue badge--dot">공청회</span><span class="badge badge--eco">참가신청</span></div><p class="ttl">△△해안도로 건설사업 전략환경영향평가 공청회</p><div class="loc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg>강원 강릉시 시민회관 1층</div><div class="when"><span class="day">15</span><span class="ym">2026.04.<br>14:00–17:00</span></div></article>
+          <article class="sch-card"><div class="badges"><span class="badge badge--navy badge--dot">설명회</span><span class="badge badge--eco">참가신청</span></div><p class="ttl">□□산업단지 환경영향평가 주민설명회 (2차)</p><div class="loc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg>전북 전주시 완산구 시민회관</div><div class="when"><span class="day">22</span><span class="ym">2026.04.<br>14:00–17:00</span></div></article>
+          <article class="sch-card"><div class="badges"><span class="badge badge--blue badge--dot">공청회</span><span class="badge badge--eco">참가신청</span></div><p class="ttl">◎◎항만개발계획 전략환경영향평가 공청회</p><div class="loc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg>부산 강서구 에코델타시티 컨벤션홀</div><div class="when"><span class="day">28</span><span class="ym">2026.04.<br>13:00–16:00</span></div></article>
+          <article class="sch-card"><div class="badges"><span class="badge badge--blue badge--dot">공청회</span><span class="badge badge--eco">참가신청</span></div><p class="ttl">◆◆재생에너지 단지 소규모 환경영향평가 설명회</p><div class="loc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg>충남 보령시 주민자치회관</div><div class="when"><span class="day">8</span><span class="ym">2026.05.<br>14:00–17:00</span></div></article>
+          <article class="sch-card"><div class="badges"><span class="badge badge--navy badge--dot">설명회</span><span class="badge badge--line">D-30</span></div><p class="ttl">▽▽근린공원 조성사업 소규모 환경영향평가 설명회</p><div class="loc"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg>대전 유성구 주민센터 다목적실</div><div class="when"><span class="day">12</span><span class="ym">2026.05.<br>10:00–12:00</span></div></article>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 국민참여 (dark band) ===================== -->
+  <section class="section civic" data-tabs>
+    <div class="wrap">
+      <div class="section-head section-head--row reveal">
+        <div>
+          <span class="kicker kicker--light"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="10" cy="8" r="3.2"></circle><path d="M3.5 20c.8-3.6 3.5-5 6.5-5"></path><path d="M18 9v6M21 12h-6"></path></svg>국민참여</span>
+          <h2 class="display" style="margin-top:10px"># 국민참여 <span style="color:#9fc0ff">— 지금 공람이 열려 있습니다</span></h2>
+        </div>
+        <div class="carousel-ctrl" data-carousel data-autoplay>
+          <span class="car-count"><b data-cur>01</b> / <span data-tot>00</span></span>
+          <button class="car-btn" data-prev aria-label="이전"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg></button>
+          <button class="car-btn" data-play aria-label="자동재생"></button>
+          <button class="car-btn" data-next aria-label="다음"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></button>
+        </div>
+      </div>
+
+      <div class="civic-tabs">
+        <button data-tab="draft" class="on">평가서 초안공람</button>
+        <button data-tab="small">소규모 공람</button>
+        <button data-tab="status">협의진행현황</button>
+      </div>
+
+      <div data-panel="draft">
+        <div class="carousel" data-carousel data-autoplay>
+          <div class="carousel-track">
+            <article class="civic-card"><div class="badges"><span class="badge badge--eco badge--dot">환경</span><span class="badge badge--dday">D-2</span></div><p class="ttl">○○신도시 개발사업 환경영향평가서(초안) 주민공람</p><div class="meta"><span>경기 하남 · ~26.04.15</span><span>의견 <b>12</b>건</span></div></article>
+            <article class="civic-card hot"><div class="badges"><span class="badge badge--live">LIVE</span><span class="badge badge--dday" style="background:#fff;color:var(--primary)">D-12</span></div><p class="ttl">◇◇물류센터 소규모 환경영향평가서 공람</p><div class="meta"><span>충북 청주 · ~26.03.30</span><span>의견 <b>7</b>건</span></div></article>
+            <article class="civic-card"><div class="badges"><span class="badge badge--navy badge--dot">전략</span><span class="badge badge--dday">D-12</span></div><p class="ttl">△△해안도로 건설사업 전략환경영향평가서(초안)</p><div class="meta"><span>강원 강릉 · ~26.04.08</span><span>의견 <b>5</b>건</span></div></article>
+            <article class="civic-card"><div class="badges"><span class="badge badge--eco badge--dot">환경</span><span class="badge badge--dday">D-15</span></div><p class="ttl">□□산업단지 조성사업 환경영향평가서(초안)</p><div class="meta"><span>전북 전주 · ~26.04.20</span><span>의견 <b>0</b>건</span></div></article>
+            <article class="civic-card"><div class="badges"><span class="badge badge--navy badge--dot">전략</span><span class="badge badge--dday">D-20</span></div><p class="ttl">◎◎항만개발계획 전략환경영향평가서(초안)</p><div class="meta"><span>부산 강서 · ~26.04.25</span><span>의견 <b>3</b>건</span></div></article>
+            <article class="civic-card"><div class="badges"><span class="badge badge--orange badge--dot">소규모</span><span class="badge badge--dday">D-9</span></div><p class="ttl">◆◆재생에너지 단지 소규모 환경영향평가서</p><div class="meta"><span>충남 보령 · ~26.04.18</span><span>의견 <b>2</b>건</span></div></article>
+          </div>
+        </div>
+      </div>
+      <div data-panel="small" style="display:none">
+        <div class="carousel" data-carousel>
+          <div class="carousel-track">
+            <article class="civic-card"><div class="badges"><span class="badge badge--orange badge--dot">소규모</span><span class="badge badge--dday">D-5</span></div><p class="ttl">◇◇물류센터 소규모 환경영향평가서 공람</p><div class="meta"><span>충북 청주 · ~26.03.30</span><span>의견 <b>7</b>건</span></div></article>
+            <article class="civic-card"><div class="badges"><span class="badge badge--orange badge--dot">소규모</span><span class="badge badge--dday">D-9</span></div><p class="ttl">◆◆재생에너지 단지 소규모 환경영향평가서</p><div class="meta"><span>충남 보령 · ~26.04.18</span><span>의견 <b>2</b>건</span></div></article>
+            <article class="civic-card"><div class="badges"><span class="badge badge--orange badge--dot">소규모</span><span class="badge badge--dday">D-14</span></div><p class="ttl">▽▽근린공원 조성 소규모 환경영향평가서</p><div class="meta"><span>대전 유성 · ~26.04.22</span><span>의견 <b>1</b>건</span></div></article>
+            <article class="civic-card"><div class="badges"><span class="badge badge--orange badge--dot">소규모</span><span class="badge badge--dday">D-18</span></div><p class="ttl">☆☆관광단지 진입도로 소규모 환경영향평가서</p><div class="meta"><span>제주 서귀포 · ~26.04.28</span><span>의견 <b>0</b>건</span></div></article>
+          </div>
+        </div>
+      </div>
+      <div data-panel="status" style="display:none">
+        <div class="carousel" data-carousel>
+          <div class="carousel-track">
+            <article class="civic-card"><div class="badges"><span class="badge badge--blue badge--dot">협의중</span></div><p class="ttl">○○신도시 개발사업 — 본안 협의 검토 진행</p><div class="meta"><span>접수 26.02.10</span><span>처리 <b>62</b>%</span></div></article>
+            <article class="civic-card"><div class="badges"><span class="badge badge--eco badge--dot">보완</span></div><p class="ttl">△△해안도로 건설사업 — 보완요청 회신 대기</p><div class="meta"><span>접수 26.01.22</span><span>처리 <b>40</b>%</span></div></article>
+            <article class="civic-card"><div class="badges"><span class="badge badge--gray badge--dot">완료</span></div><p class="ttl">□□산업단지 조성사업 — 협의 완료</p><div class="meta"><span>접수 25.11.05</span><span>처리 <b>100</b>%</span></div></article>
+            <article class="civic-card"><div class="badges"><span class="badge badge--blue badge--dot">협의중</span></div><p class="ttl">◎◎항만개발계획 — 전략환경 협의 진행</p><div class="meta"><span>접수 26.02.28</span><span>처리 <b>28</b>%</span></div></article>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 주요 서비스 (탭) ===================== -->
+  <section class="section" data-tabs style="padding-block:calc(28px*var(--dscale))">
+    <div class="wrap">
+      <div class="section-head" style="align-items:center;text-align:center;margin-bottom:24px">
+        <span class="kicker" style="justify-content:center"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.8 5.6L19 9l-4.4 3.2L16 18l-4-3-4 3 1.4-5.8L5 9l5.2-1.4z"></path></svg>주요 서비스</span>
+        <h2 class="display">회원에 꼭 맞는 업무 서비스</h2>
+        <p class="lead text-pretty">로그인하면 회원 유형에 맞춘 바로가기와 알림이 자동으로 구성됩니다.</p>
+        <div class="svc-tabs" style="margin-top:14px">
+          <button data-tab="cit" class="on">국민 회원</button>
+          <button data-tab="eng">기술자 회원</button>
+          <button data-tab="biz">평가업체(대행자)</button>
+        </div>
+      </div>
+
+      <!-- 국민 -->
+      <div data-panel="cit">
+        <div class="svc-grid">
+          <a class="svc-card" href="국민참여.html"><span class="ico-tile" data-ico="pen"></span><span class="t">평가서 초안 공람</span><span class="d">의견 제출</span></a>
+          <a class="svc-card" href="국민참여.html"><span class="ico-tile" data-ico="cal"></span><span class="t">설명회·공청회</span><span class="d">일정·신청</span></a>
+          <a class="svc-card" href="평가정보조회.html"><span class="ico-tile" data-ico="search"></span><span class="t">우리동네 사업조회</span><span class="d">지역별 검색</span></a>
+          <a class="svc-card" href="환경지도.html" target="_blank" rel="noopener" title="환경영향 지도 새창열림"><span class="ico-tile" data-ico="map"></span><span class="t">환경영향 지도</span><span class="d">공간정보</span></a>
+          <a class="svc-card" href="#"><span class="ico-tile" data-ico="doc"></span><span class="t">평가서 원문 열람</span><span class="d">공개 정보</span></a>
+          <a class="svc-card" href="환경영향평가소개.html"><span class="ico-tile" data-ico="book"></span><span class="t">제도 알아보기</span><span class="d">쉬운 안내</span></a>
+          <a class="svc-card" href="#"><span class="ico-tile" data-ico="bell"></span><span class="t">관심사업 알림</span><span class="d">구독</span></a>
+          <a class="svc-card" href="자주묻는질문.html"><span class="ico-tile" data-ico="chat"></span><span class="t">민원·문의</span><span class="d">FAQ</span></a>
+        </div>
+      </div>
+      <!-- 기술자 -->
+      <div data-panel="eng" style="display:none">
+        <div class="svc-grid">
+          <a class="svc-card" href="기술자등록안내.html"><span class="ico-tile" data-ico="badge"></span><span class="t">기술자 등록안내</span><span class="d">자격기준·절차</span></a>
+          <a class="svc-card" href="기술경력인정.html"><span class="ico-tile" data-ico="pen"></span><span class="t">경력 신청 (온라인)</span><span class="d">경력등록·갱신</span></a>
+          <a class="svc-card" href="증명서발급내역.html"><span class="ico-tile" data-ico="stamp"></span><span class="t">증명서 발급신청</span><span class="d">경력확인서 등</span></a>
+          <a class="svc-card" href="진위확인.html"><span class="ico-tile" data-ico="shield"></span><span class="t">증명서 진위확인</span><span class="d">발급 확인</span></a>
+          <a class="svc-card" href="신청내역조회.html"><span class="ico-tile" data-ico="monitor"></span><span class="t">신청현황 조회</span><span class="d">처리상태 확인</span></a>
+          <a class="svc-card" href="평가정보조회.html"><span class="ico-tile" data-ico="doc"></span><span class="t">평가정보 조회</span><span class="d">사업·평가서</span></a>
+          <a class="svc-card" href="교육일정.html"><span class="ico-tile" data-ico="cal"></span><span class="t">교육정보 안내</span><span class="d">교육 일정</span></a>
+          <a class="svc-card" href="자주묻는질문.html"><span class="ico-tile" data-ico="chat"></span><span class="t">FAQ / 이용안내</span><span class="d">자주 묻는 질문</span></a>
+        </div>
+      </div>
+      <!-- 평가업체 -->
+      <div data-panel="biz" style="display:none">
+        <div class="svc-grid">
+          <a class="svc-card" href="평가업등록신청.html"><span class="ico-tile" data-ico="badge"></span><span class="t">평가업 등록</span><span class="d">등록·변경신고</span></a>
+          <a class="svc-card" href="내사업진행현황.html"><span class="ico-tile" data-ico="doc"></span><span class="t">사업실적 신고</span><span class="d">실적 등록</span></a>
+          <a class="svc-card" href="#"><span class="ico-tile" data-ico="chart"></span><span class="t">실적 통계</span><span class="d">업체별 현황</span></a>
+          <a class="svc-card" href="증명서발급내역.html"><span class="ico-tile" data-ico="stamp"></span><span class="t">실적 증명발급</span><span class="d">증명서 신청</span></a>
+          <a class="svc-card" href="평가정보조회.html"><span class="ico-tile" data-ico="search"></span><span class="t">평가사업 검색</span><span class="d">수주·참고</span></a>
+          <a class="svc-card" href="행정처분공고.html"><span class="ico-tile" data-ico="shield"></span><span class="t">행정처분 이력</span><span class="d">업체 조회</span></a>
+          <a class="svc-card" href="#"><span class="ico-tile" data-ico="bell"></span><span class="t">입찰·공고 알림</span><span class="d">맞춤 알림</span></a>
+          <a class="svc-card" href="1대1문의.html"><span class="ico-tile" data-ico="chat"></span><span class="t">1:1 문의</span><span class="d">상담 지원</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 교육 + 협의현황 ===================== -->
+  <section class="section bg-blue">
+    <div class="wrap edu-split">
+      <div class="reveal">
+        <div class="section-head section-head--row" style="margin-bottom:24px">
+          <div>
+            <span class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M4 5c2.5-1 5-1 8 .5C15 4 17.5 4 20 5v14c-2.5-1-5-1-8 .5C9 18 6.5 18 4 19z"></path><path d="M12 5.5v14"></path></svg>교육정보</span>
+            <h2 class="h-l" style="margin-top:10px">전문성을 더하고, <span class="em">커리어의 가치</span>를 높입니다.</h2>
+          </div>
+          <a class="btn btn--line btn--sm" href="#">전체보기 +</a>
+        </div>
+        <div class="edu-list">
+          <a class="edu-item" href="#">
+            <div class="tags"><span class="badge badge--navy">집합교육</span><span class="badge badge--eco">신청가능</span></div>
+            <div class="body"><p class="t">2026 환경영향평가 기술자 역량강화 교육 (기초)</p><p class="d">평가서 작성 실무와 협의 절차, 최신 ICT 기반 평가기법 등 현업 적용 중심으로 구성된 기초 과정입니다.</p><p class="when">2026.04.14 – 16 · 서울 환경회관</p></div>
+          </a>
+          <a class="edu-item" href="#">
+            <div class="tags"><span class="badge badge--blue">온라인</span><span class="badge badge--eco">상시수강</span></div>
+            <div class="body"><p class="t">2026 환경영향평가 기술자 역량강화 교육 (심화)</p><p class="d">전략환경영향평가·누적영향평가 등 고난도 평가 사례 분석 중심의 온라인 심화 과정입니다.</p><p class="when">2026.04.01 – 30 · 온라인(LMS)</p></div>
+          </a>
+          <a class="edu-item" href="#">
+            <div class="tags"><span class="badge badge--navy">집합교육</span><span class="badge badge--gray">접수예정</span></div>
+            <div class="body"><p class="t">2026 환경영향평가 기술자 역량강화 교육 (실무)</p><p class="d">평가서 검토·보완 대응 실무 워크숍과 GIS 분석 실습을 포함합니다.</p><p class="when">2026.05.12 – 14 · 서울 환경회관</p></div>
+          </a>
+          <a class="edu-item" href="#">
+            <div class="tags"><span class="badge badge--teal">공무원</span><span class="badge badge--gray">접수예정</span></div>
+            <div class="body"><p class="t">환경영향평가 협의기관 담당자 교육</p><p class="d">협의의견 작성 기준과 처분 사례, 통합정보시스템 활용법을 다룹니다.</p><p class="when">2026.05.20 – 21 · 세종 MEI센터</p></div>
+          </a>
+        </div>
+      </div>
+
+      <div class="side-stack reveal" data-delay="120">
+        <a class="promo energy" href="#">
+          <h3><svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 4 14h6l-1 8 9-12h-6z"></path></svg>재생에너지</h3>
+          <p>투명한 정보 공개로 친환경 에너지의 미래를 함께 만들어 갑니다.</p>
+          <span class="go"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span>
+        </a>
+        <div class="promo consult">
+          <h3><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M4 20V4M4 20h16"></path><path d="M8 16l3.5-4 3 2.5L20 8"></path></svg>유형별 협의 현황</h3>
+          <p style="color:#cfe0ff">2026년 누적 기준</p>
+          <div class="conrows">
+            <div class="conrow"><div class="ctop"><span>환경영향평가</span><span>35%</span></div><div class="cnum">2,970<small>건</small></div><div class="bar"><i style="width:35%"></i></div></div>
+            <div class="conrow"><div class="ctop"><span>전략환경영향평가</span><span>22%</span></div><div class="cnum">1,840<small>건</small></div><div class="bar"><i style="width:22%"></i></div></div>
+            <div class="conrow"><div class="ctop"><span>사후환경조사</span><span>15%</span></div><div class="cnum">1,260<small>건</small></div><div class="bar"><i style="width:15%"></i></div></div>
+            <div class="conrow"><div class="ctop"><span>소규모 환경영향평가</span><span>28%</span></div><div class="cnum">2,400<small>건</small></div><div class="bar"><i style="width:28%"></i></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== 관련사이트 (green band) ===================== -->
+  <section class="section--tight family">
+    <div class="wrap">
+      <div class="section-head section-head--row" style="margin-bottom:8px">
+        <div>
+          <span class="kicker kicker--light"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.5 2.5 2.5 15.5 0 18M12 3c-2.5 2.5-2.5 15.5 0 18"></path></svg>관련사이트</span>
+          <h2 class="h-l" style="color:#fff;margin-top:10px">환경 정보의 모든 길, 한 곳에서.</h2>
+        </div>
+      </div>
+      <div class="fam-grid">
+        <a class="fam-link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.5 2.5 2.5 15.5 0 18M12 3c-2.5 2.5-2.5 15.5 0 18"></path></svg>기후·에너지환경부</a>
+        <a class="fam-link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"></path><path d="M9 4v14M15 6v14"></path></svg>국토환경성평가지도</a>
+        <a class="fam-link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.5 2.5 2.5 15.5 0 18M12 3c-2.5 2.5-2.5 15.5 0 18"></path></svg>환경공간정보서비스</a>
+        <a class="fam-link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.5 2.5 2.5 15.5 0 18M12 3c-2.5 2.5-2.5 15.5 0 18"></path></svg>환경부</a>
+        <a class="fam-link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.5 2.5 2.5 15.5 0 18M12 3c-2.5 2.5-2.5 15.5 0 18"></path></svg>생활환경안전정보시스템</a>
+        <a class="fam-link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.5 2.5 2.5 15.5 0 18M12 3c-2.5 2.5-2.5 15.5 0 18"></path></svg>HIA 공간정보서비스</a>
+        <a class="fam-link" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"></circle><path d="M3 12h18M12 3c2.5 2.5 2.5 15.5 0 18M12 3c-2.5 2.5-2.5 15.5 0 18"></path></svg>측정망 연계</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div id="site-footer-slot"></div>
+
+<button class="totop" id="totop" aria-label="맨 위로">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"></path></svg>
+</button>
+
+<script src="assets/site.js"></script>
+<script>
+/* fill icon tiles + totop */
+(function(){
+  var I = window.EIASS_ICONS||{};
+  document.querySelectorAll("[data-ico]").forEach(function(el){
+    var k=el.getAttribute("data-ico"); if(I[k]) el.innerHTML=I[k];
+  });
+  var tt=document.getElementById("totop");
+  if(tt){
+    addEventListener("scroll",function(){tt.classList.toggle("show",scrollY>600);},{passive:true});
+    tt.addEventListener("click",function(){scrollTo({top:0,behavior:"smooth"});});
+  }
+})();
+</script>
+</body>
+</html>
