@@ -163,22 +163,25 @@ button{cursor:pointer}
 .util-bar .sep{width:1px;height:12px;background:rgba(255,255,255,.22)}
 
 .site-header{position:sticky;top:0;z-index:200;background:#fff;border-bottom:1px solid var(--line)}
-.header-main{display:flex;align-items:center;height:70px;gap:36px}
+.header-main{display:flex;align-items:center;height:70px;gap:36px;min-width:0}
 .brand-logo{display:flex;align-items:baseline;gap:3px;font-weight:800;font-size:23px;
   letter-spacing:-.03em;color:var(--navy);flex:none}
 .brand-logo .leaf{width:13px;height:13px;align-self:flex-start;margin-top:3px}
 .brand-logo b{color:var(--primary)}
 .brand-sub{font-size:11.5px;color:var(--ink-4);font-weight:600;margin-left:8px;align-self:center}
 
-.gnb{flex:1;height:100%}
-.gnb>ul{display:flex;height:100%;gap:34px}
+.gnb{flex:1;min-width:0;height:100%}
+.gnb>ul{display:flex;height:100%;gap:28px}
 .gnb>ul>li{display:flex;align-items:center}
-.gnb>ul>li>a{display:flex;align-items:center;height:100%;font-size:17px;font-weight:600;
-  color:var(--ink);position:relative;letter-spacing:-.02em;transition:color .15s}
-.gnb>ul>li>a::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:3px;
-  background:var(--primary);transform:scaleX(0);transition:transform .2s;border-radius:2px}
-.gnb>ul>li:hover>a,.gnb>ul>li.active>a{color:var(--primary)}
-.gnb>ul>li:hover>a::after,.gnb>ul>li.active>a::after{transform:scaleX(1)}
+.gnb>ul>li>a,.gnb>ul>li>button{display:flex;align-items:center;height:100%;font-size:17px;
+  font-weight:600;color:var(--ink);position:relative;letter-spacing:-.02em;
+  background:none;border:0;padding:0;white-space:nowrap;transition:color .15s}
+.gnb>ul>li>a::after,.gnb>ul>li>button::after{content:"";position:absolute;left:0;right:0;bottom:-1px;
+  height:3px;background:var(--primary);transform:scaleX(0);transition:transform .2s;border-radius:2px}
+.gnb>ul>li:hover>a,.gnb>ul>li:hover>button,
+.gnb>ul>li.active>a,.gnb>ul>li.active>button{color:var(--primary)}
+.gnb>ul>li:hover>a::after,.gnb>ul>li:hover>button::after,
+.gnb>ul>li.active>a::after,.gnb>ul>li.active>button::after{transform:scaleX(1)}
 
 .header-actions{display:flex;align-items:center;gap:9px;flex:none}
 .hood-pill{display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 15px;
@@ -251,6 +254,16 @@ button{cursor:pointer}
 .tick .msg{font-size:var(--fs-body-s);color:var(--ink-2);overflow:hidden;text-overflow:ellipsis;
   white-space:nowrap;flex:1}
 .tick .date{font-size:var(--fs-body-xs);color:var(--ink-4);flex:none}
+
+/* 보는 범위 바꾸기 — 우리 집 반경 / 전국 */
+.scope-seg{display:inline-flex;gap:3px;background:var(--bg-1);border:1px solid var(--line);
+  border-radius:var(--r-pill);padding:3px;flex:none}
+.scope-seg button{padding:8px 16px;border:0;background:transparent;border-radius:var(--r-pill);
+  font-size:var(--fs-body-s);font-weight:600;color:var(--ink-3);white-space:nowrap;
+  transition:.16s var(--ease)}
+.scope-seg button:hover{color:var(--primary)}
+.scope-seg button.on{background:#fff;color:var(--primary);font-weight:800;box-shadow:var(--sh-sm)}
+.scope-seg b{font-weight:inherit}
 
 .filter-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .sort-btn{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-body-s);
@@ -342,6 +355,11 @@ button{cursor:pointer}
 .deftable{width:100%;border-collapse:collapse;margin-top:6px}
 .deftable th,.deftable td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);font-size:var(--fs-body-s)}
 .deftable th{width:34%;color:var(--ink);font-weight:700;background:var(--bg-1)}
+/* 동네 변경 모달 — 지도 화면 주소칸과 같은 드롭다운(.msel)을 쓴다 */
+.hood-pick{display:flex;gap:8px;flex-wrap:wrap}
+.hood-pick .msel{flex:1 1 110px}
+.hood-pick-msg{font-size:var(--fs-body-xs);color:var(--ink-4);margin-top:12px;min-height:18px}
+
 .contact-card{background:var(--bg-1);border:1px solid var(--line);border-radius:var(--r-md);padding:18px 20px}
 .contact-row{display:flex;gap:12px;padding:7px 0}
 .contact-row .k{width:70px;flex:none;color:var(--ink-3);font-weight:600}
@@ -381,13 +399,26 @@ button{cursor:pointer}
 .gis-map{position:absolute;inset:0;background:var(--bg-blue);display:flex}
 #gisDetail{padding:20px 22px}
 
-/* 지도 화면 안에서 주소 바꾸기 */
+/* 지도 화면 안에서 주소 바꾸기 — 드롭다운 3개와 버튼을 한 줄에 둔다.
+   자리가 모자라면 버튼만 아래 줄로 내려간다(줄바꿈). */
 .gis-addr{flex:none;padding:14px 14px 15px;border-bottom:1px solid var(--line);background:var(--bg-2)}
 .gis-addr-lb{font-size:var(--fs-body-xs);font-weight:700;color:var(--ink-3);margin-bottom:7px}
-.gis-addr-row{display:flex;flex-direction:column;gap:6px;margin-bottom:9px}
-.gis-addr-row select{width:100%;height:36px;border:1px solid var(--line-2);border-radius:var(--r-xs);
-  padding:0 9px;font-size:var(--fs-body-s);color:var(--ink);background:#fff;outline:0}
-.gis-addr-row select:focus{border-color:var(--primary)}
+.gis-addr-row{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+.gis-addr-row .btn{flex:0 0 auto;height:38px}
+
+/* 드롭다운 화살표는 첫 화면(.setcell.sel)과 같은 방식으로 직접 그린다.
+   그래야 브라우저마다 다른 기본 화살표 대신 같은 모양이 나온다. */
+.msel{position:relative;flex:1 1 88px;min-width:0}
+.msel::after{content:"";position:absolute;right:11px;top:50%;width:7px;height:7px;
+  margin-top:-5px;border-right:1.8px solid var(--ink-3);border-bottom:1.8px solid var(--ink-3);
+  transform:rotate(45deg);pointer-events:none}
+.msel select{width:100%;height:38px;border:1px solid var(--line-2);border-radius:var(--r-sm);
+  padding:0 26px 0 11px;font-size:var(--fs-body-s);font-weight:600;color:var(--ink);
+  background:#fff;outline:0;cursor:pointer;appearance:none;-webkit-appearance:none;
+  text-overflow:ellipsis;transition:.16s var(--ease)}
+.msel select:hover{border-color:var(--line-strong)}
+.msel select:focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-soft)}
+.msel:focus-within::after{border-color:var(--primary)}
 
 .gis-list-head{padding:11px 14px;border-bottom:1px solid var(--line);background:var(--bg-2);
   font-size:var(--fs-body-xs);font-weight:700;color:var(--ink-3)}
@@ -443,24 +474,20 @@ button{cursor:pointer}
 .gis-draw-btns{display:flex;flex-wrap:wrap;gap:6px}
 .gis-map--draw{cursor:crosshair}
 
-/* 눌러서 펼쳐 보는 묶음 (공람·설명회 / 구간 / 환경영향분석) */
-.acc-group{margin-top:20px;border-top:2px solid var(--ink)}
-.acc{border-bottom:1px solid var(--line)}
-.acc > summary{display:flex;align-items:center;gap:9px;padding:13px 2px;cursor:pointer;
-  list-style:none;transition:.14s var(--ease)}
-.acc > summary::-webkit-details-marker{display:none}
-.acc > summary:hover{color:var(--primary)}
-.acc > summary:focus-visible{outline:3px solid color-mix(in srgb,var(--primary) 55%,#fff);outline-offset:2px}
-.acc-t{font-size:var(--fs-h-xxs);font-weight:800;color:var(--ink)}
-.acc-h{font-size:var(--fs-body-xs);color:var(--ink-4);font-weight:600}
-.acc-i{width:17px;height:17px;margin-left:auto;color:var(--ink-3);flex:none;transition:transform .18s var(--ease)}
-.acc[open] > summary .acc-i{transform:rotate(180deg)}
-.acc-body{padding-bottom:14px}
+/* 가로로 눌러서 바꿔 보는 묶음 (공람·설명회 / 구간 / 환경영향분석)
+   한 번에 한 묶음만 보여준다. 세로로 쌓지 않아 스크롤이 짧아진다. */
+.tabs{margin-top:20px}
+.tab-strip{display:flex;gap:3px;background:var(--bg-1);border:1px solid var(--line);
+  border-radius:var(--r-sm);padding:3px}
+.tab{flex:1 1 0;min-width:0;padding:9px 8px;border:0;background:transparent;
+  border-radius:var(--r-xs);font-size:var(--fs-body-s);font-weight:600;color:var(--ink-3);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:.16s var(--ease)}
+.tab:hover{color:var(--primary)}
+.tab[aria-selected="true"]{background:#fff;color:var(--primary);font-weight:800;box-shadow:var(--sh-sm)}
+.tab-panel[hidden]{display:none}
+.tab-hint{font-size:var(--fs-body-xs);color:var(--ink-4);font-weight:700;padding:13px 2px 0}
 
 /* 환경영향분석 — 정형화된 항목 목록 */
-.eia{margin-top:20px}
-.eia > h4{font-size:var(--fs-h-xxs);font-weight:800;color:var(--ink);
-  padding-bottom:9px;border-bottom:2px solid var(--ink);margin-bottom:2px}
 .eia-src{font-size:var(--fs-body-xs);color:var(--ink-4);margin:7px 0 12px;line-height:1.55}
 .eia-row{padding:11px 0;border-bottom:1px solid var(--line)}
 .eia-row .k{display:flex;align-items:center;gap:6px;font-size:var(--fs-body-xs);
@@ -524,7 +551,7 @@ button{cursor:pointer}
 .fld-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .fld-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .toggle{display:flex;align-items:center;gap:10px;font-size:var(--fs-body-s);font-weight:600;color:var(--ink)}
-.toggle input{width:auto;height:auto;accent-color:var(--primary);width:17px;height:17px}
+.toggle input{width:17px;height:17px;accent-color:var(--primary)}
 .adm-actions{display:flex;gap:10px;margin-top:24px;align-items:center}
 .adm-saved{font-size:var(--fs-body-s);font-weight:700;color:var(--eco);opacity:0;transition:.2s}
 .adm-saved.on{opacity:1}
@@ -535,6 +562,10 @@ button{cursor:pointer}
 
 /* ---------- RESPONSIVE ---------- */
 @media (max-width:1180px){
+  /* 메뉴가 5개라 이 폭부터는 헤더가 좁아진다. 설명 문구를 빼고 간격·글자를 줄인다. */
+  .brand-sub{display:none}
+  .gnb>ul{gap:18px}
+  .gnb>ul>li>a,.gnb>ul>li>button{font-size:15.5px}
   .hero-home{grid-template-columns:1fr;gap:26px;padding-bottom:110px}
   .hood-card{max-width:520px}
   .proj-grid{grid-template-columns:repeat(2,1fr)}
@@ -570,6 +601,10 @@ button{cursor:pointer}
   .dash-top{grid-template-columns:1fr}
   .brand-sub{display:none}
   .nation-i{padding:0 16px}
+  /* 동네 이름이 길면 헤더가 넘쳐 검색 버튼이 잘렸다. 이름 쪽만 줄여 준다. */
+  .header-actions{flex:0 1 auto;min-width:0}
+  .hood-pill{min-width:0;overflow:hidden}
+  .hood-pill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 }
 @media (prefers-reduced-motion:reduce){
   *{transition:none!important;animation:none!important;scroll-behavior:auto!important}

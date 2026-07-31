@@ -221,9 +221,13 @@ def _row_first_td_text(tree, th_keyword):
     return re.sub(r"\s+", " ", tds[0].text_content()).strip()
 
 
-def parse_detail_html(html_text):
-    tree = lhtml.fromstring(html_text)
-    result = {
+def empty_detail():
+    """상세 페이지에서 뽑아내는 항목의 빈 틀.
+
+    상세 조회가 실패했을 때도 이 틀을 그대로 쓴다. 실패한 건만 값이 비어 있을 뿐
+    키는 모두 있어야, 뒤에서 detail["briefWhen"] 처럼 꺼내 쓸 때 죽지 않는다.
+    """
+    return {
         "address": None, "org": None, "tel": None, "files": [],
         # 사업위치 유형. 전략환경영향평가는 면형/선형/점형이 표시되지만
         # 환경영향평가 쪽은 표시가 없어서 None 으로 둔다(추측하지 않는다).
@@ -239,6 +243,11 @@ def parse_detail_html(html_text):
         "deptName": None,      # 의견을 받는 부서
         "deptTel": None,       # 그 부서 전화번호
     }
+
+
+def parse_detail_html(html_text):
+    tree = lhtml.fromstring(html_text)
+    result = empty_detail()
 
     # 사업위치 항목 이름이 유형별로 다르다 ("사업위치" 또는 "사업지위치").
     # 면형(소재지+면적 표) / 점형·선형(그냥 주소 텍스트) 둘 다 있을 수 있다.
@@ -613,8 +622,9 @@ def build(args):
                 detail_html = fetch_detail_html(category_key, it["biz_cd"], it["biz_seq"], it["step_cd"])
                 detail = parse_detail_html(detail_html)
             except Exception as e:
+                # 한 건이 실패해도 나머지 수집은 계속한다.
                 log(f"    [상세 조회 실패] {e}")
-                detail = {"address": None, "org": None, "tel": None, "files": []}
+                detail = empty_detail()
             time.sleep(args.delay)
 
             summary_file = find_summary_file(detail["files"])

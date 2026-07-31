@@ -84,6 +84,7 @@ const SAMPLE_PROJECTS = [
 let PROJECTS = [];          // 공람 기간 안에 있는 사업 (화면에 보이는 것)
 let CLOSED_PROJECTS = [];   // 기간이 지난 사업 (화면에서 빼지만, 참조되면 최소 정보만 보여준다)
 let dataReady = false;
+let usingSample = false;    // 실제 파일을 못 읽어 표본으로 대신하고 있는가
 const CATEGORY_BADGE = { strat:"badge--navy", main:"badge--blue" };
 
 /* 우리 집(기준 위치). 동네를 정하면 좌표를 찾아 여기에 넣는다. */
@@ -165,6 +166,8 @@ async function loadProjects(){
   }catch(e){
     console.warn("data/projects.json 을 불러오지 못해 표본 데이터를 표시합니다.", e);
   }
+  // 실제 파일을 못 읽었을 때만 표본으로 대신한다. 이때만 상단에 안내 띠를 띄운다.
+  usingSample = !list.length;
   const all = (list.length ? list : SAMPLE_PROJECTS).map(normalizeProject);
 
   // 화면에는 '초안 공람 기간 안'에 있는 사업만 올린다.
@@ -176,14 +179,29 @@ async function loadProjects(){
   }
 
   dataReady = true;
+  applyDemoBanner();
   recomputeDistances();
   refreshAll();
 }
 
+/* 표본 데이터를 쓰고 있을 때만 상단 안내 띠를 보여준다.
+   실제 데이터에 "표본입니다"라고 붙이면 거짓 안내가 되므로 자동으로 판단한다. */
+function applyDemoBanner(){
+  const el = $("#demoBanner");
+  const on = usingSample && S.showDemoBanner;
+  el.hidden = !on;
+  if(on){
+    el.textContent = "실제 수집 데이터를 읽지 못해 화면 확인용 표본을 보여주고 있습니다. "
+      + "python -m http.server 로 열었는지, data/projects.json 이 있는지 확인하세요.";
+  }
+}
+
 /* 화면 전체를 데이터에 맞춰 다시 그린다. */
 function refreshAll(){
+  renderScope();
   updateFilterCounts();
   updateDashboardStats();
+  renderHoodFoot();
   renderDashTick();
   render();
   renderOpenList();
@@ -212,7 +230,8 @@ function openEiassSource(p){
   });
   document.body.appendChild(form);
   form.submit();
-  form.remove();
+  // 브라우저가 새 탭으로 보내기 전에 폼이 사라지면 안 되므로 한 박자 뒤에 치운다.
+  setTimeout(() => form.remove(), 0);
 }
 
 /* ============================================================
@@ -270,11 +289,13 @@ function bindRegionSelects(sidoSel, sggSel, dongSel){
   };
 }
 
-const onbHood = bindRegionSelects($("#f-sido"), $("#f-sgg"), $("#f-dong"));
-const mapHood = bindRegionSelects($("#m-sido"), $("#m-sgg"), $("#m-dong"));
+const onbHood  = bindRegionSelects($("#f-sido"), $("#f-sgg"), $("#f-dong"));  // 첫 화면
+const mapHood  = bindRegionSelects($("#m-sido"), $("#m-sgg"), $("#m-dong"));  // 지도 화면
+const pickHood = bindRegionSelects($("#h-sido"), $("#h-sgg"), $("#h-dong"));  // 동네 변경 모달
 
 /* 지금 보고 있는 동네 */
 let currentHood = Object.assign({}, S.defHood);
+let hoodShortName = "";   // 화면에 크게 쓰는 짧은 이름 (예: 미사동)
 
 async function loadRegions(){
   try{
@@ -288,6 +309,7 @@ async function loadRegions(){
   }
   onbHood.set(S.defHood);
   mapHood.set(S.defHood);
+  pickHood.set(S.defHood);
   renderRecent();
 }
 
@@ -343,21 +365,23 @@ async function resolveHome(hood){
 
   // 화면 곳곳의 동네 이름을 맞춘다.
   const label = `${shortSido(hood.sido)} ${sgg} ${dong}`.replace(/\s+/g, " ").trim();
-  $("#h-hood").textContent = dong || sgg || hood.sido;
+  hoodShortName = dong || sgg || hood.sido;
   $("#hood-pill-label").textContent = label;
   $("#hood-card-name").textContent = label;
   mapHood.set(hood);
+  pickHood.set(hood);
 
   recomputeDistances();
   refreshAll();
 
-  // 지도 화면을 보고 있으면 그 주소로 지도를 옮긴다.
-  if($("#scr-map").classList.contains("on") && gisMap){
+  // 지도 화면을 보고 있으면 그 주소로 지도를 옮기고 목록을 처음부터 다시 보여준다.
+  if($("#scr-map").classList.contains("on")){
     selectedId = null;
-    gisMap.setView([HOME.lat, HOME.lon], 13);
-    renderGisMarkers(false);
-    renderGisList();
-    showGisPane("list");
+    if(gisMap){
+      gisMap.setView([HOME.lat, HOME.lon], 13);
+      renderGisMarkers(false);
+    }
+    backToGisList();
   }
 }
 
@@ -365,21 +389,22 @@ async function resolveHome(hood){
    설정 적용
    ============================================================ */
 function applySettings(){
-  $("#nationRow").innerHTML = S.nation.map(n => `
+  $("#nationRow").innerHTML = (S.nation || []).map(n => `
     <div class="nation-i">
       <p class="v">${esc(n.v)}<small>${esc(n.u || "")}</small></p>
       <p class="k">${esc(n.k)}</p>
     </div>`).join("");
 
-  $("#demoBanner").hidden = !S.showDemoBanner;
+  applyDemoBanner();
   $("#v-radius").innerHTML = `${esc(S.radiusKm)}<small>km 이내</small>`;
-  $("#h-radius").textContent = S.radiusKm;
+  $("#scope-radius").textContent = S.radiusKm;
   $("#gis-radius").textContent = S.radiusKm;
   $("#c-org").textContent = S.org;
   $("#c-person").textContent = S.person;
   $("#c-tel").textContent = S.tel;
   $("#f-org").textContent = S.org;
   $("#f-tel").textContent = S.tel;
+  renderScope();
   if(REGIONS) renderRecent();
 }
 
@@ -428,10 +453,30 @@ $("#setForm").addEventListener("submit", e => {
   resolveHome(hood);   // 동네 이름 표시와 거리 계산은 여기서 함께 처리한다
 });
 
+/* 동네 변경 — 첫 화면으로 되돌아가지 않고 모달에서 바로 바꾼다.
+   (한 번 들어온 뒤에 처음 화면으로 튕기면 하던 것을 잃어버린다) */
 $$(".js-change").forEach(b => b.addEventListener("click", () => {
-  renderRecent();
-  show("#scr-onboard");
+  pickHood.set(currentHood);
+  $("#hoodPickMsg").textContent = "";
+  openModal("m-hood");
 }));
+
+$("#btn-hood-apply").addEventListener("click", async () => {
+  const btn = $("#btn-hood-apply");
+  const hood = pickHood.get();
+  btn.disabled = true;
+  btn.textContent = "주소를 찾고 있어요…";
+  $("#hoodPickMsg").textContent = "";
+  await resolveHome(hood);
+  pushRecent(hood);
+  btn.disabled = false;
+  btn.textContent = "이 동네로 보기";
+  if(!HOME.exact){
+    $("#hoodPickMsg").textContent = "이 주소의 좌표를 찾지 못해 기준 위치를 옮기지 못했습니다. 다른 동네를 골라 보세요.";
+    return;
+  }
+  closeModal($("#m-hood"));
+});
 
 /* ============================================================
    모달
@@ -465,7 +510,7 @@ addEventListener("keydown", e => {
 /* ============================================================
    반경 안/밖 구분
    ============================================================ */
-let homeNearbyOnly = true;   // 홈 화면 사업 목록
+let homeNearbyOnly = true;   // 홈 화면 사업 목록 (true = 우리 집 반경, false = 전국)
 let mapNearbyOnly = false;   // 지도 화면
 
 function isNearby(p){
@@ -473,16 +518,59 @@ function isNearby(p){
 }
 function nearbyProjects(){ return PROJECTS.filter(isNearby); }
 
+/* 홈 화면이 지금 보고 있는 범위의 사업들 */
+function scopedProjects(){ return homeNearbyOnly ? nearbyProjects() : PROJECTS; }
+
+/* 범위(우리 집 반경 / 전국)에 따라 제목·라벨·강조를 맞춘다. */
+function renderScope(){
+  const near = homeNearbyOnly;
+  $$("[data-scope]").forEach(b =>
+    b.classList.toggle("on", (b.dataset.scope === "near") === near));
+  $$("[data-nav]").forEach(el => {
+    if(el.dataset.nav === "near" || el.dataset.nav === "all"){
+      el.parentElement.classList.toggle("active", el.dataset.nav === (near ? "near" : "all"));
+    }
+  });
+  $("#projHead").innerHTML = near
+    ? `우리 집 반경 ${esc(S.radiusKm)}km 안, <span class="em">계획 중인 사업</span>입니다.`
+    : `<span class="em">전국</span>에서 계획 중인 사업입니다.`;
+  $("#h-hood").textContent = near ? (hoodShortName || "우리 동네") : "전국";
+  $("#stat-total-lab").textContent = near ? "우리 동네 개발사업" : "전국 개발사업";
+}
+
+function setScope(near){
+  homeNearbyOnly = near;
+  renderScope();
+  updateFilterCounts();
+  updateDashboardStats();
+  renderDashTick();
+  render();
+  renderOpenList();
+}
+$$("[data-scope]").forEach(b =>
+  b.addEventListener("click", () => setScope(b.dataset.scope === "near")));
+
+/* 상단 메뉴 — 실제로 있는 기능으로만 보낸다. */
+$$("[data-nav]").forEach(el => el.addEventListener("click", e => {
+  const kind = el.dataset.nav;
+  if(kind === "map"){ openMapScreen(); return; }
+  if(kind === "near" || kind === "all"){
+    e.preventDefault();
+    setScope(kind === "near");
+    $("#projects").scrollIntoView({ behavior:"smooth", block:"start" });
+  }
+}));
+
 /* ============================================================
    환경영향분석 그리기
    ============================================================ */
-function eiaHtml(p){
+function eiaSection(p){
   // 공람 기간이 지난 사업은 AI 해석 결과를 보여주지 않는다.
   // (의견을 낼 수 없는 시점에 해석만 남아 잘못 참고되는 것을 막기 위함)
   if(!p.open){
-    return accordionHtml("환경영향분석", "표시하지 않음", `
+    return { title:"환경영향분석", hint:"표시하지 않음", body:`
       <p class="eia-src">공람 기간이 끝난 사업이라 요약문에 대한 해석 결과는 표시하지 않습니다.
-        사업 내용은 EIASS 원문에서 확인하세요.</p>`);
+        사업 내용은 EIASS 원문에서 확인하세요.</p>` };
   }
   const rows = EIA_FIELDS.map(f => {
     const v = p.analysis ? p.analysis[f.key] : null;
@@ -497,24 +585,67 @@ function eiaHtml(p){
   const filled = p.analysis ? Object.values(p.analysis).filter(Boolean).length : 0;
   const hint = p.analysis ? `${filled}/${EIA_FIELDS.length}개 항목` : (p.summaryEasy ? "요약" : "없음");
 
-  return accordionHtml("환경영향분석", hint, `
+  return { title:"환경영향분석", hint, body:`
     <p class="eia-src">사업자가 낸 평가서 초안의 <b>요약문</b>에 적힌 내용만 쉬운 말로 옮긴 것입니다.
       판단이나 의견은 담지 않았고, 요약문에 없는 항목은 비워 둡니다.</p>
-    ${legacy || rows}`);
+    ${legacy || rows}` };
 }
 
-/* 눌러서 펼쳐 보는 묶음. 내용이 길어 한 화면에 다 넣으면 읽기 어려우므로 접어 둔다. */
-function accordionHtml(title, hint, inner){
-  return `
-    <details class="acc">
-      <summary>
-        <span class="acc-t">${esc(title)}</span>
-        ${hint ? `<span class="acc-h">${esc(hint)}</span>` : ""}
-        <svg class="acc-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
-      </summary>
-      <div class="acc-body">${inner}</div>
-    </details>`;
+/* ============================================================
+   가로로 눌러서 바꿔 보는 묶음
+   내용이 길어 한 화면에 다 넣으면 읽기 어려우므로, 한 번에 하나만 보여준다.
+   sections = [{ title, hint, body }] — 빈 것(null)은 알아서 걸러낸다.
+   ============================================================ */
+let tabSeq = 0;
+
+function tabsHtml(sections){
+  const rows = sections.filter(Boolean);
+  if(!rows.length) return "";
+  const g = "tab" + (++tabSeq);   // 탭과 내용을 이어주는 이름표
+  const strip = rows.map((s, i) => `
+    <button class="tab" type="button" role="tab" id="${g}-t${i}" aria-controls="${g}-p${i}"
+            aria-selected="${i === 0}" tabindex="${i === 0 ? 0 : -1}">${esc(s.title)}</button>`).join("");
+  const panels = rows.map((s, i) => `
+    <div class="tab-panel" role="tabpanel" id="${g}-p${i}" aria-labelledby="${g}-t${i}"${i ? " hidden" : ""}>
+      ${s.hint ? `<p class="tab-hint">${esc(s.hint)}</p>` : ""}
+      ${s.body}
+    </div>`).join("");
+  return `<div class="tabs"><div class="tab-strip" role="tablist">${strip}</div>${panels}</div>`;
 }
+
+function selectTab(btn){
+  const strip = btn.closest(".tab-strip");
+  if(!strip) return;
+  strip.querySelectorAll(".tab").forEach(t => {
+    const on = t === btn;
+    t.setAttribute("aria-selected", on);
+    t.tabIndex = on ? 0 : -1;
+    const panel = document.getElementById(t.getAttribute("aria-controls"));
+    if(panel) panel.hidden = !on;
+  });
+}
+
+/* 탭은 상세 화면이 다시 그려질 때마다 새로 만들어지므로,
+   버튼 하나하나에 붙이지 않고 문서 전체에서 한 번만 받는다. */
+document.addEventListener("click", e => {
+  const t = e.target.closest && e.target.closest(".tab");
+  if(t) selectTab(t);
+});
+/* 키보드 좌우 화살표로도 탭을 옮길 수 있게 한다. */
+document.addEventListener("keydown", e => {
+  const t = e.target.closest && e.target.closest(".tab");
+  if(!t) return;
+  const tabs = Array.from(t.closest(".tab-strip").querySelectorAll(".tab"));
+  const step = { ArrowLeft:-1, ArrowRight:1 }[e.key];
+  let next = null;
+  if(step) next = tabs[(tabs.indexOf(t) + step + tabs.length) % tabs.length];
+  else if(e.key === "Home") next = tabs[0];
+  else if(e.key === "End") next = tabs[tabs.length - 1];
+  if(!next) return;
+  e.preventDefault();
+  selectTab(next);
+  next.focus();
+});
 
 /* ============================================================
    위치 유형 태그 (면형 / 선형)
@@ -532,7 +663,7 @@ function locTagHtml(p){
    설명회 · 공람 · 의견제출 정보
    EIASS 원문을 그대로 보여준다. (일시 표기가 사업마다 자유 형식이라 손대지 않는다)
    ============================================================ */
-function participationHtml(p){
+function participationSection(p){
   const rows = [
     ["공람 기간", p.period],
     ["의견제출 기간", p.opinionPeriod],
@@ -542,21 +673,27 @@ function participationHtml(p){
     ["의견 받는 곳", p.deptName ? `${p.deptName}${p.deptTel ? " · " + p.deptTel : ""}` : null]
   ].filter(([, v]) => v);
 
-  if(!rows.length) return "";
-  const hint = p.briefWhen ? "설명회 있음" : "";
-  return accordionHtml("공람 · 설명회 안내", hint, rows.map(([k, v]) => `
-    <div class="eia-row"><p class="k">${esc(k)}</p><p class="v">${esc(v)}</p></div>`).join(""));
+  if(!rows.length) return null;
+  return {
+    title: "공람 · 설명회",
+    hint: p.briefWhen ? "설명회 있음" : "",
+    body: rows.map(([k, v]) => `
+      <div class="eia-row"><p class="k">${esc(k)}</p><p class="v">${esc(v)}</p></div>`).join("")
+  };
 }
 
 /* 선형 사업의 구간 목록 (시점 → 종점, 연장) */
-function segmentsHtml(p){
-  if(!p.segments.length) return "";
-  return accordionHtml("구간 (시점 · 종점)", `${p.segments.length}개 구간`,
-    p.segments.map((s, i) => `
+function segmentsSection(p){
+  if(!p.segments.length) return null;
+  return {
+    title: "구간",
+    hint: `${p.segments.length}개 구간 (시점 · 종점)`,
+    body: p.segments.map((s, i) => `
       <div class="eia-row">
         <p class="k">구간 ${i + 1}${s.length ? " · " + esc(s.length) : ""}</p>
         <p class="v">시점 ${esc(s.from)}<br>종점 ${esc(s.to)}</p>
-      </div>`).join(""));
+      </div>`).join("")
+  };
 }
 
 /* ============================================================
@@ -597,7 +734,7 @@ $("#btn-opinion-go").addEventListener("click", () => {
    홈 — 대시보드 숫자 / 알림줄
    ============================================================ */
 function updateFilterCounts(){
-  const base = homeNearbyOnly ? nearbyProjects() : PROJECTS;
+  const base = scopedProjects();
   const counts = { all: base.length };
   base.forEach(p => { counts[p.type] = (counts[p.type] || 0) + 1; });
   $$("[data-filter]").forEach(chip => {
@@ -607,18 +744,18 @@ function updateFilterCounts(){
 }
 
 function updateDashboardStats(){
-  const near = nearbyProjects();
-  const openNear = near.filter(p => p.dday !== null);
-  $("#stat-total").dataset.count = near.length;
-  $("#stat-open").dataset.count = openNear.length;
-  $("#h-count").textContent = near.length;
+  const rows = scopedProjects();
+  const openRows = rows.filter(p => p.dday !== null);
+  $("#stat-total").dataset.count = rows.length;
+  $("#stat-open").dataset.count = openRows.length;
+  $("#h-count").textContent = rows.length;
 
-  const outside = PROJECTS.length - near.length;
-  $("#stat-total-note").textContent = outside > 0
+  const outside = PROJECTS.length - rows.length;
+  $("#stat-total-note").textContent = (homeNearbyOnly && outside > 0)
     ? `반경 밖에 ${outside}건 더 있음` : "";
 
-  if(openNear.length){
-    const minDday = Math.min(...openNear.map(p => p.dday));
+  if(openRows.length){
+    const minDday = Math.min(...openRows.map(p => p.dday));
     $("#stat-open-note").textContent = `가장 빠른 마감 D-${minDday}`;
   }else{
     $("#stat-open-note").textContent = "";
@@ -626,12 +763,25 @@ function updateDashboardStats(){
   countUp();
 }
 
+/* 내 동네 카드 아래 숫자 세 개.
+   EIASS에서 오지 않는 값(주민 의견 수 등)은 넣지 않고, 수집한 것만 계산해 보여준다. */
+function renderHoodFoot(){
+  const dists = PROJECTS.map(p => p.dist).filter(d => d != null);
+  $("#v-nearest").innerHTML = dists.length
+    ? `${Math.min(...dists).toFixed(1)}<small>km</small>` : "—";
+
+  const ddays = PROJECTS.map(p => p.dday).filter(d => d !== null);
+  $("#v-soonest").innerHTML = ddays.length
+    ? `${Math.min(...ddays)}<small>일 뒤</small>` : "—";
+}
+
 function renderDashTick(){
-  const soon = nearbyProjects().filter(p => p.dday !== null)
+  const soon = scopedProjects().filter(p => p.dday !== null)
     .sort((a, b) => a.dday - b.dday).slice(0, 2);
   const box = $("#dashTick");
   if(!soon.length){
-    box.innerHTML = `<div class="tick"><span class="msg">반경 ${esc(S.radiusKm)}km 안에 의견을 낼 수 있는 사업이 없습니다.</span></div>`;
+    const where = homeNearbyOnly ? `반경 ${esc(S.radiusKm)}km 안에` : "전국에";
+    box.innerHTML = `<div class="tick"><span class="msg">${where} 의견을 낼 수 있는 사업이 없습니다.</span></div>`;
     return;
   }
   box.innerHTML = soon.map(p => `
@@ -648,7 +798,7 @@ function renderDashTick(){
 let filter = "all", sortBy = "dist", query = "";
 
 function visibleProjects(){
-  let rows = (homeNearbyOnly ? nearbyProjects() : PROJECTS)
+  let rows = scopedProjects()
     .filter(p => filter === "all" || p.type === filter);
   if(query){
     const q = query.toLowerCase();
@@ -680,11 +830,7 @@ function render(){
          </div>`
       : `<p class="proj-empty">조건에 맞는 사업이 없습니다. 다른 유형을 눌러보세요.</p>`;
     const btn = $("#btnShowAll");
-    if(btn) btn.addEventListener("click", () => {
-      homeNearbyOnly = false;
-      updateFilterCounts();
-      render();
-    });
+    if(btn) btn.addEventListener("click", () => setScope(false));
     return;
   }
 
@@ -740,16 +886,19 @@ bindProjectActions("#projGrid");
 
 /* 의견 낼 수 있는 초안 공람 목록 */
 function renderOpenList(){
-  const near = nearbyProjects().filter(p => p.dday !== null).sort((a, b) => a.dday - b.dday);
+  const rows = scopedProjects().filter(p => p.dday !== null).sort((a, b) => a.dday - b.dday);
   const box = $("#openList");
   const note = $("#openListNote");
-  note.textContent = HOME.label ? `${HOME.label} 반경 ${S.radiusKm}km 기준` : "";
+  note.textContent = homeNearbyOnly
+    ? (HOME.label ? `${HOME.label} 반경 ${S.radiusKm}km 기준` : "")
+    : "전국 기준";
 
-  if(!near.length){
-    box.innerHTML = `<p class="proj-empty" style="border-radius:var(--r-md)">반경 ${esc(S.radiusKm)}km 안에 의견을 낼 수 있는 사업이 없습니다.</p>`;
+  if(!rows.length){
+    const where = homeNearbyOnly ? `반경 ${esc(S.radiusKm)}km 안에` : "전국에";
+    box.innerHTML = `<p class="proj-empty" style="border-radius:var(--r-md)">${where} 의견을 낼 수 있는 사업이 없습니다.</p>`;
     return;
   }
-  box.innerHTML = near.map(p => `
+  box.innerHTML = rows.map(p => `
     <div class="row-item">
       <span class="dpill ${p.dday <= 3 ? "urgent" : ""}">D-${p.dday}</span>
       <div class="row-body">
@@ -774,11 +923,7 @@ function openDetail(id){
       <div class="contact-row"><span class="k">기관</span><span class="v">${esc(p.org)}${p.tel ? " · " + esc(p.tel) : ""}</span></div>
       <div class="contact-row"><span class="k">공람기간</span><span class="v">${esc(p.period)}${p.dday !== null ? ` (D-${p.dday})` : ""}</span></div>
     </div>
-    <div class="acc-group">
-      ${participationHtml(p)}
-      ${segmentsHtml(p)}
-      ${eiaHtml(p)}
-    </div>
+    ${tabsHtml([participationSection(p), segmentsSection(p), eiaSection(p)])}
     <p style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap">
       ${p.dday !== null ? `<button class="btn btn--primary btn--sm" type="button" data-opinion="${esc(p.id)}">의견 제출</button>` : ""}
       ${p.lat != null ? `<button class="btn btn--line btn--sm" type="button" data-onmap="${esc(p.id)}">지도에서 보기</button>` : ""}
@@ -807,7 +952,11 @@ function runSearch(){
 $("#btn-search").addEventListener("click", runSearch);
 $("#q").addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); runSearch(); } });
 $$("[data-kw]").forEach(b => b.addEventListener("click", () => { $("#q").value = b.dataset.kw; runSearch(); }));
-$("#btn-focus-search").addEventListener("click", () => $("#q").focus());
+$("#btn-focus-search").addEventListener("click", () => {
+  // 아래로 스크롤한 상태에서 눌러도 검색칸이 보이도록 함께 올려준다.
+  $(".searchbar").scrollIntoView({ behavior:"smooth", block:"center" });
+  $("#q").focus({ preventScroll:true });
+});
 
 /* ============================================================
    지도 — 공통
@@ -822,6 +971,20 @@ function markerIcon(type, on){
     iconAnchor: [7, 7],
     html: `<div class="mk mk--${type}${on ? " mk--on" : ""}"></div>`
   });
+}
+
+/* Leaflet 마커는 키보드로 고를 수 있는 단추가 되는데 이름이 없으면
+   화면을 못 보는 사람에게 "단추"라고만 읽힌다. 사업명을 붙여 준다. */
+function nameMarker(marker, label){
+  const el = marker.getElement();
+  if(el) el.setAttribute("aria-label", label);
+  return marker;
+}
+
+/* 마커 모양을 바꾸면 Leaflet 이 요소를 새로 만들기 때문에 이름을 다시 붙여야 한다. */
+function setMarkerState(marker, p, on){
+  marker.setIcon(markerIcon(p.type, on));
+  nameMarker(marker, `${p.typeLabel} · ${p.name}`);
 }
 function mapGuideHtml(title, desc){
   return `
@@ -933,6 +1096,7 @@ function renderGisMarkers(fit = true){
 
   gisHomeMarker = L.marker([HOME.lat, HOME.lon], { icon:markerIcon("home"), zIndexOffset:1000 })
     .addTo(gisMap).bindTooltip(HOME.label || "우리 집");
+  nameMarker(gisHomeMarker, `우리 집 · ${HOME.label || "기준 위치"}`);
   gisCircle = L.circle([HOME.lat, HOME.lon], {
     radius: S.radiusKm * 1000, color:"#1c47d4", weight:1.4,
     dashArray:"5 5", fillColor:"#1c47d4", fillOpacity:.05
@@ -945,6 +1109,7 @@ function renderGisMarkers(fit = true){
     const m = L.marker([p.lat, p.lon], { icon:markerIcon(p.type, p.id === selectedId) })
       .addTo(gisMap)
       .bindTooltip(p.name, { direction:"top" });
+    nameMarker(m, `${p.typeLabel} · ${p.name}`);
     m.on("click", () => selectProject(p.id, false));
     gisMarkers.set(String(p.id), m);
   });
@@ -1032,35 +1197,37 @@ function renderGisDetail(){
     ${p.dday !== null ? `
       <button class="btn btn--primary btn--sm btn--block" type="button"
               data-opinion="${esc(p.id)}" style="margin-top:16px">의견 제출하기</button>` : ""}
-    <div class="acc-group">
-      ${participationHtml(p)}
-      ${segmentsHtml(p)}
-      ${eiaHtml(p)}
-    </div>
+    ${tabsHtml([participationSection(p), segmentsSection(p), eiaSection(p)])}
     ${p.sourceBizCd ? `
       <button class="eiass-link" type="button" data-eiass="${esc(p.id)}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path></svg>
         EIASS 원문 페이지 열기
       </button>` : ""}`;
-  $("#btn-gis-back-list").addEventListener("click", () => {
-    selectedId = null;
-    renderGisList();
-    drawRoutes();
-    gisMarkers.forEach((m, key) => {
-      const q = PROJECTS.find(x => String(x.id) === key);
-      if(q) m.setIcon(markerIcon(q.type, false));
-    });
-    showGisPane("list");
-  });
+  $("#btn-gis-back-list").addEventListener("click", backToGisList);
 }
 bindProjectActions("#gisDetail");
+
+/* 상세에서 목록으로 되돌아간다. 고른 사업이 없어지므로 강조와
+   '노선 직접 그리기' 버튼도 함께 끈다. */
+function backToGisList(){
+  selectedId = null;
+  gisMarkers.forEach((m, key) => {
+    const q = PROJECTS.find(x => String(x.id) === key);
+    if(q) setMarkerState(m, q, false);
+  });
+  drawRoutes();
+  renderGisList();
+  renderGisDetail();
+  showGisPane("list");
+  $("#btn-route-edit").hidden = true;
+}
 
 function selectProject(id, moveMap){
   selectedId = String(id);
   // 마커 강조를 위해 아이콘만 갈아끼운다
   gisMarkers.forEach((m, key) => {
     const p = PROJECTS.find(x => String(x.id) === key);
-    if(p) m.setIcon(markerIcon(p.type, key === selectedId));
+    if(p) setMarkerState(m, p, key === selectedId);
   });
   const p = PROJECTS.find(x => String(x.id) === selectedId);
   if(p && gisMap && moveMap && p.lat != null){
@@ -1076,22 +1243,23 @@ function selectProject(id, moveMap){
 function openMapScreen(focusId){
   show("#scr-map");
   mapHood.set(currentHood);      // 왼쪽 주소 칸을 지금 보고 있는 동네로 맞춘다
-  if(!S.vworldKey){
+
+  if(S.vworldKey){
+    ensureGisMap();
+    renderGisMarkers(!focusId);
+  }else{
+    // 키가 없으면 지도 자리에 안내만 띄운다. 왼쪽 목록·상세는 그대로 쓸 수 있다.
     $("#gisMap").innerHTML = mapGuideHtml(
       "VWorld 인증키가 아직 등록되지 않았습니다",
       "vworld.kr에서 인증키를 발급받아 관리자 설정에 등록하면 지도가 표시됩니다."
     );
-    renderGisList();
-    renderGisDetail();
-    return;
   }
-  ensureGisMap();
-  renderGisMarkers(!focusId);
+
   renderGisList();
   if(focusId){
     selectProject(focusId, true);
   }else{
-    showGisPane("list");
+    backToGisList();
   }
   setTimeout(() => { if(gisMap) gisMap.invalidateSize(); }, 60);
 }
@@ -1106,8 +1274,7 @@ $("#mapNearbyOnly").addEventListener("change", e => {
   mapNearbyOnly = e.target.checked;
   selectedId = null;
   renderGisMarkers(true);
-  renderGisList();
-  showGisPane("list");
+  backToGisList();
 });
 
 /* ============================================================
@@ -1264,14 +1431,18 @@ function renderMiniMap(){
   miniLayers.forEach(l => miniMap.removeLayer(l));
   miniLayers = [];
 
-  miniLayers.push(L.marker([HOME.lat, HOME.lon], { icon:markerIcon("home") }).addTo(miniMap));
+  // 미리보기 지도라 마커를 키보드로 고를 수 없게 한다.
+  // (이 지도 전체가 '크게 보기' 단추라서, 안에 또 단추가 있으면 헷갈린다)
+  miniLayers.push(L.marker([HOME.lat, HOME.lon],
+    { icon:markerIcon("home"), keyboard:false }).addTo(miniMap));
   miniLayers.push(L.circle([HOME.lat, HOME.lon], {
     radius: S.radiusKm * 1000, color:"#1c47d4", weight:1.4,
     dashArray:"5 5", fillColor:"#1c47d4", fillOpacity:.06
   }).addTo(miniMap));
 
   nearbyProjects().forEach(p => {
-    miniLayers.push(L.marker([p.lat, p.lon], { icon:markerIcon(p.type) }).addTo(miniMap));
+    miniLayers.push(L.marker([p.lat, p.lon],
+      { icon:markerIcon(p.type), keyboard:false }).addTo(miniMap));
   });
 
   // 우리 동네가 보이는 정도의 축척 — 반경 원이 화면에 꽉 차게.
@@ -1322,8 +1493,9 @@ function fillAdmin(){
   $("#a-d-dong").value      = S.defHood.dong;
   $("#a-pw").value          = S.adminPw;
   ["1","2","3"].forEach((n, i) => {
-    $(`#a-n${n}-k`).value = S.nation[i].k;
-    $(`#a-n${n}-v`).value = S.nation[i].v;
+    const item = (S.nation || [])[i] || { k:"", v:"" };
+    $(`#a-n${n}-k`).value = item.k || "";
+    $(`#a-n${n}-v`).value = item.v || "";
   });
 }
 

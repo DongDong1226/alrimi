@@ -70,7 +70,8 @@
 <!-- ══════════════════ 화면 2 · 우리 동네 홈 ══════════════════ -->
 <div class="screen" id="scr-home">
 
-  <p class="demo-banner" id="demoBanner">표시된 사업 정보는 화면 확인용 표본 데이터입니다.</p>
+  <!-- 실제 데이터를 못 읽었을 때만 보인다 (문구는 app.js 가 넣는다) -->
+  <p class="demo-banner" id="demoBanner" hidden></p>
 
   <div class="util-bar">
     <div class="wrap">
@@ -89,10 +90,14 @@
         <b>우리동네</b><span>알리미</span>
         <span class="brand-sub">환경영향평가 동네 알림 서비스</span>
       </div>
+      <!-- 메뉴는 실제로 있는 기능만 올린다. 없는 화면으로 가는 항목은 만들지 않는다. -->
       <nav class="gnb" aria-label="주요 메뉴">
         <ul>
-          <li class="active"><a href="#projects">우리 동네 사업</a></li>
-          <li><a href="#participate">의견 참여</a></li>
+          <li><a href="#projects" data-nav="near">우리 동네 사업</a></li>
+          <li><a href="#projects" data-nav="all">전국 사업</a></li>
+          <li><a href="#participate" data-nav="participate">의견 참여</a></li>
+          <li><button type="button" data-nav="map">지도로 보기</button></li>
+          <li><button type="button" data-modal="m-guide">이용안내</button></li>
         </ul>
       </nav>
       <div class="header-actions">
@@ -115,7 +120,8 @@
       <div class="wrap hero-home">
         <div class="reveal">
           <p class="greet"><b id="greet-name">홍길동</b>님, 안녕하세요</p>
-          <h1>지금 <span class="hl" id="h-hood">미사동</span>에서<br>진행 중인 개발사업 <span class="hl" id="h-count">5</span>건</h1>
+          <!-- 초안 공람 단계는 아직 짓기 전(계획 단계)이라 "진행 중"이라고 쓰지 않는다. -->
+          <h1>지금 <span class="hl" id="h-hood">미사동</span>에서<br>계획 중인 개발사업 <span class="hl" id="h-count">0</span>건</h1>
 
           <form class="searchbar" onsubmit="return false">
             <svg class="lead-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
@@ -144,10 +150,11 @@
             <div id="miniMapCanvas" class="hood-mini-map" aria-hidden="true"></div>
             <span class="zoom">크게 보기</span>
           </div>
+          <!-- 값은 모두 수집된 데이터에서 계산한다. 없는 값은 만들어 넣지 않는다. -->
           <div class="hood-foot">
             <div><p class="k">반경</p><p class="v" id="v-radius">3<small>km 이내</small></p></div>
-            <div><p class="k">가장 가까운 사업</p><p class="v">0.9<small>km</small></p></div>
-            <div><p class="k">이웃 의견</p><p class="v">15<small>건</small></p></div>
+            <div><p class="k">가장 가까운 사업</p><p class="v" id="v-nearest">—</p></div>
+            <div><p class="k">가장 빠른 마감</p><p class="v" id="v-soonest">—</p></div>
           </div>
         </aside>
       </div>
@@ -157,7 +164,7 @@
       <div class="dash reveal">
         <div class="dash-top">
           <div class="stat feat">
-            <span class="lab">우리 동네 개발사업</span>
+            <span class="lab" id="stat-total-lab">우리 동네 개발사업</span>
             <span class="num"><span data-count="0" id="stat-total">0</span><small>건</small></span>
             <span class="delta up" id="stat-total-note"></span>
           </div>
@@ -192,7 +199,12 @@
         <div class="section-head section-head--row reveal">
           <div>
             <span class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg>우리 동네 사업</span>
-            <h2 class="h-l" style="margin-top:8px">우리 집 반경 <span id="h-radius">3</span>km 안, <span class="em">지금 진행 중인 사업</span>입니다.</h2>
+            <!-- 문구는 보는 범위(우리 동네 / 전국)에 따라 app.js 가 바꾼다 -->
+            <h2 class="h-l" style="margin-top:8px" id="projHead"></h2>
+          </div>
+          <div class="scope-seg" role="group" aria-label="보는 범위">
+            <button type="button" data-scope="near" class="on">우리 집 반경 <b id="scope-radius">3</b>km</button>
+            <button type="button" data-scope="all">전국</button>
           </div>
         </div>
 
@@ -235,13 +247,12 @@
           </p>
         </div>
         <div>
+          <!-- 아직 준비되지 않은 문서로 가는 빈 링크는 두지 않는다 -->
           <div class="footer-policy">
-            <a class="em" href="#">개인정보처리방침</a>
-            <a href="#">이용약관</a>
-            <button type="button" data-modal="m-guide">이용안내</button>
+            <button class="em" type="button" data-modal="m-guide">이용안내</button>
             <button type="button" data-modal="m-contact">문의</button>
           </div>
-          <p class="footer-copy">© 2026 기후에너지환경부. 화면 시안이며 표시된 사업 정보는 실제 데이터가 아닙니다.</p>
+          <p class="footer-copy">© 2026 기후에너지환경부. 환경영향평가 정보지원시스템(EIASS)에 공개된 자료를 정리해 보여드립니다. 원문과 다른 부분이 있으면 원문이 우선합니다.</p>
         </div>
       </div>
     </div>
@@ -319,7 +330,7 @@
         <div class="inner">
           <div class="fld">
             <label for="a-datapath">사업 데이터 파일 경로</label>
-            <p class="hint">파이썬으로 만든 json 파일 위치. 아직 연결 전이라 화면은 내장 표본 데이터를 씁니다.</p>
+            <p class="hint">tools/build_data.py 가 만든 json 파일 위치입니다. 이 파일을 못 읽으면 화면 확인용 표본 데이터로 대신합니다.</p>
             <input id="a-datapath" type="text" placeholder="data/projects.json">
           </div>
           <div class="fld">
@@ -327,7 +338,7 @@
             <input id="a-radius" type="number" min="1" max="20" step="1">
           </div>
           <div class="fld">
-            <label class="toggle"><input type="checkbox" id="a-demo"> 상단에 표본 데이터 안내 띠 표시</label>
+            <label class="toggle"><input type="checkbox" id="a-demo"> 표본 데이터일 때 상단에 안내 띠 표시</label>
           </div>
         </div>
       </div>
@@ -422,17 +433,17 @@
     <aside class="gis-side" aria-label="내 동네 사업">
       <div class="gis-addr">
         <p class="gis-addr-lb">내 동네 주소</p>
+        <!-- 시·도 / 시·군·구 / 읍·면·동 + 버튼을 한 줄에 둔다.
+             화면이 좁아지면 버튼만 아래로 내려간다. -->
         <div class="gis-addr-row">
           <label class="skip" for="m-sido">시·도</label>
-          <select id="m-sido"></select>
+          <span class="msel"><select id="m-sido"></select></span>
           <label class="skip" for="m-sgg">시·군·구</label>
-          <select id="m-sgg"></select>
+          <span class="msel"><select id="m-sgg"></select></span>
           <label class="skip" for="m-dong">읍·면·동</label>
-          <select id="m-dong"></select>
+          <span class="msel"><select id="m-dong"></select></span>
+          <button class="btn btn--primary btn--sm" type="button" id="btn-map-addr">이 주소로 보기</button>
         </div>
-        <button class="btn btn--primary btn--sm btn--block" type="button" id="btn-map-addr">
-          이 주소로 보기
-        </button>
       </div>
       <div class="gis-side-body">
         <div id="gisList"></div>
@@ -519,6 +530,33 @@
       <p style="margin-top:10px">평가서 원문은 환경영향평가 정보지원시스템(EIASS)에서 확인하실 수 있습니다.</p>
     </div>
     <div class="modal-ft"><button class="btn btn--line btn--sm" type="button" data-close>닫기</button></div>
+  </div>
+</div>
+
+<!-- 동네 변경 — 첫 화면으로 되돌아가지 않고 이 자리에서 바꾼다 -->
+<div class="modal" id="m-hood" hidden role="dialog" aria-modal="true" aria-labelledby="m-hood-t">
+  <div class="modal-bd" data-close></div>
+  <div class="modal-box" style="width:min(100%,480px)">
+    <div class="modal-hd">
+      <h3 id="m-hood-t">동네 변경</h3>
+      <button class="modal-x" type="button" data-close aria-label="닫기">&times;</button>
+    </div>
+    <div class="modal-bd-in">
+      <p style="margin-bottom:16px">보고 싶은 동네를 고르세요. 고른 동네를 기준으로 거리와 반경을 다시 계산합니다.</p>
+      <div class="hood-pick">
+        <label class="skip" for="h-sido">시·도</label>
+        <span class="msel"><select id="h-sido"></select></span>
+        <label class="skip" for="h-sgg">시·군·구</label>
+        <span class="msel"><select id="h-sgg"></select></span>
+        <label class="skip" for="h-dong">읍·면·동</label>
+        <span class="msel"><select id="h-dong"></select></span>
+      </div>
+      <p class="hood-pick-msg" id="hoodPickMsg"></p>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn--line btn--sm" type="button" data-close>취소</button>
+      <button class="btn btn--primary btn--sm" type="button" id="btn-hood-apply">이 동네로 보기</button>
+    </div>
   </div>
 </div>
 
