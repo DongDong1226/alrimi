@@ -1,0 +1,106 @@
+# 매일 아침, EIASS 에서 초안 공람 자료를 받아 data/projects.json 을 갱신한다.
+#
+# 이건 "서버"가 아니다. 정해진 시각에 스크립트를 한 번 돌리고 끝나는 작업 실행기다.
+# 결과 파일을 저장소에 커밋하면 GitHub Pages 가 그 파일을 방문자에게 전달한다.
+#
+# 처음 켜기 전에 저장소 Settings → Secrets and variables → Actions 에서
+# VWORLD_KEY 와 ANTHROPIC_API_KEY 를 등록해야 한다. (docs/HANDOFF.md 참고)
+
+name: EIASS 공람 자료 수집
+
+on:
+  schedule:
+    # GitHub 는 UTC 로 움직인다. 00:00 UTC = 한국시간 오전 9시.
+    - cron: "0 0 * * *"
+  # Actions 탭에서 손으로 눌러 돌릴 수 있게 한다 (처음 시험할 때 필수).
+  workflow_dispatch:
+    inputs:
+      full:
+        description: "이미 받아 둔 것을 무시하고 전부 다시 받기 (비용이 많이 든다)"
+        type: boolean
+        default: false
+      limit:
+        description: "유형별 최대 건수 (비워 두면 전건). 처음 시험할 땐 3 정도로."
+        type: string
+        default: ""
+
+# 결과 파일을 커밋해야 하므로 쓰기 권한이 필요하다.
+# pages/id-token 은 수집이 끝난 뒤 부르는 배포 워크플로에 넘겨주기 위한 것이다.
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+# 앞 실행이 안 끝났는데 다음 실행이 겹쳐 도는 것을 막는다.
+concurrency:
+  group: eiass-collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    # 전국 전건이면 오래 걸린다. 무한정 도는 것은 막되 넉넉히 준다.
+    timeout-minutes: 120
+
+    steps:
+      - name: 저장소 내려받기
+        uses: actions/checkout@v4
+
+      - name: 파이썬 준비
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: 필요한 패키지 설치
+        run: pip install -r requirements.txt
+
+      - name: EIASS 수집
+        env:
+          VWORLD_KEY: ${{ secrets.VWORLD_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # VWorld 데이터 API 는 발급 때 등록한 서비스 URL 을 같이 보내야 한다.
+          VWORLD_DOMAIN: ${{ vars.VWORLD_DOMAIN }}
+        run: |
+          ARGS=""
+          if [ "${{ inputs.full }}" = "true" ]; then ARGS="$ARGS --full"; fi
+          if [ -n "${{ inputs.limit }}" ]; then ARGS="$ARGS --limit ${{ inputs.limit }}"; fi
+          echo "실행: python tools/build_data.py $ARGS"
+          python tools/build_data.py $ARGS
+
+      - name: 결과 확인
+        # 수집이 실패해 빈 파일이 커밋되는 것을 막는다.
+        run: |
+          python - <<'PY'
+          import json, sys
+          with open("data/projects.json", encoding="utf-8") as f:
+              data = json.load(f)
+          n = len(data.get("projects", []))
+          print(f"공람 중인 사업 {n}건")
+          if n == 0:
+              print("::error::수집 결과가 0건입니다. 커밋하지 않고 멈춥니다.")
+              sys.exit(1)
+          PY
+
+      - name: 바뀐 게 있으면 커밋
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/projects.json
+          if git diff --cached --quiet; then
+            echo "바뀐 내용이 없어 커밋하지 않습니다."
+          else
+            git commit -m "데이터 갱신 $(date -u +'%Y-%m-%d')"
+            git push
+          fi
+
+  # 수집이 끝나면 바로 사이트를 다시 올린다.
+  # (Actions 가 만든 커밋은 다른 워크플로를 자동으로 깨우지 않기 때문에 여기서 직접 부른다)
+  deploy:
+    needs: collect
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit
+    permissions:
+      contents: read
+      pages: write
+      id-token: write

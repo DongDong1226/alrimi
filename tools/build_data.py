@@ -61,6 +61,7 @@ VWORLD_DATA_URL = "https://api.vworld.kr/req/data"
 RIVER_LAYER = "LT_C_WKMSTRM"      # 하천망도 (하천 구역)
 ROUTE_SIMPLIFY_TOL = 0.0004        # 약 40m — 도형을 이 정도까지 단순화한다
 ROUTE_MAX_KM = 60                  # 사업 위치에서 이만큼 떨어진 동명이천은 버린다
+EMPTY_PAGE_STREAK = 5              # 공람 중인 사업이 없는 페이지가 이만큼 이어지면 목록 조회를 멈춘다
 
 # 이 저장소를 만든 개발 환경(샌드박스)에서만 인증서 검증이 막혀 있었다.
 # 실제 사용자 PC에서는 기본값(검증함)을 그대로 쓰면 된다.
@@ -132,9 +133,17 @@ def parse_period(text):
 
 
 def parse_list_html(html_text, category_key):
+    """목록 페이지 한 쪽에서 사업 목록을 뽑는다.
+
+    주의: EIASS 목록 페이지에는 tbl01 표가 **두 개** 들어 있고 둘 다 같은 사업 10건을
+    담고 있다(확인함). 그대로 두면 사업 하나가 두 번 잡혀서 상세 조회도, 요약문 PDF도,
+    AI 해석 호출도 전부 두 번씩 일어난다(= 비용 2배, 결과 파일에 같은 사업이 두 번).
+    그래서 여기서 사업 번호 기준으로 한 번 걸러 낸다.
+    """
     tree = lhtml.fromstring(html_text)
     rows = tree.xpath("//table[contains(@class,'tbl01')]//tbody/tr")
     items = []
+    seen = set()
     for row in rows:
         links = row.xpath(".//a[contains(@href,\"view('\")]")
         if not links:
@@ -143,6 +152,11 @@ def parse_list_html(html_text, category_key):
         args = re.findall(r"'([^']*)'", href)
         if len(args) < 2:
             continue
+        key = (args[0], args[1])
+        if key in seen:
+            continue          # 같은 페이지 안의 두 번째 표 — 건너뛴다
+        seen.add(key)
+
         tds = row.xpath("./td")
         items.append({
             "category": category_key,
@@ -166,34 +180,49 @@ def parse_list_html(html_text, category_key):
 def fetch_open_items(category_key, today, max_pages, delay):
     """공람기간에 오늘이 포함된 사업만 모은다.
 
-    목록은 공람 시작일이 최신 순으로 정렬돼 있다. 그래서 뒤로 갈수록 오래전에
-    시작한 사업만 나오는데, 시작일이 오늘로부터 이미 90일 넘게 지난 사업은
-    공람기간(보통 14~30일)이 진작 끝났을 게 뻔하므로 그쯤에서 그만 뒤진다.
+    예전에는 "시작일이 90일보다 오래된 게 나오면 목록이 옛날 것으로 넘어간 것"이라 보고
+    그쯤에서 멈췄다. 그런데 **목록이 시작일 순으로 정렬돼 있지 않다**(확인함).
+    1페이지에 1년 전 사업이 섞여 있고 2페이지에 이번 달 사업이 나오는 식이라,
+    그 방식으로는 공람 중인 사업을 통째로 놓쳤다(환경영향평가 24건 중 16건만 수집됐다).
+
+    그래서 지금은 '공람 중인 사업이 한 건도 없는 페이지'가 몇 쪽 이어질 때까지 계속 넘긴다.
+    목록 조회는 값이 싸므로 넉넉히 뒤지는 편이 안전하다.
     """
     open_items = []
+    seen = set()
     label = CATEGORIES[category_key]["label"]
+    empty_streak = 0
+
     for page in range(1, max_pages + 1):
         html_text = fetch_list_page(category_key, page)
         items = parse_list_html(html_text, category_key)
         if not items:
-            break
+            break   # 더 볼 페이지가 없다
 
-        oldest_start = None
+        found_here = 0
         for it in items:
-            if not it["period_start"]:
+            if not it["period_start"] or not it["period_end"]:
                 continue
             start = datetime.date.fromisoformat(it["period_start"])
             end = datetime.date.fromisoformat(it["period_end"])
-            if oldest_start is None or start < oldest_start:
-                oldest_start = start
-            if start <= today <= end:
-                open_items.append(it)
+            if not (start <= today <= end):
+                continue
+            key = (it["biz_cd"], it["biz_seq"])
+            if key in seen:      # 같은 사업이 여러 페이지에 나오는 경우 대비
+                continue
+            seen.add(key)
+            open_items.append(it)
+            found_here += 1
 
-        log(f"  [{label}] {page}페이지 확인 ({len(items)}건, 누적 공람중 {len(open_items)}건)")
+        empty_streak = 0 if found_here else empty_streak + 1
+        log(f"  [{label}] {page}페이지 ({len(items)}건 중 공람중 {found_here}건, "
+            f"누적 {len(open_items)}건)")
 
-        if oldest_start is not None and (today - oldest_start).days > 90:
+        if empty_streak >= EMPTY_PAGE_STREAK:
+            log(f"  [{label}] 공람 중인 사업이 없는 페이지가 {EMPTY_PAGE_STREAK}쪽 이어져 멈춥니다.")
             break
         time.sleep(delay)
+
     return open_items
 
 
@@ -593,6 +622,50 @@ def analyze_environment(name, address, raw_text, anthropic_key):
 
 
 # ============================================================
+# 이미 받아 둔 결과 재사용 (증분 수집)
+#
+#  돈과 시간이 드는 것은 목록 조회가 아니라 그 다음 단계다.
+#  사업 1건마다: 상세 페이지 + 요약문 PDF 내려받기 + AI 해석 1회.
+#  매일 전건을 다시 돌리면 같은 사업의 AI 해석 비용을 매일 다시 낸다.
+#
+#  그래서 이미 있는 사업은 저장해 둔 결과를 그대로 쓰고, 새로 올라온 사업만 받는다.
+#  공람이 끝난 사업은 마지막 필터에서 자동으로 빠지므로 따로 지울 필요가 없다.
+# ============================================================
+def load_existing(path):
+    """지난번에 만든 projects.json 을 {사업id: 사업} 으로 읽어 온다.
+    파일이 없거나 깨져 있으면 빈 것으로 보고 전부 새로 받는다."""
+    try:
+        with open(path, encoding="utf-8") as f:
+            data = json.load(f)
+    except (FileNotFoundError, ValueError, OSError):
+        return {}
+    rows = data.get("projects")
+    if not isinstance(rows, list):
+        return {}
+    return {p["id"]: p for p in rows if isinstance(p, dict) and p.get("id")}
+
+
+def refresh_cached(cached, item, vworld_key, skip_geocode):
+    """재사용하는 사업에서 '싸게 고칠 수 있는 것'만 손본다.
+
+    · 공람 기간: 목록에 나온 최신 값으로 갱신한다 (기간이 연장되는 경우가 있다).
+    · 좌표: 지난번에 못 찾았으면 다시 시도한다 (지오코딩은 돈이 들지 않는다).
+    · AI 해석: 다시 하지 않는다. 한 번 실패한 요약문은 내일도 실패할 가능성이 크고,
+      매일 다시 부르면 그만큼 비용이 계속 나간다. 전부 다시 받으려면 --full 을 쓴다.
+    """
+    if item.get("period_start"):
+        cached["periodStart"] = item["period_start"]
+        cached["periodEnd"] = item["period_end"]
+
+    if cached.get("lat") is None and cached.get("address") and not skip_geocode:
+        lat, lon = geocode_address(cached["address"], vworld_key)
+        if lat is not None:
+            cached["lat"], cached["lon"] = lat, lon
+            log("    (재사용) 지난번에 못 찾은 좌표를 채웠습니다")
+    return cached
+
+
+# ============================================================
 # 전체 흐름
 # ============================================================
 def build(args):
@@ -606,7 +679,16 @@ def build(args):
     if not args.skip_summary and not anthropic_key:
         log("[안내] ANTHROPIC_API_KEY 환경변수가 없어서 쉬운말 요약은 비워둡니다.")
 
+    # 이미 받아 둔 사업은 다시 받지 않는다. --full 을 주면 전부 새로 받는다.
+    existing = {} if args.full else load_existing(OUT_PATH)
+    if existing:
+        log(f"[안내] 지난 결과 {len(existing)}건을 읽었습니다. 여기 있는 사업은 다시 받지 않습니다.")
+    elif not args.full:
+        log("[안내] 지난 결과가 없어 전부 새로 받습니다.")
+
     all_projects = []
+    reused_count = 0
+    new_count = 0
 
     for category_key, cat in CATEGORIES.items():
         label = cat["label"]
@@ -614,10 +696,21 @@ def build(args):
         open_items = fetch_open_items(category_key, today, args.max_pages, args.delay)
         if args.limit:
             open_items = open_items[: args.limit]
-        log(f"[{label}] 공람 중 {len(open_items)}건 상세 조회 시작")
+        log(f"[{label}] 공람 중 {len(open_items)}건 확인")
 
         for it in open_items:
-            log(f"  - {it['name']}")
+            project_id = f"{it['biz_cd']}-{it['biz_seq']}"
+
+            cached = existing.get(project_id)
+            if cached:
+                log(f"  = {it['name']} (이미 받아 둠)")
+                all_projects.append(
+                    refresh_cached(cached, it, vworld_key, args.skip_geocode))
+                reused_count += 1
+                continue
+
+            log(f"  + {it['name']} (새 사업)")
+            new_count += 1
             try:
                 detail_html = fetch_detail_html(category_key, it["biz_cd"], it["biz_seq"], it["step_cd"])
                 detail = parse_detail_html(detail_html)
@@ -667,7 +760,7 @@ def build(args):
                 log(f"    위치 유형 {'/'.join(location_types)} (노선 조회 안 함)")
 
             all_projects.append({
-                "id": f"{it['biz_cd']}-{it['biz_seq']}",
+                "id": project_id,
                 "category": category_key,
                 "categoryLabel": label,
                 "name": it["name"],
@@ -713,6 +806,11 @@ def build(args):
     if dropped:
         log(f"[안내] 공람 기간이 끝난 {dropped}건은 저장하지 않았습니다.")
 
+    # 지난 결과에는 있었지만 이번 목록에 없는 사업 = 공람이 끝나 EIASS 목록에서 빠진 것.
+    gone = len(existing) - reused_count
+    if gone > 0:
+        log(f"[안내] 지난 결과의 {gone}건은 EIASS 목록에서 사라져(공람 종료) 빼냈습니다.")
+
     os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
     with open(OUT_PATH, "w", encoding="utf-8") as f:
         json.dump({
@@ -723,6 +821,7 @@ def build(args):
         }, f, ensure_ascii=False, indent=2)
 
     log(f"완료: {OUT_PATH} 에 {len(kept)}건 저장 (모두 공람 기간 중)")
+    log(f"      새로 받은 사업 {new_count}건 · 지난 결과 재사용 {reused_count}건")
 
 
 def main():
@@ -733,6 +832,9 @@ def main():
     parser.add_argument("--skip-geocode", action="store_true", help="vworld 지오코딩 건너뛰기")
     parser.add_argument("--skip-summary", action="store_true", help="요약문 PDF 다운로드/LLM 요약 건너뛰기")
     parser.add_argument("--skip-route", action="store_true", help="하천 노선 도형 조회 건너뛰기")
+    parser.add_argument("--full", action="store_true",
+                        help="이미 받아 둔 결과를 무시하고 전부 다시 받는다 "
+                             "(EIA_FIELDS 를 바꿨을 때는 반드시 이걸로 돌려야 한다)")
     args = parser.parse_args()
     build(args)
 

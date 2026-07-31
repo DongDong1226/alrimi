@@ -3,9 +3,12 @@
    이 값들은 관리자 화면에서 덮어쓸 수 있고, 덮어쓴 값은
    localStorage 에 저장되어 다음 방문 때 우선 적용됩니다.
    ============================================================ */
+/* 배포할 때 assets/config.js 에 채워지는 값. 내 PC 에서 열면 비어 있다. */
+const BUILD = window.WDN_CONFIG || {};
+
 const DEFAULTS = {
   adminPw: "admin1234",
-  vworldKey: "",
+  vworldKey: BUILD.vworldKey || "",
   serviceUrl: "http://localhost:8000",
   centerLon: "127.1946",
   centerLat: "37.5636",
@@ -39,6 +42,10 @@ function lsSet(k, v){
 }
 
 let S = Object.assign({}, DEFAULTS, lsGet(LSKEY, {}));
+
+/* 예전에 이 브라우저에서 키를 비운 채로 저장했더라도,
+   배포에 심어 둔 키가 있으면 그걸 쓴다. (안 그러면 방문자에게 지도가 안 보인다) */
+if(!S.vworldKey) S.vworldKey = DEFAULTS.vworldKey;
 
 const $  = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));

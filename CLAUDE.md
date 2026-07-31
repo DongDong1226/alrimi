@@ -133,7 +133,7 @@ AI는 **번역만** 한다. 분석·판단·보충을 하지 않는다.
 
 | 단계 | 방법 |
 |---|---|
-| 목록 | `POST /searchApi/search.do` — 화면의 검색엔진 AJAX를 그대로 흉내낸다.<br>`collection=draft`, `urlString=&alias=1(전략)/2(환경)&orgnCd=&sido=`,<br>`viewName=eiass/user/partcptn/choan/choan{Sperss|Eiass}List_searchApi` |
+| 목록 | `POST /searchApi/search.do` — 화면의 검색엔진 AJAX를 그대로 흉내낸다.<br>`collection=draft`, `urlString=&alias=1(전략)/2(환경)&orgnCd=&sido=`,<br>`viewName=eiass/user/partcptn/choan/choan{Sperss|Eiass}List_searchApi`<br>**함정 2개 (둘 다 겪음)**: ① 한 페이지에 `tbl01` 표가 **두 개** 있고 내용이 같다 → 사업 번호로 걸러내지 않으면 전부 두 번씩 처리된다. ② 목록이 **시작일 순으로 정렬돼 있지 않다** → "오래된 게 나오면 그만" 방식은 공람 중인 사업을 놓친다. 공람 중인 사업이 없는 페이지가 5쪽 이어질 때까지 넘긴다. |
 | 상세 | `POST /partcptn/choan/choan{Sperss|Eiass}View.do`<br>전략: `BIZ_CD, BIZ_SEQ, CCIL_STEP1_CD_CK` / 환경: `BIZ_CD, BIZ_SEQ` |
 | 첨부파일 | 상세 HTML의 `generalView('FILE_SEQ','파일명')` 링크에서 뽑는다 |
 | 파일 받기 | `GET /common/file/downloadFileByFileSeq.do?FILE_SEQ=..&SYSTEM_NAME=PERSS`<br>**로그인·세션 없이 그대로 내려온다** (확인함) |
@@ -186,12 +186,18 @@ AI는 **번역만** 한다. 분석·판단·보충을 하지 않는다.
 ### 실행
 
 ```bash
-python tools/build_data.py            # 전체
+python tools/build_data.py            # 전체 (이미 받아 둔 사업은 재사용)
 python tools/build_data.py --limit 5  # 유형별 5건만 (테스트)
+python tools/build_data.py --full     # 캐시 무시하고 전부 다시 받기
 python tools/build_regions.py         # 행정구역 목록 (한 번만)
 ```
 
-옵션: `--skip-geocode`, `--skip-summary`, `--skip-route`, `--max-pages`, `--delay`
+옵션: `--skip-geocode`, `--skip-summary`, `--skip-route`, `--max-pages`, `--delay`, `--full`
+
+**증분 수집**: 기본 동작은 `data/projects.json`을 먼저 읽어 **이미 받아 둔 사업은 건너뛰는** 것이다.
+돈과 시간이 드는 건 목록 조회가 아니라 사업 1건당 상세+PDF+AI 해석이다.
+공람이 끝난 사업은 마지막 필터에서 자동으로 빠진다.
+**`EIA_FIELDS`를 바꿨으면 반드시 `--full`로 돌려야 한다** (옛 키가 그대로 남는다).
 
 로컬에서 화면을 볼 때는 **반드시 서버로 열어야 한다** (`file://`은 json을 못 읽음):
 
@@ -262,10 +268,12 @@ EIASS에 없는 정보는 화면에 만들어 넣지 않는다.
 
 ## 아직 안 된 것 / 다음에 할 것
 
-- **자동화**: `tools/run_daily.bat` + 윈도우 작업 스케줄러로 매일 아침 9시 실행.
-  컴퓨터가 꺼져 있으면 안 돈다. GitHub Actions로 옮기는 방안을 논의 중
-  (그때는 `data/projects.json`을 커밋하는 흐름이 필요하다)
-- **전국 전체 수집**: 지금은 `--limit`으로 몇 건만 받는다. 실제로는 공람 중 수백 건
+- **자동화**: `.github/workflows/collect.yml` 준비됨 (매일 00:00 UTC = 한국 오전 9시).
+  켜기 전에 저장소 Secrets에 `VWORLD_KEY`·`ANTHROPIC_API_KEY` 등록 필요.
+  **미확인 위험: EIASS가 GitHub의 해외 IP를 막을 수 있다.** 수동 실행으로 먼저 확인할 것.
+  윈도우 작업 스케줄러(`tools/run_daily.bat`)는 컴퓨터가 꺼져 있으면 안 도는 대비책.
+- **전국 전체 수집**: 실제 공람 중 사업은 **36건**이다 (2026-08-01 실측: 전략 23 + 환경 13).
+  예전에 적혀 있던 "수백 건"은 목록 중복 집계 때문에 나온 잘못된 수였다.
 - **도로·철도 선형 사업의 노선**: 자동으로는 못 한다. 관리자가 직접 그리는 방식
 - **사업 구간만 잘라낸 하천 노선**: 지금은 하천 전체가 나온다
 - 공람 마감 알림(캘린더 .ics), 읍면동 경계 표시, 사후환경영향조사 추가

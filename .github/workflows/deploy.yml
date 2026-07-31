@@ -1,0 +1,92 @@
+# 사이트를 만들어 GitHub Pages 로 올린다.
+#
+# 왜 저장소에 그냥 두지 않고 여기서 "만들어서" 올리는가:
+#   지도를 보여주려면 VWorld 인증키가 방문자 브라우저에 있어야 한다.
+#   저장소가 공개라서 키를 파일에 적어 커밋하면 git 이력에 영원히 남는다.
+#   그래서 올리기 직전에만 Secret 값으로 assets/config.js 를 덮어쓴다.
+#
+# 처음 켤 때: 저장소 Settings → Pages → Source 를 "GitHub Actions" 로 바꿔야 한다.
+
+name: 사이트 배포
+
+on:
+  push:
+    branches: [master]
+  # collect.yml 이 데이터를 갱신한 뒤 이 워크플로를 불러 쓴다.
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 배포가 겹치면 나중 것만 살린다.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: 저장소 내려받기
+        uses: actions/checkout@v4
+        with:
+          # collect.yml 이 방금 커밋한 최신 데이터를 받으려면 브랜치 끝을 집어야 한다.
+          # (기본값은 워크플로를 시작시킨 시점의 커밋이라 옛 데이터가 올라간다)
+          ref: master
+
+      - name: 올릴 파일만 모으기
+        run: |
+          mkdir -p _site
+          cp index.html _site/
+          cp -r assets _site/
+          cp -r data _site/
+          echo "--- 올라갈 파일 ---"
+          find _site -type f | sort
+
+      - name: VWorld 키 심기
+        env:
+          VWORLD_KEY: ${{ secrets.VWORLD_KEY }}
+        run: |
+          if [ -z "$VWORLD_KEY" ]; then
+            echo "::warning::VWORLD_KEY Secret 이 없습니다. 지도 자리에 안내 문구만 나옵니다."
+            exit 0
+          fi
+          # 키를 로그에 찍지 않도록 파이썬으로 조용히 써 넣는다.
+          python - <<'PY'
+          import json, os
+          key = os.environ["VWORLD_KEY"]
+          with open("_site/assets/config.js", "w", encoding="utf-8") as f:
+              f.write("/* 배포할 때 자동으로 채워진 값 — 직접 고치지 마세요. */\n")
+              f.write("window.WDN_CONFIG = %s;\n"
+                      % json.dumps({"vworldKey": key}, ensure_ascii=False))
+          print("VWorld 키를 심었습니다. (도메인 제한이 걸린 키여야 합니다)")
+          PY
+
+      - name: 데이터 확인
+        run: |
+          python - <<'PY'
+          import json
+          with open("_site/data/projects.json", encoding="utf-8") as f:
+              data = json.load(f)
+          print(f"올라가는 사업 {len(data.get('projects', []))}건 "
+                f"(생성일 {data.get('generatedAt')})")
+          PY
+
+      - name: Pages 준비
+        uses: actions/configure-pages@v5
+
+      - name: 올릴 것 싸기
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: 배포
+        id: deployment
+        uses: actions/deploy-pages@v4
