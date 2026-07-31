@@ -6,6 +6,10 @@ __pycache__/
 # API 키 등 비밀값 (절대 커밋하지 않음)
 .env
 
+# tools/build_data.py 로 언제든 다시 만들 수 있는 결과물
+data/projects.json
+data/build_log.txt
+
 # OS/에디터
 .DS_Store
 Thumbs.db

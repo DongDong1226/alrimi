@@ -7,6 +7,7 @@
 <meta name="description" content="내가 사는 동네의 개발사업과 환경영향평가를 한 화면에서. 공람 마감과 설명회 일정을 놓치지 마세요.">
 <link rel="stylesheet" href="assets/tokens.css">
 <link rel="stylesheet" href="assets/app.css">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 
 <body>
@@ -179,23 +180,23 @@
         <div class="dash-top">
           <div class="stat feat">
             <span class="lab">우리 동네 개발사업</span>
-            <span class="num"><span data-count="5">0</span><small>건</small></span>
-            <span class="delta up"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 14l6-6 6 6"></path></svg>이번 주 신규 1건</span>
+            <span class="num"><span data-count="0" id="stat-total">0</span><small>건</small></span>
+            <span class="delta up" id="stat-total-note"></span>
           </div>
           <div class="stat">
             <span class="lab">의견 낼 수 있는 사업</span>
-            <span class="num"><span data-count="2">0</span><small>건</small></span>
-            <span class="delta hot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 7v6"></path><path d="M12 16.5v.5"></path></svg>가장 빠른 마감 D-3</span>
+            <span class="num"><span data-count="0" id="stat-open">0</span><small>건</small></span>
+            <span class="delta hot" id="stat-open-note"></span>
           </div>
           <div class="stat">
             <span class="lab">예정 설명회·공청회</span>
-            <span class="num"><span data-count="2">0</span><small>건</small></span>
-            <span class="delta">7월 21일 · 8월 4일</span>
+            <span class="num"><span data-count="0" id="stat-events">0</span><small>건</small></span>
+            <span class="delta" id="stat-events-note">아직 수집하지 않음</span>
           </div>
           <div class="stat">
             <span class="lab">협의 진행 중</span>
-            <span class="num"><span data-count="1">0</span><small>건</small></span>
-            <span class="delta">교산지구 진입도로</span>
+            <span class="num"><span data-count="0" id="stat-nego">0</span><small>건</small></span>
+            <span class="delta" id="stat-nego-note">아직 수집하지 않음</span>
           </div>
           <button class="dash-cta" type="button" id="btn-openmap">
             <svg class="pin" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg>
@@ -229,11 +230,9 @@
         </div>
 
         <div class="filter-row reveal" data-delay="80">
-          <button class="chip on" type="button" data-filter="all">전체 <span class="cnt">5</span></button>
-          <button class="chip" type="button" data-filter="strat">전략환경영향평가 <span class="cnt">1</span></button>
-          <button class="chip" type="button" data-filter="main">환경영향평가 <span class="cnt">2</span></button>
-          <button class="chip" type="button" data-filter="small">소규모 환경영향평가 <span class="cnt">1</span></button>
-          <button class="chip" type="button" data-filter="post">사후환경영향조사 <span class="cnt">1</span></button>
+          <button class="chip on" type="button" data-filter="all">전체 <span class="cnt">0</span></button>
+          <button class="chip" type="button" data-filter="strat">전략환경영향평가 <span class="cnt">0</span></button>
+          <button class="chip" type="button" data-filter="main">환경영향평가 <span class="cnt">0</span></button>
           <button class="sort-btn" type="button" id="sortBtn">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M6 12h12M10 18h4"></path></svg>
             <span id="sortLabel">가까운 순</span>
@@ -541,6 +540,18 @@
   </div>
 </div>
 
+<div class="modal" id="m-detail" hidden role="dialog" aria-modal="true" aria-labelledby="m-detail-t">
+  <div class="modal-bd" data-close></div>
+  <div class="modal-box">
+    <div class="modal-hd">
+      <h3 id="m-detail-t">사업 상세</h3>
+      <button class="modal-x" type="button" data-close aria-label="닫기">&times;</button>
+    </div>
+    <div class="modal-bd-in" id="detailBody"></div>
+    <div class="modal-ft"><button class="btn btn--line btn--sm" type="button" data-close>닫기</button></div>
+  </div>
+</div>
+
 <div class="modal" id="m-map" hidden role="dialog" aria-modal="true" aria-labelledby="m-map-t">
   <div class="modal-bd" data-close></div>
   <div class="modal-box wide">
@@ -556,6 +567,7 @@
   </div>
 </div>
 
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

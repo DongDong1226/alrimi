@@ -39,25 +39,80 @@ function lsSet(k, v){
 let S = Object.assign({}, DEFAULTS, lsGet(LSKEY, {}));
 
 /* ============================================================
-   표본 데이터 — 실제 서비스에서는 data/projects.json 으로 분리
+   사업 데이터
+   data/projects.json (tools/build_data.py가 EIASS에서 만든 실제 데이터)을
+   불러온다. 불러오지 못하면(파일이 아직 없거나 서버 없이 file://로 열었을 때)
+   화면 확인용 표본 데이터로 대신한다.
    ============================================================ */
-const PROJECTS = [
-  { id:1, type:"main",  typeLabel:"환경영향평가",       badge:"badge--blue",
-    name:"미사강변 도시개발사업 3단계", stage:"초안 공람 중", dday:3, dist:1.4, opinions:12,
-    desc:"공동주택 2,400세대 · 사업면적 38만㎡", where:"하남시 미사동 일원", org:"경기도시공사" },
-  { id:2, type:"small", typeLabel:"소규모 환경영향평가", badge:"badge--orange",
-    name:"▽▽물류단지 조성사업", stage:"초안 공람 중", dday:8, dist:3.2, opinions:3,
-    desc:"창고시설 · 사업면적 6.2만㎡", where:"하남시 감일동 일원", org:"민간사업자" },
-  { id:3, type:"strat", typeLabel:"전략환경영향평가",   badge:"badge--navy",
-    name:"하남 교산지구 진입도로 개설사업", stage:"협의 진행 중", dday:null, dist:2.1, opinions:0,
-    desc:"도로 연장 3.4km · 왕복 4차로", where:"하남시 교산동 일원", org:"한국토지주택공사" },
-  { id:4, type:"post",  typeLabel:"사후환경영향조사",   badge:"badge--teal",
-    name:"미사대로 확장공사", stage:"공사 중 조사", dday:null, dist:0.9, opinions:0,
-    desc:"소음·비산먼지 분기 조사 결과 공개", where:"하남시 미사동 일원", org:"하남시청" },
-  { id:5, type:"main",  typeLabel:"환경영향평가",       badge:"badge--blue",
-    name:"△△근린공원 조성사업", stage:"협의 완료", dday:null, dist:2.6, opinions:7,
-    desc:"근린공원 4.1만㎡ · 착공 예정", where:"하남시 덕풍동 일원", org:"하남시청" }
+const SAMPLE_PROJECTS = [
+  { id:"sample-1", type:"main",  typeLabel:"환경영향평가",       badge:"badge--blue",
+    name:"(표본) 미사강변 도시개발사업 3단계", stage:"초안 공람 중", dday:3, dist:1.4, opinions:0,
+    desc:"공람기간 2026.08.01 ~ 2026.08.14", where:"하남시 미사동 일원", org:"경기도시공사", lat:null, lon:null, summaryEasy:null },
+  { id:"sample-2", type:"strat", typeLabel:"전략환경영향평가",   badge:"badge--navy",
+    name:"(표본) 하남 교산지구 진입도로 개설사업", stage:"초안 공람 중", dday:8, dist:2.1, opinions:0,
+    desc:"공람기간 2026.08.01 ~ 2026.08.19", where:"하남시 교산동 일원", org:"한국토지주택공사", lat:null, lon:null, summaryEasy:null }
 ];
+
+let PROJECTS = SAMPLE_PROJECTS;
+const CATEGORY_BADGE = { strat:"badge--navy", main:"badge--blue" };
+
+function haversineKm(lat1, lon1, lat2, lon2){
+  const R = 6371, toRad = d => d * Math.PI / 180;
+  const dLat = toRad(lat2 - lat1), dLon = toRad(lon2 - lon1);
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+/* EIASS에서 수집한 원본 항목을 화면에서 쓰는 모양으로 바꾼다.
+   여기서 실제 원문에 없는 값(예: 주민 의견 수)은 만들어내지 않고 0/없음으로 둔다. */
+function normalizeProject(p){
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  let dday = null, stage = "공람 종료";
+  if(p.periodEnd){
+    const end = new Date(p.periodEnd + "T00:00:00");
+    const diff = Math.round((end - today) / 86400000);
+    if(diff >= 0){ dday = diff; stage = "초안 공람 중"; }
+  }
+  const hasCoord = typeof p.lat === "number" && typeof p.lon === "number";
+  const dist = hasCoord ? haversineKm(+S.centerLat, +S.centerLon, p.lat, p.lon) : null;
+  return {
+    id: p.id,
+    type: p.category,
+    typeLabel: p.categoryLabel || p.category,
+    badge: CATEGORY_BADGE[p.category] || "badge--gray",
+    name: p.name,
+    stage,
+    dday,
+    dist,
+    opinions: 0,
+    desc: (p.periodStart && p.periodEnd) ? `공람기간 ${p.periodStart} ~ ${p.periodEnd}` : "공람기간 정보 없음",
+    where: p.address || "위치 정보 없음",
+    org: p.org || "기관 정보 없음",
+    lat: hasCoord ? p.lat : null,
+    lon: hasCoord ? p.lon : null,
+    summaryEasy: p.summaryEasy || null
+  };
+}
+
+async function loadProjects(){
+  try{
+    const res = await fetch(S.dataPath, { cache:"no-store" });
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    const json = await res.json();
+    const list = Array.isArray(json.projects) ? json.projects : [];
+    if(list.length){
+      PROJECTS = list.map(normalizeProject);
+    }
+  }catch(e){
+    console.warn("data/projects.json 을 불러오지 못해 표본 데이터를 표시합니다.", e);
+    PROJECTS = SAMPLE_PROJECTS;
+  }
+  updateFilterCounts();
+  updateDashboardStats();
+  render();
+  renderMapMarkers();
+}
 
 const REGION = {
   "서울특별시":["마포구","강남구","송파구","은평구","성동구"],
@@ -201,51 +256,69 @@ addEventListener("keydown", e => {
 });
 
 /* ============================================================
-   지도 모달
-   VWorld Static Map API — 인증키가 있으면 실제 지도 이미지,
-   없으면 안내 문구.
-   ※ 파라미터명은 vworld.kr 의 Static Map API 레퍼런스에서
-     최종 확인 후 조정하세요.
+   지도 모달 — Leaflet + VWorld 2D 지도 API 타일
+   인증키가 없으면 안내 문구만 표시한다.
    ============================================================ */
-function vworldStaticUrl(){
-  const markers = PROJECTS
-    .map(p => `point:${S.centerLon} ${S.centerLat}|label:${encodeURIComponent(p.id)}`)
-    .join("&marker=");
-  const q = new URLSearchParams({
-    service: "image",
-    request: "getmap",
-    key: S.vworldKey,
-    format: "png",
-    basemap: "GRAPHIC",
-    crs: "EPSG:4326",
-    center: `${S.centerLon},${S.centerLat}`,
-    zoom: "14",
-    size: "1000,620"
+let leafletMap = null, leafletMarkers = [];
+
+function showMapGuide(title, desc){
+  $("#mapBox").innerHTML = `
+    <div class="map-guide">
+      <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"></path><path d="M9 4v14M15 6v14"></path></svg></div>
+      <h4>${title}</h4>
+      <p>${desc}</p>
+    </div>`;
+}
+
+function ensureLeafletMap(){
+  if(leafletMap || typeof L === "undefined") return leafletMap;
+  $("#mapBox").innerHTML = "";
+  leafletMap = L.map("mapBox", { attributionControl:true });
+  L.tileLayer(`https://api.vworld.kr/req/wmts/1.0.0/${S.vworldKey}/Base/{z}/{y}/{x}.png`, {
+    maxZoom: 19,
+    attribution: "ⓒ VWorld"
+  }).addTo(leafletMap);
+  return leafletMap;
+}
+
+function renderMapMarkers(){
+  if(!leafletMap) return;
+  leafletMarkers.forEach(m => leafletMap.removeLayer(m));
+  leafletMarkers = [];
+
+  const homeIcon = L.divIcon({ className:"", html:
+    `<div style="width:16px;height:16px;border-radius:50%;background:#1f8a5b;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)"></div>` });
+  const home = L.marker([+S.centerLat, +S.centerLon], { icon:homeIcon }).addTo(leafletMap).bindPopup("우리 집(기준 위치)");
+  leafletMarkers.push(home);
+
+  const withCoord = PROJECTS.filter(p => p.lat != null && p.lon != null);
+  withCoord.forEach(p => {
+    const marker = L.marker([p.lat, p.lon]).addTo(leafletMap);
+    marker.bindPopup(`<b>${p.name}</b><br>${p.typeLabel} · ${p.stage}<br>${p.org}`);
+    leafletMarkers.push(marker);
   });
-  return `https://api.vworld.kr/req/image?${q}&marker=${markers}`;
+
+  const boundsPoints = [[+S.centerLat, +S.centerLon], ...withCoord.map(p => [p.lat, p.lon])];
+  if(boundsPoints.length > 1){
+    leafletMap.fitBounds(boundsPoints, { padding:[30, 30] });
+  }else{
+    leafletMap.setView([+S.centerLat, +S.centerLon], 11);
+  }
 }
 
 function openMap(){
-  const box = $("#mapBox");
   if(!S.vworldKey){
-    box.innerHTML = `
-      <div class="map-guide">
-        <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"></path><path d="M9 4v14M15 6v14"></path></svg></div>
-        <h4>VWorld 인증키가 아직 등록되지 않았습니다</h4>
-        <p>vworld.kr에서 인증키를 발급받아 관리자 설정에 등록하면, 이 자리에 실제 지도와 사업 위치가 표시됩니다.</p>
-      </div>`;
-  }else{
-    box.innerHTML = `<img alt="우리 동네 개발사업 위치 지도" src="${vworldStaticUrl()}">`;
-    box.querySelector("img").addEventListener("error", () => {
-      box.innerHTML = `
-        <div class="map-guide">
-          <div class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5"></path><circle cx="12" cy="16.3" r=".7" fill="currentColor"></circle></svg></div>
-          <h4>지도를 불러오지 못했습니다</h4>
-          <p>인증키가 승인 상태인지, 발급 시 등록한 서비스 URL과 지금 접속한 주소가 같은지 확인해 주세요.</p>
-        </div>`;
-    });
+    showMapGuide(
+      "VWorld 인증키가 아직 등록되지 않았습니다",
+      "vworld.kr에서 인증키를 발급받아 관리자 설정에 등록하면, 이 자리에 실제 지도와 사업 위치가 표시됩니다."
+    );
+    openModal("m-map");
+    return;
   }
   openModal("m-map");
+  ensureLeafletMap();
+  renderMapMarkers();
+  setTimeout(() => { if(leafletMap) leafletMap.invalidateSize(); }, 80);
 }
 $("#btn-openmap").addEventListener("click", openMap);
 $("#miniMap").addEventListener("click", openMap);
@@ -344,15 +417,47 @@ $("#admReset").addEventListener("click", () => {
    ============================================================ */
 let filter = "all", sortBy = "dist", query = "";
 
+function updateFilterCounts(){
+  const counts = { all: PROJECTS.length };
+  PROJECTS.forEach(p => { counts[p.type] = (counts[p.type] || 0) + 1; });
+  $$("[data-filter]").forEach(chip => {
+    const cnt = chip.querySelector(".cnt");
+    if(cnt) cnt.textContent = counts[chip.dataset.filter] || 0;
+  });
+}
+
+function updateDashboardStats(){
+  const openList = PROJECTS.filter(p => p.dday !== null);
+  $("#stat-total").dataset.count = PROJECTS.length;
+  $("#stat-open").dataset.count = openList.length;
+  $("#h-count").textContent = PROJECTS.length;
+
+  $("#stat-total-note").textContent = "";
+  if(openList.length){
+    const minDday = Math.min(...openList.map(p => p.dday));
+    $("#stat-open-note").innerHTML =
+      `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 7v6"></path><path d="M12 16.5v.5"></path></svg>가장 빠른 마감 D-${minDday}`;
+  }else{
+    $("#stat-open-note").textContent = "";
+  }
+  // 설명회·협의현황은 아직 수집하지 않아 0으로 둔다 (지어내지 않음).
+}
+
 function render(){
   let rows = PROJECTS.filter(p => filter === "all" || p.type === filter);
   if(query){
     const q = query.toLowerCase();
     rows = rows.filter(p => (p.name + p.typeLabel + p.desc).toLowerCase().includes(q));
   }
-  rows.sort((a, b) => sortBy === "dist"
-    ? a.dist - b.dist
-    : (a.dday === null) - (b.dday === null) || (a.dday ?? 999) - (b.dday ?? 999));
+  rows.sort((a, b) => {
+    if(sortBy === "dist"){
+      if(a.dist == null && b.dist == null) return 0;
+      if(a.dist == null) return 1;
+      if(b.dist == null) return -1;
+      return a.dist - b.dist;
+    }
+    return (a.dday === null) - (b.dday === null) || (a.dday ?? 999) - (b.dday ?? 999);
+  });
 
   const grid = $("#projGrid");
   if(!rows.length){
@@ -360,7 +465,7 @@ function render(){
     return;
   }
   grid.innerHTML = rows.map(p => `
-    <article class="proj">
+    <article class="proj" data-id="${p.id}">
       <div class="badges">
         <span class="badge ${p.badge} badge--dot">${p.typeLabel}</span>
         ${p.dday !== null
@@ -370,15 +475,38 @@ function render(){
       <p class="ttl">${p.name}</p>
       <p class="desc">${p.desc}</p>
       <div class="rows">
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg><span>${p.where} · 우리 집에서 ${p.dist}km</span></div>
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"></path><path d="M15 3v4h4"></path></svg><span>${p.org} · ${p.stage}${p.opinions ? ` · 주민 의견 ${p.opinions}건` : ""}</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg><span>${p.where}${p.dist != null ? " · 우리 집에서 " + p.dist.toFixed(1) + "km" : ""}</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"></path><path d="M15 3v4h4"></path></svg><span>${p.org} · ${p.stage}</span></div>
       </div>
       <div class="foot">
         ${p.dday !== null ? `<button class="btn btn--primary btn--sm btn--pill" type="button">의견 제출</button>` : ``}
-        <button class="btn btn--line btn--sm btn--pill" type="button">자세히 보기</button>
+        <button class="btn btn--line btn--sm btn--pill" type="button" data-detail="${p.id}">자세히 보기</button>
       </div>
     </article>`).join("");
 }
+
+function openDetail(id){
+  const p = PROJECTS.find(x => String(x.id) === String(id));
+  if(!p) return;
+  $("#m-detail-t").textContent = p.name;
+  $("#detailBody").innerHTML = `
+    <div class="contact-card" style="margin-bottom:16px">
+      <div class="contact-row"><span class="k">유형</span><span class="v">${p.typeLabel}</span></div>
+      <div class="contact-row"><span class="k">위치</span><span class="v">${p.where}</span></div>
+      <div class="contact-row"><span class="k">협의기관</span><span class="v">${p.org}</span></div>
+      <div class="contact-row"><span class="k">공람기간</span><span class="v">${p.desc}</span></div>
+    </div>
+    <h4>환경영향 요약 (AI가 평가서 요약문을 쉬운 말로 옮긴 것)</h4>
+    ${p.summaryEasy
+      ? `<div style="white-space:pre-wrap;line-height:1.7">${p.summaryEasy}</div>`
+      : `<p style="color:var(--ink-3)">아직 쉬운말 요약이 만들어지지 않았습니다.</p>`}
+  `;
+  openModal("m-detail");
+}
+$("#projGrid").addEventListener("click", e => {
+  const btn = e.target.closest("[data-detail]");
+  if(btn) openDetail(btn.dataset.detail);
+});
 
 $$("[data-filter]").forEach(c => c.addEventListener("click", () => {
   $$("[data-filter]").forEach(x => x.classList.remove("on"));
@@ -434,3 +562,4 @@ tt.addEventListener("click", () => scrollTo({ top:0, behavior:"smooth" }));
 
 applySettings();
 render();
+loadProjects();

@@ -14,15 +14,21 @@ data/projects.json 을 만드는 스크립트.
   5. 뽑은 글자를 Anthropic API로 보내 주민이 읽기 쉬운 요약을 받는다. (ANTHROPIC_API_KEY 필요)
 
 키가 없으면 해당 단계만 건너뛰고 나머지는 정상적으로 만든다.
-API 키는 코드에 직접 적지 말고, 실행 전에 환경변수로 넣어서 쓴다.
+API 키는 코드에 직접 적지 말고, 이 파일과 같은 폴더가 아니라
+저장소 맨 위(EIASS 폴더)에 ".env" 파일을 만들어서 아래처럼 적어둔다.
+(.env는 .gitignore에 있어서 GitHub에는 올라가지 않는다.)
 
-    (윈도우 PowerShell)
-    $env:VWORLD_KEY = "발급받은 vworld 키"
-    $env:ANTHROPIC_API_KEY = "발급받은 anthropic 키"
+    VWORLD_KEY=발급받은 vworld 키
+    ANTHROPIC_API_KEY=발급받은 anthropic 키
+
+그 다음부턴 그냥 이렇게 실행하면 된다. (매번 $env: 안 쳐도 됨 — 자동으로 .env를 읽는다)
     python tools/build_data.py
 
 테스트로 몇 건만 빠르게 돌려보고 싶으면:
     python tools/build_data.py --limit 3 --skip-summary --skip-geocode
+
+윈도우 작업 스케줄러로 매일 아침 9시에 자동 실행하게 등록하는 방법은
+README나 대화에서 안내한 절차를 따른다 (이 스크립트 자체는 그대로 두면 됨).
 """
 
 import argparse
@@ -35,7 +41,12 @@ import sys
 import time
 
 import requests
+from dotenv import load_dotenv
 from lxml import html as lhtml
+
+# EIASS 폴더 맨 위에 있는 .env 파일을 읽어서 환경변수로 등록한다.
+# (이미 $env: 로 직접 넣어둔 값이 있으면 그 값이 우선한다.)
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
 
 BASE = "https://www.eiass.go.kr"
 HEADERS = {
@@ -212,7 +223,10 @@ def parse_detail_html(html_text):
             addr = tds[0].text_content() if tds else ""
         addr = re.sub(r"\s+", " ", addr).strip()
         # 주소가 여러 필지를 나열해 길 때는 지오코딩용으로 첫 구간만 쓴다.
-        result["address"] = addr.split(")")[0].strip() + ")" if ")" in addr else addr
+        addr = addr.split(")")[0].strip() + ")" if ")" in addr else addr
+        # "시점 : ", "종점 : " 같은 도로·하천 사업의 구간 표시 라벨은 지오코딩에 방해만 되니 뗀다.
+        addr = re.sub(r"^\S*\s*:\s*", "", addr).strip()
+        result["address"] = addr
 
     # "협의기관" 표기가 없는 유형(환경영향평가)은 "승인기관"으로 대신한다.
     result["org"] = _row_first_td_text(tree, "협의기관") or _row_first_td_text(tree, "승인기관")
@@ -258,27 +272,50 @@ def extract_pdf_text(pdf_bytes, max_pages=25):
 # ============================================================
 # 4) VWorld 지오코딩 — 주소 → 위경도
 # ============================================================
+def build_address_candidates(address):
+    """"경기도 포천시 일동면 기산리 (운악청계로1480번길 8-1)" 같은 주소는
+    동/리 이름과 도로명이 괄호로 겹쳐 있어 지오코더가 못 찾는 경우가 있다.
+    그래서 원래 문자열 외에, 도로명 부분만 따로 뽑은 후보도 함께 시도한다."""
+    candidates = [address]
+
+    m = re.match(r"^(\S+[시도])\s+(\S+[시군구])\s+.*\(([^)]+)\)\s*$", address)
+    if m:
+        sido, sigungu, road_part = m.groups()
+        candidates.append(f"{sido} {sigungu} {road_part}")  # 시/도 시군구 + 도로명주소만
+        candidates.append(road_part)  # 도로명주소만
+
+    # 순서를 지키면서 중복은 제거한다.
+    seen = set()
+    unique = []
+    for c in candidates:
+        c = c.strip()
+        if c and c not in seen:
+            seen.add(c)
+            unique.append(c)
+    return unique
+
+
 def geocode_address(address, vworld_key):
     if not vworld_key or not address:
         return None, None
     url = "https://api.vworld.kr/req/address"
-    base_params = {
-        "service": "address",
-        "request": "getcoord",
-        "version": "2.0",
-        "crs": "epsg:4326",
-        "address": address,
-        "key": vworld_key,
-    }
-    for addr_type in ("road", "parcel"):
-        try:
-            r = requests.get(url, params={**base_params, "type": addr_type},
-                              verify=VERIFY_SSL, timeout=10)
-            point = r.json().get("response", {}).get("result", {}).get("point")
-            if point:
-                return float(point["y"]), float(point["x"])
-        except Exception as e:
-            log(f"    [지오코딩 오류:{addr_type}] {e}")
+    for candidate in build_address_candidates(address):
+        for addr_type in ("road", "parcel"):
+            try:
+                r = requests.get(url, params={
+                    "service": "address",
+                    "request": "getcoord",
+                    "version": "2.0",
+                    "crs": "epsg:4326",
+                    "address": candidate,
+                    "type": addr_type,
+                    "key": vworld_key,
+                }, verify=VERIFY_SSL, timeout=10)
+                point = r.json().get("response", {}).get("result", {}).get("point")
+                if point:
+                    return float(point["y"]), float(point["x"])
+            except Exception as e:
+                log(f"    [지오코딩 오류:{addr_type}:{candidate}] {e}")
     return None, None
 
 
@@ -292,20 +329,28 @@ def summarize_easy(name, address, raw_text, anthropic_key):
 
     client = anthropic.Anthropic(api_key=anthropic_key)
     prompt = (
-        "너는 환경영향평가 요약문을, 관련 지식이 없는 동네 주민에게 설명하는 사람이야.\n"
-        "아래는 실제 평가서 요약문에서 뽑은 원문이야. 이걸 읽고 다음 형식으로 답해.\n\n"
-        "- 전문용어를 쓰지 말고, 한 문장은 짧게.\n"
-        "- 소음, 교통, 먼지, 자연환경 등 생활에 영향을 주는 부분 위주로 3~5문장.\n"
-        "- 사업 자체를 홍보하거나 판단하지 말고, 사실만 담백하게 전달.\n\n"
+        "너는 환경영향평가 요약문 원문을 '번역'하는 사람이야. 어려운 말을 쉬운 말로\n"
+        "바꿔 전달하는 것만 하고, 새로운 내용을 만들거나 판단을 더하면 절대 안 돼.\n\n"
+        "지켜야 할 규칙 (매우 중요):\n"
+        "1. 아래 원문에 실제로 적힌 내용만 써라. 원문에 없는 숫자, 영향, 결론, 추측을\n"
+        "   지어내지 마라. 네가 아는 일반 지식으로 내용을 보충하지 마라.\n"
+        "2. 각 문장은 원문의 특정 부분을 쉬운 말로 바꿔 쓴 것이어야 한다. 원문에\n"
+        "   없는 카테고리(예: 원문에 소음 얘기가 없으면 소음 얘기를 쓰지 마라)는\n"
+        "   다루지 마라.\n"
+        "3. 사업이 좋다/나쁘다 판단하거나, 홍보하거나, 걱정할 필요 없다는 식의\n"
+        "   너의 의견을 넣지 마라. 원문에 적힌 사실만 전달해라.\n"
+        "4. 원문에 근거가 부족해서 확실하지 않은 부분은 없다고 하지 말고 아예\n"
+        "   언급하지 말아라.\n"
+        "5. 전문용어는 쉬운 말로 풀어 쓰고, 문장은 짧게. 3~6문장 정도로.\n\n"
         f"사업명: {name}\n"
         f"위치: {address or '정보 없음'}\n\n"
-        "요약문 원문(일부):\n"
+        "요약문 원문(이 안에 있는 내용만 사용할 것):\n"
         f"{raw_text[:6000]}\n"
     )
     try:
         msg = client.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=500,
+            max_tokens=800,
             messages=[{"role": "user", "content": prompt}],
         )
         return "".join(block.text for block in msg.content if block.type == "text").strip()
