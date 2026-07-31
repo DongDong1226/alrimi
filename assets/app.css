@@ -373,13 +373,13 @@ button{cursor:pointer}
 .gis-toggle input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
 
 .gis-body{flex:1;min-height:0;display:flex}
-.gis-list{width:250px;flex:none;border-right:1px solid var(--line);background:#fff;
-  overflow-y:auto;display:flex;flex-direction:column}
+/* 왼쪽 한 패널에서 목록과 상세를 번갈아 보여준다 (오른쪽 패널 없음) */
+.gis-side{width:578px;flex:none;border-right:1px solid var(--line);background:#fff;
+  display:flex;flex-direction:column;min-height:0}
+.gis-side-body{flex:1;min-height:0;overflow-y:auto}
 .gis-map-wrap{flex:1;min-width:0;position:relative}
 .gis-map{position:absolute;inset:0;background:var(--bg-blue);display:flex}
-/* 오른쪽 설명 패널 — 폭을 넉넉하게 (기본 340px 의 1.7배) */
-.gis-detail{width:578px;flex:none;border-left:1px solid var(--line);background:#fff;
-  overflow-y:auto;padding:22px 24px}
+#gisDetail{padding:20px 22px}
 
 /* 지도 화면 안에서 주소 바꾸기 */
 .gis-addr{flex:none;padding:14px 14px 15px;border-bottom:1px solid var(--line);background:var(--bg-2)}
@@ -396,6 +396,7 @@ button{cursor:pointer}
   padding:13px 16px;display:flex;flex-direction:column;gap:5px;transition:.14s var(--ease)}
 .gis-item:hover{background:var(--primary-tint)}
 .gis-item.on{background:var(--primary-soft);box-shadow:inset 3px 0 0 var(--primary)}
+.gis-item-tags{display:flex;gap:5px;flex-wrap:wrap;align-self:flex-start}
 .gis-item .t{font-size:var(--fs-body-s);font-weight:700;color:var(--ink);line-height:1.45;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .gis-item .m{font-size:var(--fs-body-xs);color:var(--ink-3)}
@@ -410,6 +411,7 @@ button{cursor:pointer}
 .gis-legend .lg--strat{background:var(--navy)}
 .gis-legend .lg--main{background:var(--primary)}
 .gis-legend .lg--circle{background:transparent;border:1.5px dashed var(--primary)}
+.gis-legend .lg--route{background:var(--teal);border-radius:2px;height:4px}
 
 /* 지도 마커 (Leaflet divIcon 안에서 쓰는 점) */
 .mk{width:15px;height:15px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(16,28,54,.45)}
@@ -418,15 +420,42 @@ button{cursor:pointer}
 .mk--main{background:var(--primary)}
 .mk--on{transform:scale(1.45)}
 
-.gis-detail-empty{color:var(--ink-3);font-size:var(--fs-body-s);line-height:1.7;text-align:center;margin-top:70px}
-.gis-detail .ttl{font-size:var(--fs-h-xs);font-weight:800;color:var(--ink);line-height:1.4;margin:10px 0 14px}
-.gis-detail .kv{display:flex;gap:10px;font-size:var(--fs-body-s);padding:8px 0;border-bottom:1px solid var(--line)}
-.gis-detail .kv .k{width:62px;flex:none;color:var(--ink-3);font-weight:600}
-.gis-detail .kv .v{color:var(--ink-2);min-width:0;word-break:break-all}
-.gis-detail .eiass-link{margin-top:16px;display:inline-flex;align-items:center;gap:6px;
+.gis-detail-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+#gisDetail .ttl{font-size:var(--fs-h-xs);font-weight:800;color:var(--ink);line-height:1.4;margin:10px 0 14px}
+#gisDetail .kv{display:flex;gap:10px;font-size:var(--fs-body-s);padding:8px 0;border-bottom:1px solid var(--line)}
+#gisDetail .kv .k{width:70px;flex:none;color:var(--ink-3);font-weight:600}
+#gisDetail .kv .v{color:var(--ink-2);min-width:0}
+#gisDetail .eiass-link{margin-top:16px;display:inline-flex;align-items:center;gap:6px;
   font-size:var(--fs-body-s);font-weight:700;color:var(--primary);background:none;border:0;padding:0}
-.gis-detail .eiass-link svg{width:15px;height:15px}
-.gis-detail .eiass-link:hover{color:var(--p60)}
+#gisDetail .eiass-link svg{width:15px;height:15px}
+#gisDetail .eiass-link:hover{color:var(--p60)}
+.gis-detail-back{display:inline-flex;align-items:center;gap:6px;background:none;border:0;padding:0;
+  font-size:var(--fs-body-s);font-weight:700;color:var(--ink-3)}
+.gis-detail-back:hover{color:var(--primary)}
+.gis-detail-back svg{width:15px;height:15px}
+
+/* 노선 그리기 도구 (관리자) */
+.gis-draw{position:absolute;right:12px;top:12px;z-index:600;width:300px;background:#fff;
+  border:1px solid var(--line-2);border-radius:var(--r-sm);box-shadow:var(--sh-md);padding:13px 15px}
+.gis-draw[hidden]{display:none}
+.gis-draw-t{font-size:var(--fs-body-s);font-weight:800;color:var(--ink);margin-bottom:5px}
+.gis-draw-h{font-size:var(--fs-body-xs);color:var(--ink-3);line-height:1.55;margin-bottom:9px}
+.gis-draw-btns{display:flex;flex-wrap:wrap;gap:6px}
+.gis-map--draw{cursor:crosshair}
+
+/* 눌러서 펼쳐 보는 묶음 (공람·설명회 / 구간 / 환경영향분석) */
+.acc-group{margin-top:20px;border-top:2px solid var(--ink)}
+.acc{border-bottom:1px solid var(--line)}
+.acc > summary{display:flex;align-items:center;gap:9px;padding:13px 2px;cursor:pointer;
+  list-style:none;transition:.14s var(--ease)}
+.acc > summary::-webkit-details-marker{display:none}
+.acc > summary:hover{color:var(--primary)}
+.acc > summary:focus-visible{outline:3px solid color-mix(in srgb,var(--primary) 55%,#fff);outline-offset:2px}
+.acc-t{font-size:var(--fs-h-xxs);font-weight:800;color:var(--ink)}
+.acc-h{font-size:var(--fs-body-xs);color:var(--ink-4);font-weight:600}
+.acc-i{width:17px;height:17px;margin-left:auto;color:var(--ink-3);flex:none;transition:transform .18s var(--ease)}
+.acc[open] > summary .acc-i{transform:rotate(180deg)}
+.acc-body{padding-bottom:14px}
 
 /* 환경영향분석 — 정형화된 항목 목록 */
 .eia{margin-top:20px}
@@ -441,17 +470,17 @@ button{cursor:pointer}
 .eia-row.none .v{color:var(--ink-4)}
 
 @media (max-width:1400px){
-  .gis-detail{width:440px}
+  .gis-side{width:460px}
 }
 @media (max-width:1180px){
-  .gis-list{display:none}
-  .gis-detail{width:360px}
+  .gis-side{width:380px}
 }
 @media (max-width:860px){
   .gis-body{flex-direction:column}
-  .gis-map-wrap{flex:none;height:52vh}
-  .gis-detail{width:auto;flex:1;min-height:0;border-left:0;border-top:1px solid var(--line)}
+  .gis-side{width:auto;flex:1;min-height:0;border-right:0;border-bottom:1px solid var(--line)}
+  .gis-map-wrap{flex:none;height:46vh;order:-1}
   .gis-ttl{display:none}
+  .gis-draw{width:auto;left:12px;right:12px}
 }
 
 /* ============================================================

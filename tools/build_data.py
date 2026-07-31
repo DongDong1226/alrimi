@@ -57,6 +57,11 @@ HEADERS = {
                   "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
 }
 
+VWORLD_DATA_URL = "https://api.vworld.kr/req/data"
+RIVER_LAYER = "LT_C_WKMSTRM"      # 하천망도 (하천 구역)
+ROUTE_SIMPLIFY_TOL = 0.0004        # 약 40m — 도형을 이 정도까지 단순화한다
+ROUTE_MAX_KM = 60                  # 사업 위치에서 이만큼 떨어진 동명이천은 버린다
+
 # 이 저장소를 만든 개발 환경(샌드박스)에서만 인증서 검증이 막혀 있었다.
 # 실제 사용자 PC에서는 기본값(검증함)을 그대로 쓰면 된다.
 # 검증 오류가 나서 도저히 안 될 때만 EIASS_INSECURE_SSL=1 로 잠깐 꺼서 확인해본다.
@@ -87,7 +92,13 @@ OUT_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "projects.json"
 
 
 def log(msg):
-    print(msg, flush=True)
+    """윈도우 명령창은 한글 코드페이지(cp949)를 쓰는 경우가 있어서,
+    표시할 수 없는 문자가 섞이면 프로그램이 죽는다. 그런 문자는 물음표로 바꿔서라도 계속 진행한다."""
+    try:
+        print(msg, flush=True)
+    except UnicodeEncodeError:
+        enc = sys.stdout.encoding or "utf-8"
+        print(msg.encode(enc, errors="replace").decode(enc, errors="replace"), flush=True)
 
 
 # ============================================================
@@ -212,7 +223,22 @@ def _row_first_td_text(tree, th_keyword):
 
 def parse_detail_html(html_text):
     tree = lhtml.fromstring(html_text)
-    result = {"address": None, "org": None, "tel": None, "files": []}
+    result = {
+        "address": None, "org": None, "tel": None, "files": [],
+        # 사업위치 유형. 전략환경영향평가는 면형/선형/점형이 표시되지만
+        # 환경영향평가 쪽은 표시가 없어서 None 으로 둔다(추측하지 않는다).
+        "locationTypes": [],
+        "segments": [],   # 선형 사업의 구간 목록 (시점/종점/연장)
+        "bizType": None,  # 사업구분 (예: "하천이용 / 하천기본계획")
+        "lawBasis": None, # 협의대상 근거 법령
+        # 아래는 주민이 실제로 참여할 때 필요한 정보 (유형별로 항목 이름이 조금씩 다르다)
+        "viewPlace": None,     # 공람 장소
+        "briefPlace": None,    # 설명회 장소
+        "briefWhen": None,     # 설명회 일시
+        "opinionPeriod": None, # 의견제출 기간(공람기간과 다를 수 있다)
+        "deptName": None,      # 의견을 받는 부서
+        "deptTel": None,       # 그 부서 전화번호
+    }
 
     # 사업위치 항목 이름이 유형별로 다르다 ("사업위치" 또는 "사업지위치").
     # 면형(소재지+면적 표) / 점형·선형(그냥 주소 텍스트) 둘 다 있을 수 있다.
@@ -231,9 +257,48 @@ def parse_detail_html(html_text):
         addr = re.sub(r"^\S*\s*:\s*", "", addr).strip()
         result["address"] = addr
 
+        # 위치 유형(면형/선형/점형) — EIASS가 표시해 주는 경우에만 담는다.
+        for s in loc_rows[0].xpath(".//p[contains(@class,'txt_bul1')]/strong"):
+            t = re.sub(r"\s+", "", s.text_content())
+            if t in ("면형", "선형", "점형") and t not in result["locationTypes"]:
+                result["locationTypes"].append(t)
+
+        # 선형이면 구간 표에서 시점·종점·연장을 뽑아 둔다.
+        if "선형" in result["locationTypes"]:
+            for tr in loc_rows[0].xpath(".//table[contains(@class,'detail_tbl')]//tbody/tr"):
+                tds = [re.sub(r"\s+", " ", td.text_content()).strip() for td in tr.xpath("./td")]
+                if not tds:
+                    continue
+                m = re.search(r"시\s*점\s*:\s*(.+?)\s*종\s*점\s*:\s*(.+)$", tds[0])
+                if not m:
+                    continue
+                result["segments"].append({
+                    "from": m.group(1).strip(),
+                    "to": m.group(2).strip(),
+                    "length": tds[-1] if len(tds) >= 4 else None,
+                })
+
     # "협의기관" 표기가 없는 유형(환경영향평가)은 "승인기관"으로 대신한다.
     result["org"] = _row_first_td_text(tree, "협의기관") or _row_first_td_text(tree, "승인기관")
     result["tel"] = _row_first_td_text(tree, "전화번호")
+    result["bizType"] = _row_first_td_text(tree, "사업구분")
+    result["lawBasis"] = _row_first_td_text(tree, "협의대상")
+
+    # 공람·설명회·의견제출 정보. 라벨이 유형에 따라
+    # "의견제출 기간" / "의견 제출 기한" 처럼 다르므로 넉넉하게 찾는다.
+    result["viewPlace"] = _row_first_td_text(tree, "공람 장소")
+    result["briefPlace"] = _row_first_td_text(tree, "설명회 장소")
+    result["briefWhen"] = _row_first_td_text(tree, "설명회 일시")
+    result["opinionPeriod"] = (_row_first_td_text(tree, "의견제출")
+                               or _row_first_td_text(tree, "의견 제출"))
+    result["deptName"] = _row_first_td_text(tree, "부서명")
+
+    # 부서명 바로 뒤에 오는 전화번호가 의견 접수처 번호다.
+    dept_rows = tree.xpath("//tr[th[contains(normalize-space(text()),'부서명')]]")
+    if dept_rows:
+        later = dept_rows[0].xpath("./following-sibling::tr[th[contains(.,'전화번호')]][1]/td[1]")
+        if later:
+            result["deptTel"] = re.sub(r"\s+", " ", later[0].text_content()).strip() or None
 
     for a in tree.xpath("//a[contains(@href,'generalView(')]"):
         args = re.findall(r"'([^']*)'", a.get("href", ""))
@@ -256,6 +321,127 @@ def download_file(file_seq, system_name="PERSS"):
                       headers=HEADERS, verify=VERIFY_SSL, timeout=60)
     r.raise_for_status()
     return r.content
+
+
+# ============================================================
+# 3-1) 하천 사업의 노선 도형 가져오기
+#
+#  평가서 도면에는 노선이 그림으로만 있고 좌표가 없어서, 도면을 읽어내는 것은
+#  기준점이 없어 정확도를 보장할 수 없다. 그래서 대신
+#    요약문 글자에서 하천 이름을 찾고 → VWorld 하천망도에서 그 하천의 실제 도형을 받는다.
+#  받은 도형은 점이 수만 개라 브라우저에서 무거우므로 40m 정도까지 단순화한다.
+# ============================================================
+
+# "계획하천"처럼 이름이 아닌 일반 표현은 걸러낸다.
+RIVER_NAME_BLOCKLIST = {
+    "하천", "계획하천", "지방하천", "국가하천", "소하천", "대상하천", "해당하천",
+    "주요하천", "인근하천", "주변하천", "기존하천", "상류하천", "하류하천",
+}
+
+
+def extract_river_names(text):
+    names = set(re.findall(r"([가-힣]{2,6}천)\b", text or ""))
+    return sorted(n for n in names if n not in RIVER_NAME_BLOCKLIST)
+
+
+# 하천을 따라가는 사업인지 판단한다.
+# 도로·철도 사업 요약문에도 '지나가는 하천' 이름이 나오므로, 사업 자체가
+# 하천 사업일 때만 하천 도형을 노선으로 쓴다.
+RIVER_BIZ_HINTS = ("하천", "河川", "수계", "河")
+
+
+def is_river_project(name, biz_type, law_basis):
+    haystack = " ".join(filter(None, [biz_type, law_basis, name]))
+    # 사업구분·근거법령에 '하천'이 있으면 확실하다. (예: "하천이용 / 하천기본계획", "「하천법」")
+    if biz_type and "하천" in biz_type:
+        return True
+    if law_basis and "하천" in law_basis:
+        return True
+    # 사업구분 정보가 없을 때만 사업명으로 판단한다.
+    if not biz_type and not law_basis:
+        return any(h in (name or "") for h in RIVER_BIZ_HINTS)
+    return False
+
+
+def _douglas_peucker(points, tol):
+    """선을 이루는 점을 tol(도 단위) 안에서 줄인다."""
+    if len(points) < 3:
+        return points
+
+    def dist(p, a, b):
+        (x, y), (x1, y1), (x2, y2) = p, a, b
+        dx, dy = x2 - x1, y2 - y1
+        if dx == 0 and dy == 0:
+            return ((x - x1) ** 2 + (y - y1) ** 2) ** 0.5
+        t = max(0, min(1, ((x - x1) * dx + (y - y1) * dy) / (dx * dx + dy * dy)))
+        px, py = x1 + t * dx, y1 + t * dy
+        return ((x - px) ** 2 + (y - py) ** 2) ** 0.5
+
+    i_max, d_max = 0, 0.0
+    for i in range(1, len(points) - 1):
+        d = dist(points[i], points[0], points[-1])
+        if d > d_max:
+            i_max, d_max = i, d
+    if d_max <= tol:
+        return [points[0], points[-1]]
+    return _douglas_peucker(points[:i_max + 1], tol)[:-1] + _douglas_peucker(points[i_max:], tol)
+
+
+def _simplify_coords(coords, tol):
+    """GeoJSON 좌표 묶음(중첩 리스트)을 재귀로 훑어 단순화한다."""
+    if not coords:
+        return coords
+    if isinstance(coords[0][0], (int, float)):
+        thinned = _douglas_peucker([tuple(c[:2]) for c in coords], tol)
+        return [[round(x, 5), round(y, 5)] for x, y in thinned]
+    return [_simplify_coords(c, tol) for c in coords]
+
+
+def _first_point(coords):
+    c = coords
+    while c and isinstance(c[0], list):
+        c = c[0]
+    return c if c and isinstance(c[0], (int, float)) else None
+
+
+def _rough_km(lat1, lon1, lat2, lon2):
+    return (((lat1 - lat2) * 111) ** 2 + ((lon1 - lon2) * 88) ** 2) ** 0.5
+
+
+def fetch_river_routes(names, lat, lon, key, domain, max_names=8):
+    """하천 이름들로 실제 도형을 받아 [{name, type, coordinates}] 로 돌려준다."""
+    if not key or not names:
+        return []
+    routes = []
+    for name in names[:max_names]:
+        try:
+            r = requests.get(VWORLD_DATA_URL, params={
+                "service": "data", "request": "GetFeature", "data": RIVER_LAYER,
+                "key": key, "domain": domain, "format": "json",
+                "size": 20, "geometry": "true", "attrFilter": f"riv_nm:like:{name}",
+            }, verify=VERIFY_SSL, timeout=60)
+            res = r.json().get("response", {})
+            if res.get("status") != "OK":
+                continue
+            for f in res.get("result", {}).get("featureCollection", {}).get("features", []):
+                geom = f.get("geometry") or {}
+                coords = geom.get("coordinates")
+                if not coords:
+                    continue
+                # 같은 이름의 다른 지역 하천은 버린다.
+                if lat is not None and lon is not None:
+                    p = _first_point(coords)
+                    if p and _rough_km(lat, lon, p[1], p[0]) > ROUTE_MAX_KM:
+                        continue
+                routes.append({
+                    "name": f.get("properties", {}).get("riv_nm") or name,
+                    "type": geom.get("type"),
+                    "coordinates": _simplify_coords(coords, ROUTE_SIMPLIFY_TOL),
+                })
+        except Exception as e:
+            log(f"    [하천 도형 조회 오류] {name}: {e}")
+        time.sleep(0.15)
+    return routes
 
 
 # ============================================================
@@ -403,6 +589,7 @@ def analyze_environment(name, address, raw_text, anthropic_key):
 def build(args):
     today = datetime.date.today()
     vworld_key = os.environ.get("VWORLD_KEY", "")
+    vworld_domain = os.environ.get("VWORLD_DOMAIN", "http://localhost:8000")
     anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "")
 
     if not args.skip_geocode and not vworld_key:
@@ -450,6 +637,25 @@ def build(args):
                     filled = sum(1 for v in analysis.values() if v)
                     log(f"    환경영향분석 {filled}/{len(EIA_FIELDS)}개 항목 채움")
 
+            # 노선 도형은 '선형 + 하천 사업'에만 자동으로 찾는다.
+            #  · 면형: 주소 한 점으로 충분하다.
+            #  · 선형이지만 도로·철도 사업: 요약문에 나오는 하천 이름은 그냥 '지나가는 하천'이라
+            #    그것을 노선으로 그리면 틀린 그림이 된다. 관리자가 직접 그리도록 남겨둔다.
+            #  · 환경영향평가: EIASS에 유형 표시가 없어 함부로 선형으로 보지 않는다.
+            location_types = detail.get("locationTypes") or []
+            is_linear = "선형" in location_types
+            is_river = is_river_project(it["name"], detail.get("bizType"), detail.get("lawBasis"))
+            river_names, routes = [], []
+            if is_linear and is_river and raw_text and not args.skip_route:
+                river_names = extract_river_names(raw_text)
+                if river_names:
+                    routes = fetch_river_routes(river_names, lat, lon, vworld_key, vworld_domain)
+                log(f"    선형/하천 사업: 하천 이름 {len(river_names)}개, 노선 도형 {len(routes)}개")
+            elif is_linear:
+                log("    선형이지만 하천 사업이 아니어서 자동 노선을 찾지 않음 (관리자가 직접 그리기)")
+            elif location_types:
+                log(f"    위치 유형 {'/'.join(location_types)} (노선 조회 안 함)")
+
             all_projects.append({
                 "id": f"{it['biz_cd']}-{it['biz_seq']}",
                 "category": category_key,
@@ -458,12 +664,26 @@ def build(args):
                 "org": detail["org"] or it["list_meta"],
                 "tel": detail["tel"],
                 "address": detail["address"],
+                "locationTypes": location_types,
+                "segments": detail.get("segments") or [],
+                "bizType": detail.get("bizType"),
+                "isRiver": bool(is_linear and is_river),
                 "lat": lat,
                 "lon": lon,
                 "periodStart": it["period_start"],
                 "periodEnd": it["period_end"],
+                "viewPlace": detail["viewPlace"],
+                "briefPlace": detail["briefPlace"],
+                "briefWhen": detail["briefWhen"],
+                "opinionPeriod": detail["opinionPeriod"],
+                "deptName": detail["deptName"],
+                "deptTel": detail["deptTel"],
                 "summaryFileSeq": summary_file["file_seq"] if summary_file else None,
                 "analysis": analysis,
+                # 노선 도형. 자동으로 못 찾은 사업은 관리자 화면에서 직접 그려 넣을 수 있다.
+                "riverNames": river_names,
+                "routeGeom": routes or None,
+                "routeSource": "vworld-river" if routes else None,
                 # 화면에서 "EIASS 원문 보기" 링크를 만들 때 그대로 쓴다.
                 # (EIASS 상세페이지는 GET 링크가 아니라 이 값들을 넣어 POST로 열어야 한다.)
                 "sourceBizCd": it["biz_cd"],
@@ -472,15 +692,27 @@ def build(args):
                 "sourceViewPath": cat["view_path"],
             })
 
+    # 마지막으로 한 번 더 걸러낸다. 수집이 자정을 넘겨 오래 돌면
+    # 시작할 때는 공람 중이었지만 저장 시점엔 끝난 사업이 섞일 수 있다.
+    end_day = datetime.date.today()
+    kept = [p for p in all_projects
+            if p["periodStart"] and p["periodEnd"]
+            and datetime.date.fromisoformat(p["periodStart"]) <= end_day
+            <= datetime.date.fromisoformat(p["periodEnd"])]
+    dropped = len(all_projects) - len(kept)
+    if dropped:
+        log(f"[안내] 공람 기간이 끝난 {dropped}건은 저장하지 않았습니다.")
+
     os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
     with open(OUT_PATH, "w", encoding="utf-8") as f:
         json.dump({
-            "generatedAt": today.isoformat(),
-            "note": "이 파일은 tools/build_data.py가 EIASS 공개 자료를 바탕으로 자동 생성합니다.",
-            "projects": all_projects,
+            "generatedAt": end_day.isoformat(),
+            "note": ("이 파일은 tools/build_data.py가 EIASS 공개 자료를 바탕으로 자동 생성합니다. "
+                     "생성 시점에 초안 공람 기간 안에 있던 사업만 담겨 있습니다."),
+            "projects": kept,
         }, f, ensure_ascii=False, indent=2)
 
-    log(f"완료: {OUT_PATH} 에 {len(all_projects)}건 저장")
+    log(f"완료: {OUT_PATH} 에 {len(kept)}건 저장 (모두 공람 기간 중)")
 
 
 def main():
@@ -490,6 +722,7 @@ def main():
     parser.add_argument("--delay", type=float, default=0.4, help="요청 사이 대기 시간(초)")
     parser.add_argument("--skip-geocode", action="store_true", help="vworld 지오코딩 건너뛰기")
     parser.add_argument("--skip-summary", action="store_true", help="요약문 PDF 다운로드/LLM 요약 건너뛰기")
+    parser.add_argument("--skip-route", action="store_true", help="하천 노선 도형 조회 건너뛰기")
     args = parser.parse_args()
     build(args)
 

@@ -11,6 +11,7 @@ const DEFAULTS = {
   centerLat: "37.5636",
   dataPath: "data/projects.json",
   regionPath: "data/regions.json",
+  routePath: "data/routes.json",
   radiusKm: 3,
   showDemoBanner: true,
   org: "기후에너지환경부 국립환경과학원",
@@ -80,7 +81,8 @@ const SAMPLE_PROJECTS = [
     address:"하남시 교산동 일원", org:"한국토지주택공사", lat:null, lon:null }
 ];
 
-let PROJECTS = [];
+let PROJECTS = [];          // 공람 기간 안에 있는 사업 (화면에 보이는 것)
+let CLOSED_PROJECTS = [];   // 기간이 지난 사업 (화면에서 빼지만, 참조되면 최소 정보만 보여준다)
 let dataReady = false;
 const CATEGORY_BADGE = { strat:"badge--navy", main:"badge--blue" };
 
@@ -98,13 +100,16 @@ function haversineKm(lat1, lon1, lat2, lon2){
 /* EIASS에서 수집한 원본 항목을 화면에서 쓰는 모양으로 바꾼다.
    원문에 없는 값(예: 주민 의견 수)은 만들어내지 않는다. */
 function normalizeProject(p){
+  // 파일을 만든 날과 보는 날이 다를 수 있으므로, 공람 중인지는 화면에서 매번 다시 따진다.
   const today = new Date(); today.setHours(0, 0, 0, 0);
-  let dday = null, stage = "공람 종료";
-  if(p.periodEnd){
-    const end = new Date(p.periodEnd + "T00:00:00");
-    const diff = Math.round((end - today) / 86400000);
-    if(diff >= 0){ dday = diff; stage = "초안 공람 중"; }
-  }
+  const start = p.periodStart ? new Date(p.periodStart + "T00:00:00") : null;
+  const end = p.periodEnd ? new Date(p.periodEnd + "T00:00:00") : null;
+  const started = !start || today >= start;
+  const ended = end && today > end;
+  const open = Boolean(start && end && started && !ended);
+  const dday = open ? Math.round((end - today) / 86400000) : null;
+  const stage = open ? "초안 공람 중" : (ended ? "공람 종료" : "공람 시작 전");
+
   const hasCoord = typeof p.lat === "number" && typeof p.lon === "number";
   return {
     id: p.id,
@@ -112,6 +117,7 @@ function normalizeProject(p){
     typeLabel: p.categoryLabel || p.category,
     badge: CATEGORY_BADGE[p.category] || "badge--gray",
     name: p.name,
+    open,                       // 공람 기간 안에 있는가
     stage, dday,
     dist: null,                 // 우리 집 좌표가 정해진 뒤 계산한다
     period: (p.periodStart && p.periodEnd) ? `${p.periodStart} ~ ${p.periodEnd}` : "정보 없음",
@@ -122,6 +128,18 @@ function normalizeProject(p){
     lon: hasCoord ? p.lon : null,
     analysis: p.analysis || null,      // 정형화된 환경영향분석
     summaryEasy: p.summaryEasy || null, // 예전 방식(자유 문장) — 아직 남아있으면 같이 보여준다
+    routeGeom: p.routeGeom || null,     // 하천 사업의 실제 도형
+    routeSource: p.routeSource || null,
+    locationTypes: p.locationTypes || [],  // 면형 / 선형 / 점형 (EIASS 표시가 있을 때만)
+    segments: p.segments || [],             // 선형 사업의 구간 목록
+    bizType: p.bizType || null,
+    isRiver: !!p.isRiver,
+    viewPlace: p.viewPlace || null,
+    briefPlace: p.briefPlace || null,
+    briefWhen: p.briefWhen || null,
+    opinionPeriod: p.opinionPeriod || null,
+    deptName: p.deptName || null,
+    deptTel: p.deptTel || null,
     sourceBizCd: p.sourceBizCd || null,
     sourceBizSeq: p.sourceBizSeq || null,
     sourceStepCd: p.sourceStepCd || null,
@@ -147,7 +165,16 @@ async function loadProjects(){
   }catch(e){
     console.warn("data/projects.json 을 불러오지 못해 표본 데이터를 표시합니다.", e);
   }
-  PROJECTS = (list.length ? list : SAMPLE_PROJECTS).map(normalizeProject);
+  const all = (list.length ? list : SAMPLE_PROJECTS).map(normalizeProject);
+
+  // 화면에는 '초안 공람 기간 안'에 있는 사업만 올린다.
+  // 기간이 끝난 사업은 CLOSED_PROJECTS 로 따로 빼서 목록·지도·통계에서 제외한다.
+  PROJECTS = all.filter(p => p.open);
+  CLOSED_PROJECTS = all.filter(p => !p.open);
+  if(CLOSED_PROJECTS.length){
+    console.info(`공람 기간이 지난 사업 ${CLOSED_PROJECTS.length}건은 화면에서 제외했습니다.`);
+  }
+
   dataReady = true;
   recomputeDistances();
   refreshAll();
@@ -330,7 +357,7 @@ async function resolveHome(hood){
     gisMap.setView([HOME.lat, HOME.lon], 13);
     renderGisMarkers(false);
     renderGisList();
-    renderGisDetail();
+    showGisPane("list");
   }
 }
 
@@ -450,6 +477,13 @@ function nearbyProjects(){ return PROJECTS.filter(isNearby); }
    환경영향분석 그리기
    ============================================================ */
 function eiaHtml(p){
+  // 공람 기간이 지난 사업은 AI 해석 결과를 보여주지 않는다.
+  // (의견을 낼 수 없는 시점에 해석만 남아 잘못 참고되는 것을 막기 위함)
+  if(!p.open){
+    return accordionHtml("환경영향분석", "표시하지 않음", `
+      <p class="eia-src">공람 기간이 끝난 사업이라 요약문에 대한 해석 결과는 표시하지 않습니다.
+        사업 내용은 EIASS 원문에서 확인하세요.</p>`);
+  }
   const rows = EIA_FIELDS.map(f => {
     const v = p.analysis ? p.analysis[f.key] : null;
     return v
@@ -460,14 +494,104 @@ function eiaHtml(p){
   const legacy = (!p.analysis && p.summaryEasy)
     ? `<div class="eia-row"><p class="v">${esc(p.summaryEasy)}</p></div>` : "";
 
-  return `
-    <div class="eia">
-      <h4>환경영향분석</h4>
-      <p class="eia-src">사업자가 낸 평가서 초안의 <b>요약문</b>에 적힌 내용만 쉬운 말로 옮긴 것입니다.
-        판단이나 의견은 담지 않았고, 요약문에 없는 항목은 비워 둡니다.</p>
-      ${legacy || rows}
-    </div>`;
+  const filled = p.analysis ? Object.values(p.analysis).filter(Boolean).length : 0;
+  const hint = p.analysis ? `${filled}/${EIA_FIELDS.length}개 항목` : (p.summaryEasy ? "요약" : "없음");
+
+  return accordionHtml("환경영향분석", hint, `
+    <p class="eia-src">사업자가 낸 평가서 초안의 <b>요약문</b>에 적힌 내용만 쉬운 말로 옮긴 것입니다.
+      판단이나 의견은 담지 않았고, 요약문에 없는 항목은 비워 둡니다.</p>
+    ${legacy || rows}`);
 }
+
+/* 눌러서 펼쳐 보는 묶음. 내용이 길어 한 화면에 다 넣으면 읽기 어려우므로 접어 둔다. */
+function accordionHtml(title, hint, inner){
+  return `
+    <details class="acc">
+      <summary>
+        <span class="acc-t">${esc(title)}</span>
+        ${hint ? `<span class="acc-h">${esc(hint)}</span>` : ""}
+        <svg class="acc-i" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"></path></svg>
+      </summary>
+      <div class="acc-body">${inner}</div>
+    </details>`;
+}
+
+/* ============================================================
+   위치 유형 태그 (면형 / 선형)
+   EIASS가 표시해 주는 경우에만 붙인다. 표시가 없으면 태그를 만들지 않는다.
+   ============================================================ */
+const LOC_BADGE = { "면형":"badge--eco", "선형":"badge--teal", "점형":"badge--gray" };
+
+function locTagHtml(p){
+  if(!p.locationTypes.length) return "";
+  return p.locationTypes.map(t =>
+    `<span class="badge ${LOC_BADGE[t] || "badge--line"}">${esc(t)}</span>`).join("");
+}
+
+/* ============================================================
+   설명회 · 공람 · 의견제출 정보
+   EIASS 원문을 그대로 보여준다. (일시 표기가 사업마다 자유 형식이라 손대지 않는다)
+   ============================================================ */
+function participationHtml(p){
+  const rows = [
+    ["공람 기간", p.period],
+    ["의견제출 기간", p.opinionPeriod],
+    ["공람 장소", p.viewPlace],
+    ["설명회 일시", p.briefWhen],
+    ["설명회 장소", p.briefPlace],
+    ["의견 받는 곳", p.deptName ? `${p.deptName}${p.deptTel ? " · " + p.deptTel : ""}` : null]
+  ].filter(([, v]) => v);
+
+  if(!rows.length) return "";
+  const hint = p.briefWhen ? "설명회 있음" : "";
+  return accordionHtml("공람 · 설명회 안내", hint, rows.map(([k, v]) => `
+    <div class="eia-row"><p class="k">${esc(k)}</p><p class="v">${esc(v)}</p></div>`).join(""));
+}
+
+/* 선형 사업의 구간 목록 (시점 → 종점, 연장) */
+function segmentsHtml(p){
+  if(!p.segments.length) return "";
+  return accordionHtml("구간 (시점 · 종점)", `${p.segments.length}개 구간`,
+    p.segments.map((s, i) => `
+      <div class="eia-row">
+        <p class="k">구간 ${i + 1}${s.length ? " · " + esc(s.length) : ""}</p>
+        <p class="v">시점 ${esc(s.from)}<br>종점 ${esc(s.to)}</p>
+      </div>`).join(""));
+}
+
+/* ============================================================
+   의견 제출 — EIASS 주민의견등록으로 보내기
+   EIASS는 본인인증 로그인이 필요해서 우리 화면에서 직접 접수할 수 없다.
+   그래서 해당 사업 페이지까지 데려다주고, 남은 단계를 안내한다.
+   ============================================================ */
+let opinionTarget = null;
+
+function openOpinion(id){
+  const p = PROJECTS.find(x => String(x.id) === String(id));
+  if(!p) return;
+  opinionTarget = p;
+  $("#opinionBody").innerHTML = `
+    <p style="margin-bottom:14px"><b>${esc(p.name)}</b></p>
+    ${p.opinionPeriod ? `<p style="margin-bottom:14px">의견을 받는 기간은 <b>${esc(p.opinionPeriod)}</b>입니다.
+      이 기간이 지나면 접수되지 않습니다.</p>` : ""}
+    <h4>의견은 EIASS에서 접수합니다</h4>
+    <p>이 서비스는 안내만 하고, 실제 접수는 환경영향평가 정보지원시스템(EIASS)에서 이루어집니다.
+      EIASS는 <b>본인인증 로그인</b>이 필요합니다.</p>
+    <ol>
+      <li>아래 <b>EIASS로 이동</b>을 누르면 이 사업의 페이지가 새 창에서 열립니다.</li>
+      <li>그 페이지에서 <b>주민의견수렴</b> 탭을 누릅니다.</li>
+      <li><b>주민의견등록</b>을 누르고 본인인증 후 의견을 작성합니다.</li>
+    </ol>
+    <h4>이렇게 쓰면 검토에 반영되기 쉽습니다</h4>
+    <p>소음, 교통, 먼지, 일조, 생활환경 등 <b>내가 겪을 일을 구체적으로</b> 적습니다.
+      "언제, 어디서, 어떤 점이 걱정된다"처럼 쓰면 좋습니다.</p>
+    ${p.deptName ? `<p style="margin-top:12px">전화로 문의하려면
+      ${esc(p.deptName)}${p.deptTel ? ` (${esc(p.deptTel)})` : ""} 로 연락하세요.</p>` : ""}`;
+  openModal("m-opinion");
+}
+$("#btn-opinion-go").addEventListener("click", () => {
+  if(opinionTarget) openEiassSource(opinionTarget);
+});
 
 /* ============================================================
    홈 — 대시보드 숫자 / 알림줄
@@ -568,6 +692,7 @@ function render(){
     <article class="proj" data-id="${esc(p.id)}">
       <div class="badges">
         <span class="badge ${p.badge} badge--dot">${esc(p.typeLabel)}</span>
+        ${locTagHtml(p)}
         ${p.dday !== null
           ? `<span class="badge ${p.dday <= 3 ? "badge--live" : "badge--dday"}">D-${p.dday}</span>`
           : `<span class="badge badge--line">${esc(p.stage)}</span>`}
@@ -580,18 +705,38 @@ function render(){
         <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"></path><path d="M15 3v4h4"></path></svg><span>${esc(p.org)} · ${esc(p.stage)}</span></div>
       </div>
       <div class="foot">
+        ${p.dday !== null ? `<button class="btn btn--primary btn--sm btn--pill" type="button" data-opinion="${esc(p.id)}">의견 제출</button>` : ``}
         <button class="btn btn--line btn--sm btn--pill" type="button" data-detail="${esc(p.id)}">자세히 보기</button>
         ${p.lat != null ? `<button class="btn btn--ghost btn--sm btn--pill" type="button" data-onmap="${esc(p.id)}">지도에서 보기</button>` : ``}
       </div>
     </article>`).join("");
 }
 
-$("#projGrid").addEventListener("click", e => {
-  const d = e.target.closest("[data-detail]");
-  if(d){ openDetail(d.dataset.detail); return; }
-  const m = e.target.closest("[data-onmap]");
-  if(m) openMapScreen(m.dataset.onmap);
-});
+/* 카드/목록/상세 어디서든 같은 버튼이 같게 동작하도록 한 곳에서 처리한다. */
+function bindProjectActions(rootSel, opts = {}){
+  $(rootSel).addEventListener("click", e => {
+    const o = e.target.closest("[data-opinion]");
+    if(o){
+      if(opts.closeModal) closeModal($(opts.closeModal));
+      openOpinion(o.dataset.opinion);
+      return;
+    }
+    const d = e.target.closest("[data-detail]");
+    if(d){ openDetail(d.dataset.detail); return; }
+    const m = e.target.closest("[data-onmap]");
+    if(m){
+      if(opts.closeModal) closeModal($(opts.closeModal));
+      openMapScreen(m.dataset.onmap);
+      return;
+    }
+    const s = e.target.closest("[data-eiass]");
+    if(s){
+      const p = PROJECTS.find(x => String(x.id) === String(s.dataset.eiass));
+      if(p) openEiassSource(p);
+    }
+  });
+}
+bindProjectActions("#projGrid");
 
 /* 의견 낼 수 있는 초안 공람 목록 */
 function renderOpenList(){
@@ -611,13 +756,11 @@ function renderOpenList(){
         <p class="t">${esc(p.name)}</p>
         <p class="m">~${esc(p.period.split("~")[1] || "")} · ${esc(p.org)}${p.tel ? " · " + esc(p.tel) : ""}</p>
       </div>
+      <button class="btn btn--primary btn--sm btn--pill" type="button" data-opinion="${esc(p.id)}">의견 제출</button>
       <button class="btn btn--line btn--sm btn--pill" type="button" data-detail="${esc(p.id)}">자세히 보기</button>
     </div>`).join("");
 }
-$("#openList").addEventListener("click", e => {
-  const d = e.target.closest("[data-detail]");
-  if(d) openDetail(d.dataset.detail);
-});
+bindProjectActions("#openList");
 
 /* 사업 상세 모달 */
 function openDetail(id){
@@ -631,26 +774,19 @@ function openDetail(id){
       <div class="contact-row"><span class="k">기관</span><span class="v">${esc(p.org)}${p.tel ? " · " + esc(p.tel) : ""}</span></div>
       <div class="contact-row"><span class="k">공람기간</span><span class="v">${esc(p.period)}${p.dday !== null ? ` (D-${p.dday})` : ""}</span></div>
     </div>
-    ${eiaHtml(p)}
+    <div class="acc-group">
+      ${participationHtml(p)}
+      ${segmentsHtml(p)}
+      ${eiaHtml(p)}
+    </div>
     <p style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap">
+      ${p.dday !== null ? `<button class="btn btn--primary btn--sm" type="button" data-opinion="${esc(p.id)}">의견 제출</button>` : ""}
       ${p.lat != null ? `<button class="btn btn--line btn--sm" type="button" data-onmap="${esc(p.id)}">지도에서 보기</button>` : ""}
       ${p.sourceBizCd ? `<button class="btn btn--line btn--sm" type="button" data-eiass="${esc(p.id)}">EIASS 원문 페이지 열기 ↗</button>` : ""}
     </p>`;
   openModal("m-detail");
 }
-$("#detailBody").addEventListener("click", e => {
-  const s = e.target.closest("[data-eiass]");
-  if(s){
-    const p = PROJECTS.find(x => String(x.id) === String(s.dataset.eiass));
-    if(p) openEiassSource(p);
-    return;
-  }
-  const m = e.target.closest("[data-onmap]");
-  if(m){
-    closeModal($("#m-detail"));
-    openMapScreen(m.dataset.onmap);
-  }
-});
+bindProjectActions("#detailBody", { closeModal:"#m-detail" });
 
 $$("[data-filter]").forEach(c => c.addEventListener("click", () => {
   $$("[data-filter]").forEach(x => x.classList.remove("on"));
@@ -717,6 +853,77 @@ function ensureGisMap(){
   return gisMap;
 }
 
+/* ============================================================
+   사업 노선(도형)
+   우선순위: 관리자가 직접 그린 것 > 수집한 하천 도형
+   ============================================================ */
+const LSROUTES = "wdn.routes";
+let adminUnlocked = false;
+
+/* 직접 지정한 노선.
+   data/routes.json (모두에게 보이는 것) 을 먼저 깔고,
+   그 위에 이 브라우저에서 작업 중인 것(localStorage)을 덮어쓴다. */
+let fileRoutes = {};
+let localRoutes = lsGet(LSROUTES, {});
+let manualRoutes = Object.assign({}, localRoutes);
+
+async function loadRoutes(){
+  try{
+    const res = await fetch(S.routePath, { cache:"no-store" });
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    const json = await res.json();
+    fileRoutes = json.routes || {};
+  }catch(e){
+    fileRoutes = {};   // 파일이 없는 게 정상이다 (아직 아무도 노선을 지정하지 않은 상태)
+  }
+  manualRoutes = Object.assign({}, fileRoutes, localRoutes);
+  if(gisMap){ drawRoutes(); renderGisDetail(); }
+}
+
+function routeOf(p){
+  const manual = manualRoutes[String(p.id)];
+  if(manual) return { geoms:[manual], source:"manual" };
+  if(p.routeGeom && p.routeGeom.length) return { geoms:p.routeGeom, source:p.routeSource || "auto" };
+  return null;
+}
+
+/* GeoJSON 은 [경도,위도] 순서, Leaflet 은 [위도,경도] 순서라 뒤집어 준다. */
+function toLatLngs(coords){
+  if(!coords || !coords.length) return [];
+  if(typeof coords[0][0] === "number") return coords.map(c => [c[1], c[0]]);
+  return coords.map(toLatLngs);
+}
+
+let routeLayers = [];
+
+function drawRoutes(){
+  if(!gisMap) return;
+  routeLayers.forEach(l => gisMap.removeLayer(l));
+  routeLayers = [];
+
+  const rows = gisProjects();
+  rows.forEach(p => {
+    const r = routeOf(p);
+    if(!r) return;
+    const on = String(p.id) === String(selectedId);
+    r.geoms.forEach(g => {
+      const latlngs = toLatLngs(g.coordinates);
+      const style = {
+        color: on ? "#1f8a5b" : "#3f9aae",
+        weight: on ? 4 : 2.5,
+        opacity: on ? 0.95 : 0.6
+      };
+      const layer = (g.type || "").includes("Polygon")
+        ? L.polygon(latlngs, Object.assign({ fillOpacity:on ? 0.25 : 0.12 }, style))
+        : L.polyline(latlngs, style);
+      layer.bindTooltip(`${p.name}${g.name ? " · " + g.name : ""}`, { sticky:true });
+      layer.on("click", () => selectProject(p.id, false));
+      layer.addTo(gisMap);
+      routeLayers.push(layer);
+    });
+  });
+}
+
 function renderGisMarkers(fit = true){
   if(!gisMap) return;
   gisMarkers.forEach(m => gisMap.removeLayer(m));
@@ -730,6 +937,8 @@ function renderGisMarkers(fit = true){
     radius: S.radiusKm * 1000, color:"#1c47d4", weight:1.4,
     dashArray:"5 5", fillColor:"#1c47d4", fillOpacity:.05
   }).addTo(gisMap);
+
+  drawRoutes();
 
   const rows = gisProjects();
   rows.forEach(p => {
@@ -750,7 +959,10 @@ function renderGisMarkers(fit = true){
 function gisItemHtml(p){
   return `
     <button class="gis-item${p.id === selectedId ? " on" : ""}" type="button" data-gis="${esc(p.id)}">
-      <span class="badge ${p.badge} badge--dot" style="align-self:flex-start">${esc(p.typeLabel)}</span>
+      <span class="gis-item-tags">
+        <span class="badge ${p.badge} badge--dot">${esc(p.typeLabel)}</span>
+        ${locTagHtml(p)}
+      </span>
       <span class="t">${esc(p.name)}</span>
       <span class="m">${p.dist != null ? p.dist.toFixed(1) + "km" : "거리 모름"}${p.dday !== null ? ` · D-${p.dday}` : ""}</span>
     </button>`;
@@ -783,34 +995,65 @@ $("#gisList").addEventListener("click", e => {
   if(b) selectProject(b.dataset.gis, true);
 });
 
+/* 왼쪽 패널을 목록 화면 / 상세 화면 중 하나로 바꾼다. */
+function showGisPane(which){
+  $("#gisList").hidden = which !== "list";
+  $("#gisDetail").hidden = which !== "detail";
+  $(".gis-side-body").scrollTop = 0;
+}
+
+const ROUTE_SOURCE_TEXT = {
+  manual: "관리자가 지도에서 직접 그린 노선입니다.",
+  "vworld-river": "요약문에 적힌 하천 이름으로 국가 하천 자료(VWorld)에서 찾은 실제 하천 모양입니다. 사업 구간만 잘라낸 것이 아니라 하천 전체가 표시됩니다."
+};
+
 function renderGisDetail(){
   const box = $("#gisDetail");
   const p = PROJECTS.find(x => String(x.id) === String(selectedId));
-  if(!p){
-    box.innerHTML = `<p class="gis-detail-empty">지도에서 사업 위치를 누르거나<br>왼쪽 목록에서 사업을 고르면<br>여기에 내용이 나옵니다.</p>`;
-    return;
-  }
+  if(!p){ box.innerHTML = ""; return; }
+  const r = routeOf(p);
   box.innerHTML = `
-    <span class="badge ${p.badge} badge--dot">${esc(p.typeLabel)}</span>
-    ${p.dday !== null ? `<span class="badge ${p.dday <= 3 ? "badge--live" : "badge--dday"}" style="margin-left:6px">D-${p.dday}</span>` : ""}
+    <button class="gis-detail-back" type="button" id="btn-gis-back-list">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"></path></svg>
+      목록으로
+    </button>
+    <p class="gis-detail-tags">
+      <span class="badge ${p.badge} badge--dot">${esc(p.typeLabel)}</span>
+      ${locTagHtml(p)}
+      ${p.dday !== null ? `<span class="badge ${p.dday <= 3 ? "badge--live" : "badge--dday"}">D-${p.dday}</span>` : ""}
+      ${!isNearby(p) ? `<span class="badge badge--gray">반경 밖</span>` : ""}
+    </p>
     <p class="ttl">${esc(p.name)}</p>
     <div class="kv"><span class="k">위치</span><span class="v">${esc(p.where)}</span></div>
     <div class="kv"><span class="k">거리</span><span class="v">${p.dist != null ? "우리 집에서 " + p.dist.toFixed(1) + "km" : "모름"}</span></div>
-    <div class="kv"><span class="k">공람</span><span class="v">${esc(p.period)}</span></div>
-    <div class="kv"><span class="k">기관</span><span class="v">${esc(p.org)}${p.tel ? "<br>" + esc(p.tel) : ""}</span></div>
-    ${eiaHtml(p)}
+    ${p.bizType ? `<div class="kv"><span class="k">사업구분</span><span class="v">${esc(p.bizType)}</span></div>` : ""}
+    <div class="kv"><span class="k">기관</span><span class="v">${esc(p.org)}${p.tel ? " · " + esc(p.tel) : ""}</span></div>
+    ${r ? `<div class="kv"><span class="k">노선</span><span class="v">${esc(ROUTE_SOURCE_TEXT[r.source] || "지도에 표시된 노선입니다.")}</span></div>` : ""}
+    ${p.dday !== null ? `
+      <button class="btn btn--primary btn--sm btn--block" type="button"
+              data-opinion="${esc(p.id)}" style="margin-top:16px">의견 제출하기</button>` : ""}
+    <div class="acc-group">
+      ${participationHtml(p)}
+      ${segmentsHtml(p)}
+      ${eiaHtml(p)}
+    </div>
     ${p.sourceBizCd ? `
-      <button class="eiass-link" type="button" data-eiass-side="${esc(p.id)}">
+      <button class="eiass-link" type="button" data-eiass="${esc(p.id)}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path></svg>
         EIASS 원문 페이지 열기
       </button>` : ""}`;
+  $("#btn-gis-back-list").addEventListener("click", () => {
+    selectedId = null;
+    renderGisList();
+    drawRoutes();
+    gisMarkers.forEach((m, key) => {
+      const q = PROJECTS.find(x => String(x.id) === key);
+      if(q) m.setIcon(markerIcon(q.type, false));
+    });
+    showGisPane("list");
+  });
 }
-$("#gisDetail").addEventListener("click", e => {
-  const b = e.target.closest("[data-eiass-side]");
-  if(!b) return;
-  const p = PROJECTS.find(x => String(x.id) === String(b.dataset.eiassSide));
-  if(p) openEiassSource(p);
-});
+bindProjectActions("#gisDetail");
 
 function selectProject(id, moveMap){
   selectedId = String(id);
@@ -823,8 +1066,11 @@ function selectProject(id, moveMap){
   if(p && gisMap && moveMap && p.lat != null){
     gisMap.setView([p.lat, p.lon], Math.max(gisMap.getZoom(), 13), { animate:true });
   }
+  drawRoutes();
   renderGisList();
   renderGisDetail();
+  showGisPane("detail");
+  if(adminUnlocked) $("#btn-route-edit").hidden = false;
 }
 
 function openMapScreen(focusId){
@@ -842,13 +1088,17 @@ function openMapScreen(focusId){
   ensureGisMap();
   renderGisMarkers(!focusId);
   renderGisList();
-  if(focusId) selectProject(focusId, true);
-  else renderGisDetail();
+  if(focusId){
+    selectProject(focusId, true);
+  }else{
+    showGisPane("list");
+  }
   setTimeout(() => { if(gisMap) gisMap.invalidateSize(); }, 60);
 }
 
 $("#btn-openmap").addEventListener("click", () => openMapScreen());
 $("#btn-map-back").addEventListener("click", () => {
+  exitRouteEdit();
   show("#scr-home");
   renderMiniMap();
 });
@@ -857,7 +1107,111 @@ $("#mapNearbyOnly").addEventListener("change", e => {
   selectedId = null;
   renderGisMarkers(true);
   renderGisList();
+  showGisPane("list");
+});
+
+/* ============================================================
+   노선 직접 그리기 (관리자)
+   자동으로 노선을 못 찾은 사업은 여기서 지도를 눌러 직접 그려 넣는다.
+   저장한 노선은 이 브라우저(localStorage)에 남고,
+   "JSON 복사"로 받아 data/routes.json 에 넣어 두면 모두가 볼 수 있다.
+   ============================================================ */
+let routeEdit = { on:false, pts:[], layers:[], target:null };
+
+/* 그리는 중인 선과 점을 다시 그린다. */
+function redrawEdit(){
+  routeEdit.layers.forEach(l => gisMap.removeLayer(l));
+  routeEdit.layers = [];
+  if(routeEdit.pts.length >= 2){
+    routeEdit.layers.push(L.polyline(routeEdit.pts, {
+      color:"#de3412", weight:4, opacity:.9, dashArray:"6 4"
+    }).addTo(gisMap));
+  }
+  routeEdit.pts.forEach(pt => {
+    routeEdit.layers.push(L.circleMarker(pt, {
+      radius:4, color:"#de3412", fillColor:"#fff", fillOpacity:1, weight:2
+    }).addTo(gisMap));
+  });
+  $("#drawMsg").textContent = `점 ${routeEdit.pts.length}개`;
+}
+
+function onMapClickDraw(e){
+  if(!routeEdit.on) return;
+  routeEdit.pts.push([e.latlng.lat, e.latlng.lng]);
+  redrawEdit();
+}
+
+function enterRouteEdit(){
+  const p = PROJECTS.find(x => String(x.id) === String(selectedId));
+  if(!p){ alert("먼저 목록이나 지도에서 사업을 선택하세요."); return; }
+  if(!gisMap) return;
+  routeEdit.on = true;
+  routeEdit.target = p;
+  const saved = manualRoutes[String(p.id)];
+  routeEdit.pts = saved ? toLatLngs(saved.coordinates) : [];
+  $("#drawTarget").textContent = p.name;
+  $("#gisDraw").hidden = false;
+  $("#gisMap").classList.add("gis-map--draw");
+  gisMap.on("click", onMapClickDraw);
+  redrawEdit();
+}
+
+function exitRouteEdit(){
+  if(!routeEdit.on) return;
+  routeEdit.on = false;
+  if(gisMap){
+    gisMap.off("click", onMapClickDraw);
+    routeEdit.layers.forEach(l => gisMap.removeLayer(l));
+    $("#gisMap").classList.remove("gis-map--draw");
+  }
+  routeEdit.layers = [];
+  $("#gisDraw").hidden = true;
+  routeEdit.pts = [];
+  routeEdit.target = null;
+}
+
+function manualGeoJson(){
+  // 화면은 [위도,경도]로 다루지만 저장은 GeoJSON 규칙(경도,위도)에 맞춘다.
+  return {
+    type: "LineString",
+    coordinates: routeEdit.pts.map(([lat, lon]) => [+lon.toFixed(5), +lat.toFixed(5)])
+  };
+}
+
+$("#btn-route-edit").addEventListener("click", enterRouteEdit);
+$("#btn-draw-cancel").addEventListener("click", exitRouteEdit);
+$("#btn-draw-undo").addEventListener("click", () => { routeEdit.pts.pop(); redrawEdit(); });
+$("#btn-draw-clear").addEventListener("click", () => { routeEdit.pts = []; redrawEdit(); });
+
+$("#btn-draw-save").addEventListener("click", () => {
+  if(!routeEdit.target) return;
+  const id = String(routeEdit.target.id);
+  if(routeEdit.pts.length < 2){
+    // 점이 2개 미만이면 지정을 지운 것으로 본다.
+    delete localRoutes[id];
+    delete manualRoutes[id];
+  }else{
+    localRoutes[id] = manualGeoJson();
+    manualRoutes[id] = localRoutes[id];
+  }
+  const ok = lsSet(LSROUTES, localRoutes);
+  $("#drawMsg").textContent = ok
+    ? "저장했습니다. 모두에게 보이게 하려면 'JSON 복사' 후 data/routes.json 에 넣으세요."
+    : "이 브라우저에는 저장할 수 없어 이번만 적용됩니다.";
+  exitRouteEdit();
+  renderGisMarkers(false);
   renderGisDetail();
+});
+
+$("#btn-draw-copy").addEventListener("click", async () => {
+  const payload = JSON.stringify({ routes:Object.assign({}, fileRoutes, localRoutes) }, null, 1);
+  try{
+    await navigator.clipboard.writeText(payload);
+    $("#drawMsg").textContent = "복사했습니다. data/routes.json 에 붙여넣으세요.";
+  }catch(e){
+    $("#drawMsg").textContent = "복사가 막혔습니다. 개발자도구 콘솔에 출력했습니다.";
+    console.log(payload);
+  }
 });
 
 /* 지도 화면에서 주소를 바꾸면 그 주소로 지도를 옮기고 목록을 다시 계산한다. */
@@ -943,6 +1297,7 @@ function unlock(){
   if($("#admPw").value === S.adminPw){
     $("#admLock").hidden = true;
     $("#admPanel").hidden = false;
+    adminUnlocked = true;   // 지도 화면의 '노선 직접 그리기'가 열린다
     fillAdmin();
   }else{
     $("#admErr").textContent = "비밀번호가 맞지 않습니다.";
@@ -1047,4 +1402,5 @@ $("#miniMap").addEventListener("keydown", e => {
 
 applySettings();
 loadRegions();
+loadRoutes();
 loadProjects();
