@@ -209,6 +209,7 @@ button{cursor:pointer}
 .hood-head .chg:hover{border-color:var(--primary);color:var(--primary)}
 .hood-map{padding:0 13px;cursor:pointer;position:relative}
 .hood-map svg{width:100%;height:auto;border-radius:var(--r-sm);display:block}
+.hood-mini-map{height:190px;border-radius:var(--r-sm);background:var(--bg-blue);pointer-events:none}
 .hood-map .zoom{position:absolute;right:22px;bottom:10px;background:rgba(255,255,255,.94);
   border:1px solid var(--line-2);border-radius:var(--r-xs);padding:5px 10px;
   font-size:11.5px;font-weight:700;color:var(--navy)}
@@ -347,15 +348,111 @@ button{cursor:pointer}
 .contact-row .v{color:var(--ink);font-weight:600}
 .modal-ft{padding:14px 24px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px;flex:none;background:var(--bg-2)}
 
-.mapbox{height:min(66vh,560px);background:var(--bg-blue);display:flex;align-items:center;
-  justify-content:center;position:relative}
-.mapbox img{width:100%;height:100%;object-fit:cover}
-.map-guide{text-align:center;max-width:420px;padding:32px}
+.map-guide{text-align:center;max-width:420px;padding:32px;margin:auto}
 .map-guide .ic{width:52px;height:52px;border-radius:var(--r-md);background:#fff;border:1px solid var(--line);
   display:flex;align-items:center;justify-content:center;margin:0 auto 14px;color:var(--primary)}
 .map-guide .ic svg{width:26px;height:26px}
 .map-guide h4{font-size:var(--fs-h-xs);font-weight:800;color:var(--ink);margin-bottom:8px}
 .map-guide p{font-size:var(--fs-body-s);color:var(--ink-3);line-height:1.7}
+
+/* ============================================================
+   화면 4 — 지도 (전체화면 지리정보 화면)
+   ============================================================ */
+#scr-map.on{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+.gis-top{flex:none;height:56px;background:var(--navy-3);color:#fff;display:flex;align-items:center;
+  gap:18px;padding:0 18px}
+.gis-back{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.1);
+  border:1px solid rgba(255,255,255,.2);color:#fff;border-radius:var(--r-xs);padding:8px 13px;
+  font-size:var(--fs-body-s);font-weight:600;transition:.16s var(--ease)}
+.gis-back:hover{background:rgba(255,255,255,.2)}
+.gis-back svg{width:16px;height:16px}
+.gis-ttl{font-size:var(--fs-h-xs);font-weight:800;letter-spacing:-.02em}
+.gis-top-right{margin-left:auto;display:flex;align-items:center;gap:14px}
+.gis-toggle{display:inline-flex;align-items:center;gap:8px;font-size:var(--fs-body-s);
+  font-weight:600;color:rgba(255,255,255,.9);cursor:pointer}
+.gis-toggle input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+
+.gis-body{flex:1;min-height:0;display:flex}
+.gis-list{width:250px;flex:none;border-right:1px solid var(--line);background:#fff;
+  overflow-y:auto;display:flex;flex-direction:column}
+.gis-map-wrap{flex:1;min-width:0;position:relative}
+.gis-map{position:absolute;inset:0;background:var(--bg-blue);display:flex}
+/* 오른쪽 설명 패널 — 폭을 넉넉하게 (기본 340px 의 1.7배) */
+.gis-detail{width:578px;flex:none;border-left:1px solid var(--line);background:#fff;
+  overflow-y:auto;padding:22px 24px}
+
+/* 지도 화면 안에서 주소 바꾸기 */
+.gis-addr{flex:none;padding:14px 14px 15px;border-bottom:1px solid var(--line);background:var(--bg-2)}
+.gis-addr-lb{font-size:var(--fs-body-xs);font-weight:700;color:var(--ink-3);margin-bottom:7px}
+.gis-addr-row{display:flex;flex-direction:column;gap:6px;margin-bottom:9px}
+.gis-addr-row select{width:100%;height:36px;border:1px solid var(--line-2);border-radius:var(--r-xs);
+  padding:0 9px;font-size:var(--fs-body-s);color:var(--ink);background:#fff;outline:0}
+.gis-addr-row select:focus{border-color:var(--primary)}
+
+.gis-list-head{padding:11px 14px;border-bottom:1px solid var(--line);background:var(--bg-2);
+  font-size:var(--fs-body-xs);font-weight:700;color:var(--ink-3)}
+.gis-list-head--out{background:#fff;color:var(--ink-4);border-top:1px solid var(--line)}
+.gis-item{width:100%;text-align:left;background:#fff;border:0;border-bottom:1px solid var(--line);
+  padding:13px 16px;display:flex;flex-direction:column;gap:5px;transition:.14s var(--ease)}
+.gis-item:hover{background:var(--primary-tint)}
+.gis-item.on{background:var(--primary-soft);box-shadow:inset 3px 0 0 var(--primary)}
+.gis-item .t{font-size:var(--fs-body-s);font-weight:700;color:var(--ink);line-height:1.45;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.gis-item .m{font-size:var(--fs-body-xs);color:var(--ink-3)}
+.gis-empty{padding:28px 18px;font-size:var(--fs-body-s);color:var(--ink-3);line-height:1.7;text-align:center}
+
+.gis-legend{position:absolute;left:12px;bottom:12px;z-index:500;background:rgba(255,255,255,.95);
+  border:1px solid var(--line-2);border-radius:var(--r-sm);padding:9px 12px;display:flex;
+  flex-direction:column;gap:5px;box-shadow:var(--sh-sm)}
+.gis-legend span{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;color:var(--ink-2)}
+.gis-legend .lg{width:11px;height:11px;border-radius:50%;flex:none}
+.gis-legend .lg--home{background:var(--eco);border:2px solid #fff;box-shadow:0 0 0 1px var(--line-2)}
+.gis-legend .lg--strat{background:var(--navy)}
+.gis-legend .lg--main{background:var(--primary)}
+.gis-legend .lg--circle{background:transparent;border:1.5px dashed var(--primary)}
+
+/* 지도 마커 (Leaflet divIcon 안에서 쓰는 점) */
+.mk{width:15px;height:15px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(16,28,54,.45)}
+.mk--home{background:var(--eco)}
+.mk--strat{background:var(--navy)}
+.mk--main{background:var(--primary)}
+.mk--on{transform:scale(1.45)}
+
+.gis-detail-empty{color:var(--ink-3);font-size:var(--fs-body-s);line-height:1.7;text-align:center;margin-top:70px}
+.gis-detail .ttl{font-size:var(--fs-h-xs);font-weight:800;color:var(--ink);line-height:1.4;margin:10px 0 14px}
+.gis-detail .kv{display:flex;gap:10px;font-size:var(--fs-body-s);padding:8px 0;border-bottom:1px solid var(--line)}
+.gis-detail .kv .k{width:62px;flex:none;color:var(--ink-3);font-weight:600}
+.gis-detail .kv .v{color:var(--ink-2);min-width:0;word-break:break-all}
+.gis-detail .eiass-link{margin-top:16px;display:inline-flex;align-items:center;gap:6px;
+  font-size:var(--fs-body-s);font-weight:700;color:var(--primary);background:none;border:0;padding:0}
+.gis-detail .eiass-link svg{width:15px;height:15px}
+.gis-detail .eiass-link:hover{color:var(--p60)}
+
+/* 환경영향분석 — 정형화된 항목 목록 */
+.eia{margin-top:20px}
+.eia > h4{font-size:var(--fs-h-xxs);font-weight:800;color:var(--ink);
+  padding-bottom:9px;border-bottom:2px solid var(--ink);margin-bottom:2px}
+.eia-src{font-size:var(--fs-body-xs);color:var(--ink-4);margin:7px 0 12px;line-height:1.55}
+.eia-row{padding:11px 0;border-bottom:1px solid var(--line)}
+.eia-row .k{display:flex;align-items:center;gap:6px;font-size:var(--fs-body-xs);
+  font-weight:800;color:var(--p70);margin-bottom:4px}
+.eia-row .v{font-size:var(--fs-body-s);line-height:1.7;color:var(--ink-2)}
+.eia-row.none .k{color:var(--ink-4)}
+.eia-row.none .v{color:var(--ink-4)}
+
+@media (max-width:1400px){
+  .gis-detail{width:440px}
+}
+@media (max-width:1180px){
+  .gis-list{display:none}
+  .gis-detail{width:360px}
+}
+@media (max-width:860px){
+  .gis-body{flex-direction:column}
+  .gis-map-wrap{flex:none;height:52vh}
+  .gis-detail{width:auto;flex:1;min-height:0;border-left:0;border-top:1px solid var(--line)}
+  .gis-ttl{display:none}
+}
 
 /* ============================================================
    화면 3 — 관리자

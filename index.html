@@ -62,7 +62,7 @@
   </div>
 
   <div class="onb-foot">
-    <button type="button" id="btn-admin-enter">기후·에너지환경부</button>
+    <button type="button" id="btn-admin-enter">기후에너지환경부</button>
   </div>
 </section>
 
@@ -141,29 +141,7 @@
             <button class="chg js-change" type="button">변경</button>
           </div>
           <div class="hood-map" id="miniMap" role="button" tabindex="0" aria-label="지도 크게 보기">
-            <svg viewBox="0 0 340 190" role="img" aria-label="미사동 개발사업 위치 요약">
-              <rect width="340" height="190" fill="#eef3fb"/>
-              <path d="M-10 42 C 80 22 150 56 230 38 S 340 20 350 28" fill="none" stroke="#c9dcf0" stroke-width="32" stroke-linecap="round"/>
-              <g fill="#e2e9f4">
-                <rect x="18" y="74" width="72" height="40" rx="4"/><rect x="98" y="74" width="58" height="40" rx="4"/>
-                <rect x="18" y="124" width="60" height="46" rx="4"/><rect x="86" y="124" width="70" height="46" rx="4"/>
-                <rect x="188" y="66" width="66" height="50" rx="4"/><rect x="262" y="66" width="60" height="50" rx="4"/>
-                <rect x="188" y="126" width="134" height="44" rx="4"/>
-              </g>
-              <g stroke="#fff" stroke-width="9" stroke-linecap="round">
-                <path d="M170 54V188"/><path d="M6 120H334"/>
-              </g>
-              <circle cx="120" cy="118" r="58" fill="none" stroke="#1c47d4" stroke-width="1.6" stroke-dasharray="4 4" opacity=".5"/>
-              <g font-size="10" font-weight="800" fill="#fff" text-anchor="middle">
-                <g><circle cx="122" cy="90" r="12" fill="#1c47d4"/><text x="122" y="94">1</text></g>
-                <g><circle cx="288" cy="150" r="12" fill="#fb4e0c"/><text x="288" y="154">2</text></g>
-                <g><circle cx="54" cy="142" r="12" fill="#003675"/><text x="54" y="146">3</text></g>
-                <g><circle cx="240" cy="90" r="12" fill="#3f9aae"/><text x="240" y="94">4</text></g>
-                <g><circle cx="70" cy="100" r="12" fill="#1c47d4"/><text x="70" y="104">5</text></g>
-              </g>
-              <g><circle cx="120" cy="118" r="13" fill="#1f8a5b" opacity=".15"/><circle cx="120" cy="118" r="5" fill="#1f8a5b" stroke="#fff" stroke-width="2"/></g>
-              <text x="132" y="122" font-size="10.5" font-weight="700" fill="#1f8a5b">우리 집</text>
-            </svg>
+            <div id="miniMapCanvas" class="hood-mini-map" aria-hidden="true"></div>
             <span class="zoom">크게 보기</span>
           </div>
           <div class="hood-foot">
@@ -205,18 +183,7 @@
             <span class="go">지도 열기 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg></span>
           </button>
         </div>
-        <div class="dash-tick">
-          <a class="tick" href="#participate">
-            <span class="tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5" stroke-linecap="round"></path><circle cx="12" cy="16.5" r="1" fill="currentColor"></circle></svg>마감 임박</span>
-            <span class="msg">미사강변 도시개발사업 3단계 환경영향평가서(초안) 주민공람 — 의견 제출 마감 3일 전</span>
-            <span class="date">~2026.08.03</span>
-          </a>
-          <div class="tick">
-            <span class="tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2"></rect><path d="M3.5 9.5h17M8 3v4M16 3v4"></path></svg>설명회</span>
-            <span class="msg">미사강변 도시개발사업 3단계 주민설명회 — 참가 신청 접수 중</span>
-            <span class="date">2026.07.21</span>
-          </div>
-        </div>
+        <div class="dash-tick" id="dashTick"></div>
       </div>
     </div>
 
@@ -244,65 +211,13 @@
     </section>
 
     <section class="section" id="participate">
-      <div class="wrap split">
+      <div class="wrap">
         <div class="reveal">
           <div class="panel-head">
-            <h3>진행 중인 초안 공람</h3>
-            <a href="#">전체보기 +</a>
+            <h3>의견을 낼 수 있는 초안 공람</h3>
+            <span id="openListNote" style="font-size:var(--fs-body-s);color:var(--ink-3);font-weight:600"></span>
           </div>
-          <div class="row-item">
-            <span class="dpill urgent">D-3</span>
-            <div class="row-body">
-              <p class="t">미사강변 도시개발사업 3단계 환경영향평가서(초안) 주민공람</p>
-              <p class="m">~2026.08.03 · 하남시청 환경정책과 · 주민 의견 <b>12</b>건</p>
-            </div>
-            <button class="btn btn--primary btn--sm btn--pill" type="button">의견 제출</button>
-          </div>
-          <div class="row-item">
-            <span class="dpill">D-8</span>
-            <div class="row-body">
-              <p class="t">▽▽물류단지 조성사업 소규모 환경영향평가서 공람</p>
-              <p class="m">~2026.08.08 · 하남시청 환경정책과 · 주민 의견 <b>3</b>건</p>
-            </div>
-            <button class="btn btn--primary btn--sm btn--pill" type="button">의견 제출</button>
-          </div>
-          <div class="row-item" style="border-bottom:0">
-            <span class="dpill done">종료</span>
-            <div class="row-body">
-              <p class="t">△△근린공원 조성사업 환경영향평가서 공람</p>
-              <p class="m">2026.06.02 종료 · 접수된 의견 <b>7</b>건 · 협의 완료</p>
-            </div>
-            <button class="btn btn--line btn--sm btn--pill" type="button">결과 보기</button>
-          </div>
-        </div>
-
-        <div class="reveal" data-delay="120">
-          <div class="panel-head">
-            <h3>예정 설명회·공청회</h3>
-            <a href="#">전체보기 +</a>
-          </div>
-          <div class="row-item">
-            <div class="ev-date"><p class="d">21</p><p class="ym">2026.07</p></div>
-            <div class="row-body">
-              <span class="badge badge--navy badge--dot">설명회</span>
-              <p class="t" style="margin-top:7px">미사강변 도시개발사업 3단계 주민설명회</p>
-              <p class="m">하남 문화예술회관 대강당 · 14:00–17:00 · 1.9km</p>
-            </div>
-          </div>
-          <div class="row-item" style="border-bottom:0">
-            <div class="ev-date"><p class="d">04</p><p class="ym">2026.08</p></div>
-            <div class="row-body">
-              <span class="badge badge--blue badge--dot">공청회</span>
-              <p class="t" style="margin-top:7px">▽▽물류단지 조성사업 환경영향평가 공청회</p>
-              <p class="m">하남시청 대회의실 · 14:00–16:30 · 3.2km</p>
-            </div>
-          </div>
-          <div style="margin-top:18px">
-            <button class="btn btn--line btn--block" type="button">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="16" rx="2"></rect><path d="M3.5 9.5h17M8 3v4M16 3v4"></path></svg>
-              내 캘린더에 일정 추가
-            </button>
-          </div>
+          <div id="openList"></div>
         </div>
       </div>
     </section>
@@ -315,7 +230,7 @@
         <div>
           <div class="brand-logo"><b>우리동네</b><span style="color:#fff">알리미</span></div>
           <p class="footer-addr">
-            <strong>운영</strong><span id="f-org">기후·에너지환경부 국립환경과학원</span><br>
+            <strong>운영</strong><span id="f-org">기후에너지환경부 국립환경과학원</span><br>
             <strong>문의</strong><span id="f-tel">032-560-xxxx</span> (평일 09:00–18:00)
           </p>
         </div>
@@ -326,7 +241,7 @@
             <button type="button" data-modal="m-guide">이용안내</button>
             <button type="button" data-modal="m-contact">문의</button>
           </div>
-          <p class="footer-copy">© 2026 기후·에너지환경부. 화면 시안이며 표시된 사업 정보는 실제 데이터가 아닙니다.</p>
+          <p class="footer-copy">© 2026 기후에너지환경부. 화면 시안이며 표시된 사업 정보는 실제 데이터가 아닙니다.</p>
         </div>
       </div>
     </div>
@@ -483,6 +398,54 @@
 </div>
 
 
+<!-- ══════════════════ 화면 4 · 지도 (전체화면) ══════════════════ -->
+<div class="screen" id="scr-map">
+  <div class="gis-top">
+    <button class="gis-back" type="button" id="btn-map-back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"></path></svg>
+      우리 동네로 돌아가기
+    </button>
+    <span class="gis-ttl">지도로 보는 개발사업</span>
+    <div class="gis-top-right">
+      <label class="gis-toggle">
+        <input type="checkbox" id="mapNearbyOnly">
+        <span>내 동네 반경 <b id="gis-radius">3</b>km만</span>
+      </label>
+    </div>
+  </div>
+
+  <div class="gis-body">
+    <aside class="gis-list" aria-label="내 동네 사업 목록">
+      <div class="gis-addr">
+        <p class="gis-addr-lb">내 동네 주소</p>
+        <div class="gis-addr-row">
+          <label class="skip" for="m-sido">시·도</label>
+          <select id="m-sido"></select>
+          <label class="skip" for="m-sgg">시·군·구</label>
+          <select id="m-sgg"></select>
+          <label class="skip" for="m-dong">읍·면·동</label>
+          <select id="m-dong"></select>
+        </div>
+        <button class="btn btn--primary btn--sm btn--block" type="button" id="btn-map-addr">
+          이 주소로 보기
+        </button>
+      </div>
+      <div id="gisList"></div>
+    </aside>
+    <div class="gis-map-wrap">
+      <div class="gis-map" id="gisMap"></div>
+      <div class="gis-legend">
+        <span><i class="lg lg--home"></i>우리 집</span>
+        <span><i class="lg lg--strat"></i>전략환경영향평가</span>
+        <span><i class="lg lg--main"></i>환경영향평가</span>
+        <span><i class="lg lg--circle"></i>반경</span>
+      </div>
+    </div>
+    <aside class="gis-detail" id="gisDetail" aria-label="선택한 사업 정보"></aside>
+  </div>
+</div>
+
+
 <!-- ══════════════════ 모달 ══════════════════ -->
 <div class="modal" id="m-guide" hidden role="dialog" aria-modal="true" aria-labelledby="m-guide-t">
   <div class="modal-bd" data-close></div>
@@ -527,7 +490,7 @@
     <div class="modal-bd-in">
       <p style="margin-bottom:16px">서비스 이용이나 표시된 정보에 대해 궁금한 점이 있으면 아래로 연락 주세요.</p>
       <div class="contact-card">
-        <div class="contact-row"><span class="k">기관</span><span class="v" id="c-org">기후·에너지환경부 국립환경과학원</span></div>
+        <div class="contact-row"><span class="k">기관</span><span class="v" id="c-org">기후에너지환경부 국립환경과학원</span></div>
         <div class="contact-row"><span class="k">담당자</span><span class="v" id="c-person">김동윤</span></div>
         <div class="contact-row"><span class="k">전화</span><span class="v" id="c-tel">032-560-xxxx</span></div>
         <div class="contact-row"><span class="k">운영시간</span><span class="v">평일 09:00–18:00 (점심 12:00–13:00)</span></div>
@@ -549,21 +512,6 @@
     </div>
     <div class="modal-bd-in" id="detailBody"></div>
     <div class="modal-ft"><button class="btn btn--line btn--sm" type="button" data-close>닫기</button></div>
-  </div>
-</div>
-
-<div class="modal" id="m-map" hidden role="dialog" aria-modal="true" aria-labelledby="m-map-t">
-  <div class="modal-bd" data-close></div>
-  <div class="modal-box wide">
-    <div class="modal-hd">
-      <h3 id="m-map-t">우리 동네 지도</h3>
-      <button class="modal-x" type="button" data-close aria-label="닫기">&times;</button>
-    </div>
-    <div class="mapbox" id="mapBox"></div>
-    <div class="modal-ft">
-      <button class="btn btn--line btn--sm" type="button" id="btn-map-admin">관리자 설정 열기</button>
-      <button class="btn btn--line btn--sm" type="button" data-close>닫기</button>
-    </div>
   </div>
 </div>
 

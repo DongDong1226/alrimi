@@ -11,7 +11,10 @@ data/projects.json 을 만드는 스크립트.
   2. 상세 페이지에서 사업위치(주소)·협의기관 담당자·첨부파일 목록을 얻는다.
   3. 첨부파일 중 "요약문"이 들어간 파일을 찾아 내려받고 PDF에서 글자만 뽑는다.
   4. VWorld 지오코딩으로 주소를 위경도로 바꾼다. (VWORLD_KEY 필요)
-  5. 뽑은 글자를 Anthropic API로 보내 주민이 읽기 쉬운 요약을 받는다. (ANTHROPIC_API_KEY 필요)
+  5. 뽑은 글자를 Anthropic API로 보내, 정해진 항목 틀(EIA_FIELDS)에 맞춘
+     "환경영향분석"을 받는다. 요약문에 없는 항목은 비워 둔다. (ANTHROPIC_API_KEY 필요)
+
+첫 화면의 동네 드롭다운에 쓰는 전국 행정구역 목록은 tools/build_regions.py 가 따로 만든다.
 
 키가 없으면 해당 단계만 건너뛰고 나머지는 정상적으로 만든다.
 API 키는 코드에 직접 적지 말고, 이 파일과 같은 폴더가 아니라
@@ -320,42 +323,77 @@ def geocode_address(address, vworld_key):
 
 
 # ============================================================
-# 5) LLM 요약 — 어려운 평가서 요약문을 주민이 읽을 말로 바꾸기
+# 5) 환경영향분석 — 평가서 요약문을 정해진 항목 틀에 맞춰 쉬운 말로 옮긴다.
+#    항목을 고정해 두면 "원문에 없는 얘기"가 슬쩍 들어가는 것을 막을 수 있고,
+#    사업마다 같은 형식으로 비교해 볼 수 있다.
+#    (화면의 assets/app.js 의 EIA_FIELDS 와 키가 같아야 한다)
 # ============================================================
-def summarize_easy(name, address, raw_text, anthropic_key):
+EIA_FIELDS = [
+    ("overview", "어떤 사업인가 — 무엇을 어디에 얼마나 만드는지"),
+    ("air", "공기·먼지·냄새에 대한 영향"),
+    ("noise", "소음·진동에 대한 영향"),
+    ("water", "물(수질·지하수·하천)에 대한 영향"),
+    ("nature", "동식물·생태(숲, 서식지, 보호종 등)에 대한 영향"),
+    ("land", "토양·경관(토양 오염, 지형 변경, 산림 훼손, 경관 변화)에 대한 영향"),
+    ("waste", "폐기물에 대한 영향"),
+    ("etc", "위 항목에 안 들어가지만 주민 생활에 영향을 주는 내용"),
+]
+
+
+def analyze_environment(name, address, raw_text, anthropic_key):
+    """요약문 원문에서 항목별로 뽑아 쉬운 말로 옮긴 dict 를 돌려준다.
+    원문에 해당 내용이 없으면 그 항목은 None 으로 남긴다."""
     if not anthropic_key or not raw_text:
         return None
     import anthropic
 
+    field_lines = "\n".join(f'  "{k}": {desc}' for k, desc in EIA_FIELDS)
     client = anthropic.Anthropic(api_key=anthropic_key)
     prompt = (
-        "너는 환경영향평가 요약문 원문을 '번역'하는 사람이야. 어려운 말을 쉬운 말로\n"
-        "바꿔 전달하는 것만 하고, 새로운 내용을 만들거나 판단을 더하면 절대 안 돼.\n\n"
-        "지켜야 할 규칙 (매우 중요):\n"
-        "1. 아래 원문에 실제로 적힌 내용만 써라. 원문에 없는 숫자, 영향, 결론, 추측을\n"
-        "   지어내지 마라. 네가 아는 일반 지식으로 내용을 보충하지 마라.\n"
-        "2. 각 문장은 원문의 특정 부분을 쉬운 말로 바꿔 쓴 것이어야 한다. 원문에\n"
-        "   없는 카테고리(예: 원문에 소음 얘기가 없으면 소음 얘기를 쓰지 마라)는\n"
-        "   다루지 마라.\n"
-        "3. 사업이 좋다/나쁘다 판단하거나, 홍보하거나, 걱정할 필요 없다는 식의\n"
-        "   너의 의견을 넣지 마라. 원문에 적힌 사실만 전달해라.\n"
-        "4. 원문에 근거가 부족해서 확실하지 않은 부분은 없다고 하지 말고 아예\n"
-        "   언급하지 말아라.\n"
-        "5. 전문용어는 쉬운 말로 풀어 쓰고, 문장은 짧게. 3~6문장 정도로.\n\n"
+        "너는 환경영향평가서 요약문을 주민이 읽을 수 있는 말로 '옮기는' 사람이야.\n"
+        "요약문에 적힌 내용을 쉬운 말로 바꾸는 것만 하고, 없는 내용을 만들거나\n"
+        "좋다/나쁘다 판단을 더하면 절대 안 된다.\n\n"
+        "== 반드시 지킬 것 ==\n"
+        "1. 아래 요약문 원문에 실제로 적힌 내용만 쓴다. 원문에 없는 숫자·영향·결론을\n"
+        "   지어내지 마라. 네가 아는 일반 지식으로 채우지 마라.\n"
+        "2. 어떤 항목에 대한 내용이 원문에 없으면 그 항목 값은 반드시 null 로 둬라.\n"
+        "   '언급 없음' 같은 문장을 쓰지 말고 null 을 넣어라. 억지로 채우지 마라.\n"
+        "3. 사업을 홍보하거나, 걱정할 필요 없다는 식의 의견을 넣지 마라.\n"
+        "   원문에 저감 대책이 적혀 있으면 '~하기로 되어 있다'처럼 사실로만 전달해라.\n"
+        "4. 전문용어는 풀어 쓴다. 한 항목은 1~3문장, 짧게.\n"
+        "5. 마크다운 기호(#, *, - 등)를 쓰지 말고 평범한 문장으로만 써라.\n\n"
+        "== 출력 형식 ==\n"
+        "설명이나 인사말 없이, 아래 키를 가진 JSON 객체 하나만 출력해라.\n"
+        "각 값은 쉬운 말 문장(문자열) 또는 null 이다.\n"
+        "{\n" + field_lines + "\n}\n\n"
         f"사업명: {name}\n"
         f"위치: {address or '정보 없음'}\n\n"
         "요약문 원문(이 안에 있는 내용만 사용할 것):\n"
-        f"{raw_text[:6000]}\n"
+        f"{raw_text[:12000]}\n"
     )
     try:
         msg = client.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=800,
+            max_tokens=2000,
             messages=[{"role": "user", "content": prompt}],
         )
-        return "".join(block.text for block in msg.content if block.type == "text").strip()
+        text = "".join(b.text for b in msg.content if b.type == "text").strip()
+        # 혹시 ```json 같은 감싸는 표시가 붙어 오면 떼어낸다.
+        if text.startswith("```"):
+            text = re.sub(r"^```[a-zA-Z]*\s*|\s*```$", "", text).strip()
+        start, end = text.find("{"), text.rfind("}")
+        if start == -1 or end == -1:
+            log(f"    [환경영향분석 형식 오류] {name}")
+            return None
+        parsed = json.loads(text[start:end + 1])
+
+        result = {}
+        for key, _ in EIA_FIELDS:
+            v = parsed.get(key)
+            result[key] = v.strip() if isinstance(v, str) and v.strip() else None
+        return result
     except Exception as e:
-        log(f"    [LLM 요약 오류] {name}: {e}")
+        log(f"    [환경영향분석 오류] {name}: {e}")
         return None
 
 
@@ -405,9 +443,12 @@ def build(args):
             if not args.skip_geocode:
                 lat, lon = geocode_address(detail["address"], vworld_key)
 
-            easy_summary = None
+            analysis = None
             if raw_text:
-                easy_summary = summarize_easy(it["name"], detail["address"], raw_text, anthropic_key)
+                analysis = analyze_environment(it["name"], detail["address"], raw_text, anthropic_key)
+                if analysis:
+                    filled = sum(1 for v in analysis.values() if v)
+                    log(f"    환경영향분석 {filled}/{len(EIA_FIELDS)}개 항목 채움")
 
             all_projects.append({
                 "id": f"{it['biz_cd']}-{it['biz_seq']}",
@@ -422,7 +463,13 @@ def build(args):
                 "periodStart": it["period_start"],
                 "periodEnd": it["period_end"],
                 "summaryFileSeq": summary_file["file_seq"] if summary_file else None,
-                "summaryEasy": easy_summary,
+                "analysis": analysis,
+                # 화면에서 "EIASS 원문 보기" 링크를 만들 때 그대로 쓴다.
+                # (EIASS 상세페이지는 GET 링크가 아니라 이 값들을 넣어 POST로 열어야 한다.)
+                "sourceBizCd": it["biz_cd"],
+                "sourceBizSeq": it["biz_seq"],
+                "sourceStepCd": it["step_cd"],
+                "sourceViewPath": cat["view_path"],
             })
 
     os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
