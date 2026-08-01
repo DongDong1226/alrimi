@@ -598,16 +598,26 @@ def analyze_environment(name, address, raw_text, anthropic_key):
     try:
         msg = client.messages.create(
             model="claude-haiku-4-5-20251001",
-            max_tokens=2000,
+            # 항목 8개를 한글로 채우면 응답이 길다. 2000 으로 두면 긴 사업에서
+            # JSON 이 중간에 잘려 통째로 버려진다(36건 중 5건이 그랬다). 넉넉히 준다.
+            max_tokens=6000,
             messages=[{"role": "user", "content": prompt}],
         )
         text = "".join(b.text for b in msg.content if b.type == "text").strip()
+
+        # 답이 길이 제한에 걸려 잘렸으면 JSON 이 깨진다. 왜 실패했는지 남긴다.
+        if msg.stop_reason == "max_tokens":
+            log(f"    [환경영향분석 잘림] {name} — 응답이 길이 제한에 걸렸습니다 "
+                f"(출력 {msg.usage.output_tokens} 토큰). max_tokens 를 늘려야 합니다.")
+            return None
+
         # 혹시 ```json 같은 감싸는 표시가 붙어 오면 떼어낸다.
         if text.startswith("```"):
             text = re.sub(r"^```[a-zA-Z]*\s*|\s*```$", "", text).strip()
         start, end = text.find("{"), text.rfind("}")
         if start == -1 or end == -1:
-            log(f"    [환경영향분석 형식 오류] {name}")
+            log(f"    [환경영향분석 형식 오류] {name} "
+                f"(끝난 이유: {msg.stop_reason}, 출력 {msg.usage.output_tokens} 토큰)")
             return None
         parsed = json.loads(text[start:end + 1])
 
@@ -702,6 +712,13 @@ def build(args):
             project_id = f"{it['biz_cd']}-{it['biz_seq']}"
 
             cached = existing.get(project_id)
+
+            # --retry-analysis: AI 해석이 비어 있는 사업만 골라 다시 받는다.
+            # (응답이 잘리거나 형식이 깨져 실패했던 것들. 전체를 다시 받을 필요는 없다)
+            if cached and args.retry_analysis and not cached.get("analysis"):
+                log(f"  ! {it['name']} (해석이 비어 있어 다시 받습니다)")
+                cached = None
+
             if cached:
                 log(f"  = {it['name']} (이미 받아 둠)")
                 all_projects.append(
@@ -835,8 +852,27 @@ def main():
     parser.add_argument("--full", action="store_true",
                         help="이미 받아 둔 결과를 무시하고 전부 다시 받는다 "
                              "(EIA_FIELDS 를 바꿨을 때는 반드시 이걸로 돌려야 한다)")
+    parser.add_argument("--retry-analysis", action="store_true",
+                        help="AI 해석이 비어 있는 사업만 골라 다시 받는다 "
+                             "(전체를 다시 받지 않으므로 비용이 적다)")
     args = parser.parse_args()
-    build(args)
+
+    try:
+        build(args)
+    except requests.exceptions.RequestException as e:
+        # 인터넷 문제는 파이썬 오류 메시지가 길고 알아보기 어렵다.
+        # 무엇이 안 됐고 다음에 뭘 봐야 하는지 사람 말로 알려 준다.
+        log("")
+        log("=" * 62)
+        log(f"[중단] 인터넷 연결 문제로 멈췄습니다 — {type(e).__name__}")
+        log(f"       {e}")
+        log("")
+        log("  EIASS 또는 VWorld 에 닿지 못했습니다.")
+        log("  GitHub Actions 에서 났다면 해외 IP 차단일 수 있습니다.")
+        log("  docs/SETUP.md 의 '6단계 — EIASS가 막혔다면' 을 보세요.")
+        log("=" * 62)
+        return 1
+    return 0
 
 
 if __name__ == "__main__":

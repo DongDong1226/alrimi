@@ -46,11 +46,15 @@ python tools/build_data.py --limit 6
 | 의견 제출 → EIASS 안내 후 이동 | 동작 |
 | 공람 기간 지난 사업 제외 + AI 해석 차단 | 동작 |
 
-### 현재 데이터 (`data/projects.json`, git 제외)
+### 현재 데이터 (`data/projects.json`, **이제 git에 포함**)
 
-- 생성일 2026-07-31, **12건** (`--limit 6`으로 받은 것 — 전국 전체가 아니다)
-- AI 해석 11건 / 좌표 11건 / 노선 도형 1건
-- 선형 2건, 면형 4건, 유형 표시 없음 6건(환경영향평가는 EIASS에 표시가 없음)
+- 생성일 2026-08-01, **전국 전건 36건** (전략 23 + 환경 13)
+- AI 해석 30건 / 좌표 34건 / 노선 도형 4건
+- **AI 해석 6건이 비어 있다.** 응답이 `max_tokens=2000`에 걸려 JSON이 잘렸다.
+  6000으로 올려 고쳤고, 아래 명령으로 그 6건만 다시 받으면 된다 (약 $0.15):
+  ```
+  python tools/build_data.py --retry-analysis
+  ```
 
 ### 2026-08-01 점검에서 고친 것
 
@@ -94,6 +98,16 @@ python tools/build_data.py --limit 6
 공람 끝난 사업은 마지막 필터에서 자동으로 빠진다. 좌표는 공짜라 못 찾았으면 다시 시도하고,
 **AI 해석은 다시 하지 않는다**(매일 돈이 나가므로). 전부 다시 받으려면 `--full`.
 샌드박스 테스트로 검증: 새 사업 1건만 상세조회 · 공람종료 1건 제외 · 기존 AI 해석 보존.
+
+### 같은 날, 네 번째 묶음 (자동화 실전 + 버그 3건)
+
+| 무엇 | 내용 |
+|---|---|
+| **EIASS 해외 IP 차단 확인** | GitHub Actions에서 `ConnectTimeout`. 수집은 한국 PC에서만 가능. `collect.yml` 자동 실행 끔 |
+| **`run_daily.bat` 재작성** | 수집 → 커밋 → 푸시까지 한 번에. 푸시하면 `deploy.yml`이 배포 |
+| **배치 `ERRORLEVEL` 버그** | `git diff --quiet`가 남긴 errorlevel 1을 `echo`가 지우지 않아 멀쩡한 실행이 "커밋 실패"로 끝났다. 명령마다 `%ERRORLEVEL%`을 바로 확인하도록 고침. 변경 있음/없음 두 경로 다 검증 |
+| **AI 응답 잘림** | `max_tokens=2000`이 한글 8항목에 모자라 36건 중 5건의 JSON이 잘렸다. 6000으로 올리고, 잘렸을 때 `stop_reason`·출력토큰을 로그에 남기게 함 |
+| **`--retry-analysis` 추가** | 해석이 빈 사업만 골라 다시 받는다. 6건만 겨냥하는 것 검증 완료 |
 
 **배포 시 키 주입**: 저장소가 공개라 VWorld 키를 커밋할 수 없다. `assets/config.js`를
 빈 채로 커밋해 두고, `deploy.yml`이 **올리기 직전에만** Secret 값으로 덮어쓴다. git 이력에 안 남는다.
@@ -153,11 +167,18 @@ CLAUDE.md에 규칙으로 적혀 있지만, **왜 그렇게 정했는지**를 �
 | `.env` | API 키 | **제외** |
 | `.env.example` | 키 양식 | 포함 |
 | `.claude/launch.json` | 로컬 서버 설정 | 포함 |
+| `docs/SETUP.md` | 배포 설정 설명서 (처음 한 번 따라 하는 것) | 포함 |
+| `.github/workflows/*.yml` | 매일 수집 + 사이트 배포 | 포함 |
+| `requirements.txt` | 파이썬 패키지 목록 | 포함 |
+| `assets/config.js` | 배포 때 VWorld 키가 채워지는 자리 (빈 채로 커밋) | 포함 |
 | `docs/reference/*.txt` | 최초 화면 시안, EIASS 원본 CSS | 포함 |
 
 ---
 
 ## 4-1. GitHub Actions 자동화 — 켜는 순서
+
+> **처음 켜는 사람은 `docs/SETUP.md`를 본다.** 클릭 하나하나까지 적어 둔 설명서다.
+> 아래는 요약이다.
 
 **아직 안 켰다.** 파일은 다 만들어 뒀고, 아래 4단계를 사람이 해야 켜진다.
 
@@ -165,10 +186,15 @@ CLAUDE.md에 규칙으로 적혀 있지만, **왜 그렇게 정했는지**를 �
 > 작업 실행기다. 결과 파일을 저장소에 커밋하면 GitHub Pages가 그걸 방문자에게 전달한다.
 > 항상 떠 있는 서버는 없고, 이 서비스에는 필요하지도 않다.
 
-### 1) VWorld 키를 배포 주소로 다시 발급
-vworld.kr → 오픈API → 인증키 발급에서 **서비스 URL을 `https://dongdong1226.github.io`** 로 등록한다.
-이 키는 페이지 소스에 보이게 되므로, **지금 `.env`에 있는 키를 그대로 쓰지 말고 새로 발급받아** 도메인 제한을 건다.
-(도메인 제한이 있으면 등록한 주소 밖에서는 작동하지 않는다. 모든 VWorld 웹지도가 이 방식이다.)
+### 1) VWorld 키를 배포 주소로 새로 발급
+vworld.kr 신청서의 **`서비스URL` 칸이 곧 도메인 제한이다** (별도 항목은 없다).
+거기에 `https://dongdong1226.github.io/alrimi/` 를 넣는다.
+
+**지금 `.env`의 키는 `http://localhost:8000` 으로 등록돼 있어 배포 사이트에서 안 먹는다.**
+그래서 새 키가 필요하다 — 보안 때문이 아니라 안 그러면 지도가 안 뜨기 때문이다.
+기존 localhost 키는 `.env`에 그대로 두고 내 컴퓨터용으로 계속 쓴다 (키 2개 운영).
+
+활용API는 **2D 지도 / WMTS·TMS / 2D데이터 / 지오코더** 네 개를 고른다.
 
 ### 2) 저장소 Secrets 등록
 `Settings → Secrets and variables → Actions → New repository secret`
@@ -178,7 +204,8 @@ vworld.kr → 오픈API → 인증키 발급에서 **서비스 URL을 `https://d
 | `VWORLD_KEY` | 1)에서 새로 받은 키 |
 | `ANTHROPIC_API_KEY` | `.env`에 있는 것과 같은 키 |
 
-같은 화면 **Variables** 탭에 `VWORLD_DOMAIN` = `https://dongdong1226.github.io` 도 넣는다.
+같은 화면 **Variables** 탭에 `VWORLD_DOMAIN` = `https://dongdong1226.github.io/alrimi/` 도 넣는다.
+**1)의 서비스URL과 글자 하나까지 같아야 한다** (다르면 하천 조회가 `INCORRECT_KEY`).
 
 > **ANTHROPIC_API_KEY는 브라우저로 절대 가지 않는다.** 파이썬이 GitHub 서버 안에서만 쓴다.
 
@@ -187,7 +214,24 @@ vworld.kr → 오픈API → 인증키 발급에서 **서비스 URL을 `https://d
 (브랜치 배포가 아니라 Actions가 만든 결과물을 올리는 방식. 그래야 VWorld 키를
 git에 커밋하지 않고 배포할 때만 심을 수 있다.)
 
-### 4) 손으로 한 번 돌려서 확인 — **이게 제일 중요하다**
+### ⚠️ 4)는 실패로 끝났다 — 결론이 나왔다
+
+**EIASS가 GitHub 서버(미국)를 막는다.** 2026-08-01 확인:
+
+```
+requests.exceptions.ConnectTimeout
+  Connection to www.eiass.go.kr timed out. (connect timeout=20)
+```
+
+DNS는 풀리는데 TCP 연결이 무응답 = 거부(403)가 아니라 차단. 우회 불가.
+
+**확정된 방식:** 수집은 내 PC(`tools/run_daily.bat` + 작업 스케줄러),
+배포는 GitHub Actions(`deploy.yml`, 푸시하면 자동). 배포는 이미 성공을 확인했다.
+`collect.yml`은 지우지 않고 **자동 실행만 껐다**(매일 실패 알림이 오면 안 되므로).
+
+아래 4)~5)는 나중에 차단이 풀렸을 때를 위해 남겨 둔다.
+
+### 4) 손으로 한 번 돌려서 확인 — (지금은 실패한다)
 `Actions → EIASS 공람 자료 수집 → Run workflow` 에서 **limit을 3으로** 넣고 실행한다.
 
 **확인할 것: EIASS가 GitHub의 해외 IP를 막지 않는지.**
