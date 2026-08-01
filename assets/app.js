@@ -3,12 +3,15 @@
    이 값들은 관리자 화면에서 덮어쓸 수 있고, 덮어쓴 값은
    localStorage 에 저장되어 다음 방문 때 우선 적용됩니다.
    ============================================================ */
-/* 배포할 때 assets/config.js 에 채워지는 값. 내 PC 에서 열면 비어 있다. */
+/* 배포할 때 assets/config.js 에 채워지는 값. 내 PC 에서 열면 비어 있다.
+   키 앞뒤 공백은 반드시 걷어낸다 — 공백이 하나만 붙어도 VWorld 지오코더가
+   INVALID_KEY 로 거부한다(지도 타일은 그대로 나와서 원인을 찾기 어렵다). */
 const BUILD = window.WDN_CONFIG || {};
+const BUILD_VWORLD_KEY = String(BUILD.vworldKey || "").trim();
 
 const DEFAULTS = {
   adminPw: "admin1234",
-  vworldKey: BUILD.vworldKey || "",
+  vworldKey: BUILD_VWORLD_KEY,
   serviceUrl: "http://localhost:8000",
   centerLon: "127.1946",
   centerLat: "37.5636",
@@ -43,9 +46,9 @@ function lsSet(k, v){
 
 let S = Object.assign({}, DEFAULTS, lsGet(LSKEY, {}));
 
-/* 예전에 이 브라우저에서 키를 비운 채로 저장했더라도,
-   배포에 심어 둔 키가 있으면 그걸 쓴다. (안 그러면 방문자에게 지도가 안 보인다) */
-if(!S.vworldKey) S.vworldKey = DEFAULTS.vworldKey;
+/* 저장해 둔 키에 공백이 섞여 있으면 걷어낸다. 비어 있으면 배포에 심어 둔 키를 쓴다.
+   (안 그러면 방문자에게 지도가 안 보인다) */
+S.vworldKey = String(S.vworldKey || "").trim() || BUILD_VWORLD_KEY;
 
 const $  = s => document.querySelector(s);
 const $$ = s => Array.from(document.querySelectorAll(s));

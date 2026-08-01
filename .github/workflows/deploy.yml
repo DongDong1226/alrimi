@@ -61,12 +61,19 @@ jobs:
           # 키를 로그에 찍지 않도록 파이썬으로 조용히 써 넣는다.
           python - <<'PY'
           import json, os
-          key = os.environ["VWORLD_KEY"]
+          raw = os.environ["VWORLD_KEY"]
+          key = raw.strip()
+          # Secret 에 붙여넣을 때 앞뒤로 공백이나 줄바꿈이 섞이는 일이 흔하다.
+          # 그러면 지도 타일은 되는데 지오코더만 INVALID_KEY 로 거부되어(2026-08-01 겪음)
+          # 원인을 찾기가 아주 어렵다. 여기서 확실히 걷어낸다.
+          if key != raw:
+              print(f"::warning::VWORLD_KEY 앞뒤에 공백이 있어 걷어냈습니다 "
+                    f"({len(raw)}자 -> {len(key)}자). Secret 을 고쳐 두는 편이 좋습니다.")
           with open("_site/assets/config.js", "w", encoding="utf-8") as f:
               f.write("/* 배포할 때 자동으로 채워진 값 — 직접 고치지 마세요. */\n")
               f.write("window.WDN_CONFIG = %s;\n"
                       % json.dumps({"vworldKey": key}, ensure_ascii=False))
-          print("VWorld 키를 심었습니다. (도메인 제한이 걸린 키여야 합니다)")
+          print(f"VWorld 키를 심었습니다 ({len(key)}자). 도메인 제한이 걸린 키여야 합니다.")
           PY
 
       - name: 데이터 확인

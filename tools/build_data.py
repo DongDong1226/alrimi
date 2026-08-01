@@ -680,9 +680,11 @@ def refresh_cached(cached, item, vworld_key, skip_geocode):
 # ============================================================
 def build(args):
     today = datetime.date.today()
-    vworld_key = os.environ.get("VWORLD_KEY", "")
-    vworld_domain = os.environ.get("VWORLD_DOMAIN", "http://localhost:8000")
-    anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "")
+    # .env 나 Secret 에 붙여넣을 때 앞뒤 공백·줄바꿈이 섞이는 일이 흔하다.
+    # 공백이 하나만 붙어도 VWorld 가 INVALID_KEY 로 거부하므로 반드시 걷어낸다.
+    vworld_key = os.environ.get("VWORLD_KEY", "").strip()
+    vworld_domain = os.environ.get("VWORLD_DOMAIN", "http://localhost:8000").strip()
+    anthropic_key = os.environ.get("ANTHROPIC_API_KEY", "").strip()
 
     if not args.skip_geocode and not vworld_key:
         log("[안내] VWORLD_KEY 환경변수가 없어서 위치 좌표(위경도)는 비워둡니다.")
