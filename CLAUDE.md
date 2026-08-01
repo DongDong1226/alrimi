@@ -7,7 +7,8 @@
 - 사용자: 개발사업 관련 지식이 없는 일반 주민 한 명
 - 이 프로젝트를 만드는 팀: 2~3명, 코딩 경험 거의 없음
 - 목표: 9월 데모에서 실제로 돌아가는 화면
-- 저장소: `DongDong1226/alrimi` (비공개). 커밋·푸시는 사람이 GitHub Desktop에서 직접 한다.
+- 저장소: `DongDong1226/alrimi` (**공개**). 커밋·푸시는 사람이 GitHub Desktop에서 직접 한다.
+- 배포: https://dongdong1226.github.io/alrimi/ — 푸시하면 자동으로 다시 올라간다.
 
 > **작업을 시작하기 전에 `docs/HANDOFF.md`를 읽는다.**
 > 이 문서(CLAUDE.md)는 *바뀌지 않는 규칙과 구조*를 담고,
@@ -34,9 +35,11 @@
 
 4. **API 키를 프론트엔드 코드에 넣지 않는다.**
    AI 해석은 파이썬으로 미리 생성해 `data/projects.json`에 넣어둔다.
-   Anthropic 키는 절대 브라우저로 가면 안 된다.
-   VWorld 키는 지도 타일·지오코딩에 필요해 관리자 화면에서 넣고 브라우저에 저장된다
-   (도메인 제한이 걸린 키만 쓴다).
+   **Anthropic 키는 절대 브라우저로 가면 안 된다.** GitHub Secret 에만 두고 파이썬이 쓴다.
+   VWorld 키는 지도 타일·지오코딩에 브라우저가 직접 써야 해서 예외다.
+   저장소가 공개라 **커밋하지 않고**, `deploy.yml`이 배포 직전에만 `assets/config.js`에 심는다.
+   **서비스URL(도메인)이 배포 주소로 등록된 키만** 쓴다.
+   키 앞뒤 공백은 세 곳(`deploy.yml`·`app.js`·`build_data.py`)에서 걷어낸다 — 아래 함정 참고.
 
 5. **디자인 방향을 임의로 바꾸지 않는다.**
    "이게 더 예쁠 것 같아서" 팔레트나 레이아웃을 갈아엎지 않는다.
@@ -74,19 +77,27 @@
 ## 파일 구조
 
 ```
-index.html              화면 4개(동네 설정 / 우리 동네 홈 / 관리자 / 지도) + 모달
-assets/tokens.css       디자인 토큰 (EIASS 원본, --dscale 만 0.7로 조정)
-assets/app.css          컴포넌트 스타일
-assets/app.js           모든 화면 동작
-data/projects.json      수집 결과 (git 제외 — 스크립트로 다시 만든다)
-data/regions.json       전국 행정구역 목록 (git 포함 — 자주 안 바뀜)
-data/routes.json        관리자가 직접 그린 노선 (git 포함, 없어도 정상)
-tools/build_data.py     EIASS 수집 → projects.json 생성
-tools/build_regions.py  VWorld → regions.json 생성
-tools/run_daily.bat     작업 스케줄러용 실행 파일
-.env                    API 키 (git 제외). .env.example 참고
-docs/reference/         최초 화면 시안과 EIASS 원본 CSS
+index.html                     화면 4개(동네 설정 / 우리 동네 홈 / 관리자 / 지도) + 모달 5개
+assets/tokens.css              디자인 토큰 (EIASS 원본, --dscale 만 0.7로 조정)
+assets/app.css                 컴포넌트 스타일
+assets/app.js                  모든 화면 동작
+assets/config.js               배포 때 VWorld 키가 채워지는 자리 (빈 채로 커밋)
+data/projects.json             수집 결과 (git 포함 — 배포 사이트가 이 파일을 읽는다)
+data/regions.json              전국 행정구역 목록 (git 포함 — 자주 안 바뀜)
+data/routes.json               관리자가 직접 그린 노선 (git 포함, 없어도 정상)
+tools/build_data.py            EIASS 수집 → projects.json 생성
+tools/build_regions.py         VWorld → regions.json 생성
+tools/run_daily.bat            매일 수집 → 커밋 → 푸시 (작업 스케줄러용, 반드시 CRLF)
+.github/workflows/deploy.yml   푸시하면 사이트 배포. 이때만 VWorld 키를 심는다
+.github/workflows/collect.yml  수집용 — EIASS 해외 IP 차단으로 자동 실행 꺼 둠
+.gitattributes                 *.bat 를 CRLF 로 고정
+requirements.txt               파이썬 패키지 목록
+.env                           API 키 (git 제외). .env.example 참고
+docs/SETUP.md                  배포 설정 설명서 (처음 한 번 따라 하는 것)
+docs/reference/                최초 화면 시안과 EIASS 원본 CSS
 ```
+
+**배포**: https://dongdong1226.github.io/alrimi/ (GitHub Pages, Source = GitHub Actions)
 
 ---
 
@@ -186,6 +197,20 @@ AI는 **번역만** 한다. 분석·판단·보충을 하지 않는다.
 `.env`에 넣는다. VWorld 데이터 API는 **`domain` 파라미터**(발급 때 등록한 서비스 URL)가
 없으면 `INCORRECT_KEY`가 난다. `VWORLD_DOMAIN`으로 바꿀 수 있다(기본 `http://localhost:8000`).
 
+**VWorld 키는 두 개를 나눠 쓴다:**
+
+| 어디 | 서비스URL | 어디에 두나 |
+|---|---|---|
+| 내 PC 수집 | `http://localhost:8000` | `.env` |
+| 배포 사이트 | `https://dongdong1226.github.io/alrimi/` | GitHub Secret `VWORLD_KEY` |
+
+활용API는 **2D 지도 / WMTS·TMS / 2D데이터 / 지오코더** 네 개를 모두 체크해야 한다.
+
+> **함정 — 키 앞뒤 공백.** 공백이 한 칸만 붙어도 VWorld가 `INVALID_KEY`로 거부한다.
+> 그런데 **지도 타일(WMTS)은 멀쩡히 나오고 지오코더만 막힌다** (타일은 키가 URL 경로에,
+> 지오코더는 질의 파라미터에 들어가기 때문). 원인을 찾기 아주 어렵다 — 2026-08-01에 겪었다.
+> **키가 거부되면 값을 의심하기 전에 길이부터 세어 본다.**
+
 ### 실행
 
 ```bash
@@ -280,3 +305,5 @@ EIASS에 없는 정보는 화면에 만들어 넣지 않는다.
 - **도로·철도 선형 사업의 노선**: 자동으로는 못 한다. 관리자가 직접 그리는 방식
 - **사업 구간만 잘라낸 하천 노선**: 지금은 하천 전체가 나온다
 - 공람 마감 알림(캘린더 .ics), 읍면동 경계 표시, 사후환경영향조사 추가
+
+> **지금 당장 할 일은 `docs/HANDOFF.md` §2 에 있다.** 이 목록은 큰 방향만 적는다.
