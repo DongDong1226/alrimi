@@ -158,12 +158,48 @@ function normalizeProject(p){
   };
 }
 
-/* 우리 집 좌표가 바뀌면 모든 사업의 거리를 다시 계산한다. */
+/* 노선 도형의 좌표를 [[위도,경도], ...] 한 줄로 펴서 돌려준다.
+   (GeoJSON 은 [경도,위도] 순서라 뒤집는다) */
+function routePointsOf(p){
+  const r = (typeof routeOf === "function") ? routeOf(p) : null;
+  const out = [];
+  if(!r) return out;
+  const walk = c => {
+    if(!Array.isArray(c)) return;
+    if(typeof c[0] === "number"){ out.push([c[1], c[0]]); return; }
+    c.forEach(walk);
+  };
+  r.geoms.forEach(g => walk(g && g.coordinates));
+  return out;
+}
+
+/* 우리 집 좌표가 바뀌면 모든 사업의 거리를 다시 계산한다.
+   선형 사업(하천·도로)은 **대표 주소가 노선에서 아주 멀 수 있다.**
+   실제로 한강 고양권역 하천사업은 주소가 파주시라 계양구에서 22.9km 로 나오지만,
+   하천 노선은 4.1km 앞을 지난다. 주소만 보면 "우리 동네 사업"에서 빠진다.
+   그래서 노선까지의 최단 거리도 따로 재고, 둘 중 가까운 쪽을 기준으로 삼는다. */
 function recomputeDistances(){
   PROJECTS.forEach(p => {
     p.dist = (p.lat != null && p.lon != null)
       ? haversineKm(HOME.lat, HOME.lon, p.lat, p.lon) : null;
+
+    let best = null;
+    routePointsOf(p).forEach(([la, lo]) => {
+      const d = haversineKm(HOME.lat, HOME.lon, la, lo);
+      if(best === null || d < best) best = d;
+    });
+    p.routeDist = best;
+
+    const both = [p.dist, p.routeDist].filter(v => v != null);
+    p.nearDist = both.length ? Math.min(...both) : null;
   });
+}
+
+/* 화면에 쓸 거리 문구. 노선 쪽이 더 가까우면 그렇다고 밝힌다. */
+function distText(p){
+  if(p.nearDist == null) return null;
+  const viaRoute = p.routeDist != null && (p.dist == null || p.routeDist < p.dist - 0.05);
+  return `${p.nearDist.toFixed(1)}km${viaRoute ? " (노선 기준)" : ""}`;
 }
 
 async function loadProjects(){
@@ -538,8 +574,10 @@ addEventListener("keydown", e => {
 let homeNearbyOnly = true;   // 홈 화면 사업 목록 (true = 우리 집 반경, false = 전국)
 let mapNearbyOnly = false;   // 지도 화면
 
+/* 반경 안인지 판단할 때는 '주소까지'가 아니라 '주소 또는 노선 중 가까운 쪽'을 쓴다.
+   (노선이 우리 집 앞을 지나는데 주소가 멀다고 빼면 안 된다) */
 function isNearby(p){
-  return p.dist != null && p.dist <= S.radiusKm;
+  return p.nearDist != null && p.nearDist <= S.radiusKm;
 }
 function nearbyProjects(){ return PROJECTS.filter(isNearby); }
 
@@ -1031,7 +1069,7 @@ function updateDashboardStats(){
 /* 내 동네 카드 아래 숫자 세 개.
    EIASS에서 오지 않는 값(주민 의견 수 등)은 넣지 않고, 수집한 것만 계산해 보여준다. */
 function renderHoodFoot(){
-  const dists = PROJECTS.map(p => p.dist).filter(d => d != null);
+  const dists = PROJECTS.map(p => p.nearDist).filter(d => d != null);
   $("#v-nearest").innerHTML = dists.length
     ? `${Math.min(...dists).toFixed(1)}<small>km</small>` : "—";
 
@@ -1071,10 +1109,10 @@ function visibleProjects(){
   }
   rows.sort((a, b) => {
     if(sortBy === "dist"){
-      if(a.dist == null && b.dist == null) return 0;
-      if(a.dist == null) return 1;
-      if(b.dist == null) return -1;
-      return a.dist - b.dist;
+      if(a.nearDist == null && b.nearDist == null) return 0;
+      if(a.nearDist == null) return 1;
+      if(b.nearDist == null) return -1;
+      return a.nearDist - b.nearDist;
     }
     return (a.dday === null) - (b.dday === null) || (a.dday ?? 999) - (b.dday ?? 999);
   });
@@ -1181,7 +1219,7 @@ function render(){
       <p class="ttl">${esc(p.name)}</p>
       <p class="desc">공람기간 ${esc(p.period)}</p>
       <div class="rows">
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg><span>${esc(p.where)}${p.dist != null ? " · 우리 집에서 " + p.dist.toFixed(1) + "km" : ""}</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg><span>${esc(p.where)}${distText(p) ? " · 우리 집에서 " + esc(distText(p)) : ""}</span></div>
         <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"></path><path d="M15 3v4h4"></path></svg><span>${esc(p.org)} · ${esc(p.stage)}</span></div>
       </div>
       <div class="foot">
@@ -1408,7 +1446,7 @@ let selectedId = null;
 
 function gisProjects(){
   const rows = (mapNearbyOnly ? nearbyProjects() : PROJECTS).filter(p => p.lat != null);
-  return rows.sort((a, b) => (a.dist ?? 1e9) - (b.dist ?? 1e9));
+  return rows.sort((a, b) => (a.nearDist ?? 1e9) - (b.nearDist ?? 1e9));
 }
 
 function ensureGisMap(){
@@ -1533,7 +1571,7 @@ function gisItemHtml(p){
         ${locTagHtml(p)}
       </span>
       <span class="t">${esc(p.name)}</span>
-      <span class="m">${p.dist != null ? p.dist.toFixed(1) + "km" : "거리 모름"}${p.dday !== null ? ` · D-${p.dday}` : ""}</span>
+      <span class="m">${distText(p) ? esc(distText(p)) : "거리 모름"}${p.dday !== null ? ` · D-${p.dday}` : ""}</span>
     </button>`;
 }
 
@@ -1606,7 +1644,7 @@ function renderGisDetail(){
     </p>
     <p class="ttl">${esc(p.name)}</p>
     <div class="kv"><span class="k">위치</span><span class="v">${esc(p.where)}</span></div>
-    <div class="kv"><span class="k">거리</span><span class="v">${p.dist != null ? "우리 집에서 " + p.dist.toFixed(1) + "km" : "모름"}</span></div>
+    <div class="kv"><span class="k">거리</span><span class="v">${distText(p) ? "우리 집에서 " + esc(distText(p)) : "모름"}</span></div>
     ${p.bizType ? `<div class="kv"><span class="k">사업구분</span><span class="v">${esc(p.bizType)}</span></div>` : ""}
     <div class="kv"><span class="k">기관</span><span class="v">${esc(p.org)}</span></div>
     ${r ? `<div class="kv"><span class="k">노선</span><span class="v">${esc(ROUTE_SOURCE_TEXT[r.source] || "지도에 표시된 노선입니다.")}</span></div>` : ""}
