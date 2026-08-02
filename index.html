@@ -174,9 +174,9 @@
             <span class="delta hot" id="stat-open-note"></span>
           </div>
           <div class="stat">
-            <span class="lab">예정 설명회·공청회</span>
-            <span class="num"><span data-count="0" id="stat-events">0</span><small>건</small></span>
-            <span class="delta" id="stat-events-note">아직 수집하지 않음</span>
+            <span class="lab">예정 설명회</span>
+            <span class="num"><span data-count="0" id="stat-events">0</span><small>회</small></span>
+            <span class="delta" id="stat-events-note"></span>
           </div>
           <div class="stat">
             <span class="lab">협의 진행 중</span>
@@ -220,8 +220,8 @@
           <label class="perpage" for="projPerPage">
             <span>한 페이지에</span>
             <select id="projPerPage">
-              <option value="6">6개</option>
-              <option value="9" selected>9개</option>
+              <option value="6" selected>6개</option>
+              <option value="9">9개</option>
               <option value="12">12개</option>
               <option value="24">24개</option>
               <option value="0">전체</option>
@@ -238,7 +238,7 @@
       <div class="wrap">
         <div class="reveal">
           <div class="panel-head">
-            <h3>의견을 낼 수 있는 초안 공람</h3>
+            <h3>주민 설명회 안내</h3>
             <div class="panel-head-right">
               <label class="perpage" for="openPerPage">
                 <span>한 페이지에</span>
@@ -252,8 +252,11 @@
               <span id="openListNote" style="font-size:var(--fs-body-s);color:var(--ink-3);font-weight:600"></span>
             </div>
           </div>
+          <p class="brief-guide">설명회 일시·장소는 사업자가 낸 <b>원문 그대로</b>입니다.
+            표기 방식이 사업마다 달라 날짜로 바꾸지 않았고, 날짜를 분명히 알 수 있는 것만
+            지난 일정에 <b>지남</b>을 붙였습니다. 가시기 전에 의견 받는 곳에 한 번 확인하세요.</p>
           <div id="openList"></div>
-          <nav class="pager" id="openPager" aria-label="공람 목록 페이지"></nav>
+          <nav class="pager" id="openPager" aria-label="설명회 목록 페이지"></nav>
         </div>
       </div>
     </section>

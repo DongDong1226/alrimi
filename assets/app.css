@@ -331,7 +331,7 @@ button{cursor:pointer}
 .panel-head a{font-size:var(--fs-body-s);color:var(--ink-3);font-weight:600}
 .panel-head a:hover{color:var(--primary)}
 
-.row-item{display:flex;align-items:center;gap:14px;padding:16px 4px;border-bottom:1px solid var(--line)}
+.row-item{display:flex;align-items:flex-start;gap:14px;padding:16px 4px;border-bottom:1px solid var(--line)}
 .dpill{flex:none;min-width:54px;text-align:center;padding:8px 11px;border-radius:var(--r-pill);
   background:var(--primary-soft);color:var(--p70);font-size:var(--fs-body-s);font-weight:800;
   font-variant-numeric:tabular-nums}
@@ -341,6 +341,22 @@ button{cursor:pointer}
 .row-body .t{font-size:var(--fs-h-xxs);font-weight:700;color:var(--ink);line-height:1.45}
 .row-body .m{font-size:var(--fs-body-s);color:var(--ink-3);margin-top:4px}
 .row-body .m b{color:var(--primary);font-weight:700}
+
+/* 설명회 안내 — 언제 / 어디서 / 의견은 어디로 */
+.brief-guide{font-size:var(--fs-body-s);color:var(--ink-3);line-height:1.65;
+  background:var(--bg-1);border-radius:var(--r-sm);padding:12px 14px;margin-top:14px}
+.brief-guide b{color:var(--ink-2);font-weight:700}
+.brief{display:grid;gap:4px;margin-top:7px}
+.brief>div{display:flex;gap:9px;font-size:var(--fs-body-s);line-height:1.55}
+.brief dt{flex:none;width:82px;color:var(--ink-4);font-weight:700}
+.brief dd{margin:0;min-width:0;color:var(--ink-2)}
+.brief-none{color:var(--ink-4)}
+.brief-at{color:var(--ink-3)}
+.brief-at::before{content:"· "}
+.brief-past{display:inline-block;margin-left:4px;padding:2px 8px;border-radius:var(--r-pill);
+  background:#eef0f3;color:var(--ink-3);font-size:var(--fs-body-xs);font-weight:800}
+.row-item--past{opacity:.72}
+.row-btns{flex:none;display:flex;align-items:center;gap:8px}
 .ev-date{flex:none;width:58px;text-align:center}
 .ev-date .d{font-size:28px;font-weight:800;color:var(--navy);line-height:1;letter-spacing:-.03em}
 .ev-date .ym{font-size:11.5px;color:var(--ink-4);font-weight:600;margin-top:4px}
@@ -735,6 +751,12 @@ button{cursor:pointer}
   .gis-to-map{display:inline-flex}
   .pager{justify-content:center}
   .pager-btns{margin-left:0}
+  /* 설명회 목록 — 좁은 화면에서는 단추를 아래로 내린다 */
+  .row-item{flex-wrap:wrap}
+  /* flex-basis 100% + 왼쪽 여백이면 줄을 넘친다. 줄어들 수 있게 flex 로 준다 */
+  .row-btns{flex:1 1 100%;width:auto;min-width:0;margin-left:64px}
+  .brief>div{flex-direction:column;gap:1px}
+  .brief dt{width:auto}
   /* 범례가 작은 지도의 3분의 1을 가려서 두 줄로 눕힌다 */
   .gis-legend{left:8px;bottom:8px;flex-direction:row;flex-wrap:wrap;max-width:calc(100% - 60px);
     gap:4px 10px;padding:7px 9px}

@@ -698,6 +698,176 @@ function locTagHtml(p){
 }
 
 /* ============================================================
+   설명회 일시 읽기
+   일시 표기는 사업마다 자유 형식이라 **원문을 고치지 않는다.**
+   다만 이미 끝난 설명회를 안내처럼 보여주면 안 되므로,
+   형식이 분명한 것만 골라 날짜로 읽어 "지남"을 표시한다.
+
+   읽는 형식: 2026년 8월 6일 / 2026.08.06 / 2026-08-06 / 20260806 / 2026 8 6(목)
+   읽고 남은 자리에 날짜 같은 조각이 또 있으면(예: "30일(목)~31일(금), 08월 03일")
+   해석을 포기하고 원문만 보여준다. 틀린 안내가 없는 안내보다 나쁘기 때문이다.
+   ============================================================ */
+/* 여러 회에 걸쳐 여는 설명회는 일시와 장소가 쉼표(또는 빗금)로 나란히 적혀 있고
+   **순서가 1:1로 맞는다**(확인함: 36건 중 32건). 그래서 같은 자리끼리 짝지어 쓴다.
+   괄호 안의 쉼표(주소)에서는 자르면 안 된다. */
+function splitSessions(s){
+  const seps = /\d{4}\/\d{1,2}\/\d{1,2}/.test(s) ? "," : ",/";  // 날짜에 빗금을 쓰면 빗금으로 안 자른다
+  const out = [];
+  let buf = "", depth = 0;
+  for(const ch of s){
+    if("([{".includes(ch)) depth++;
+    else if(")]}".includes(ch)) depth = Math.max(0, depth - 1);
+    if(seps.includes(ch) && depth === 0){ out.push(buf.trim()); buf = ""; }
+    else buf += ch;
+  }
+  if(buf.trim()) out.push(buf.trim());
+  return out.filter(Boolean);
+}
+
+/* 시각만 적힌 조각("14:00")은 앞 조각에 붙인다 — "2026.08.19(수), 14:00" 같은 경우 */
+const TIME_ONLY_RE = /^[\s\d시:분초오전후~∼\-–()월화수목금토일요]*$/;
+
+const BRIEF_FULL_RES = [
+  /(\d{4})\s*년\s*(\d{1,2})\s*월\s*(\d{1,2})\s*일/,
+  /(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/,
+  /(?<!\d)(\d{4})(\d{2})(\d{2})(?!\d)/,
+  /(\d{4})\s+(\d{1,2})\s+(\d{1,2})\s*\(/
+];
+
+function mkDate(y, m, d){
+  const v = new Date(y, m - 1, d);
+  return (v.getFullYear() === y && v.getMonth() === m - 1 && v.getDate() === d) ? v : null;
+}
+
+/* 조각 하나에서 날짜들을 뽑는다. carry 는 앞 조각에서 물려받은 [연,월] —
+   "08월 03일(월)"처럼 연도를 생략한 경우에 쓴다. */
+function datesInPiece(text, carry){
+  const got = [];
+  let y = null, m = null, mt = null;
+  for(const re of BRIEF_FULL_RES){
+    mt = re.exec(text);
+    if(mt){
+      y = +mt[1]; m = +mt[2];
+      const v = mkDate(y, m, +mt[3]);
+      if(v) got.push(v);
+      break;
+    }
+  }
+  if(!got.length && (mt = /(?<!\d)(2\d)(\d{2})(\d{2})(?!\d)/.exec(text))){   // 260814
+    y = 2000 + +mt[1]; m = +mt[2];
+    const v = mkDate(y, m, +mt[3]);
+    if(v) got.push(v);
+  }
+  if(!got.length && carry[0] && (mt = /(\d{1,2})\s*월\s*(\d{1,2})\s*일/.exec(text))){
+    y = carry[0]; m = +mt[1];
+    const v = mkDate(y, m, +mt[2]);
+    if(v) got.push(v);
+  }
+  if(got.length && y && m && (mt = /[~∼]\s*(\d{1,2})\s*일/.exec(text))){      // "30일~31일" 의 끝날
+    const v = mkDate(y, m, +mt[1]);
+    if(v) got.push(v);
+  }
+  return { dates: got, carry: [y || carry[0], m || carry[1]] };
+}
+
+function today0(){ const t = new Date(); t.setHours(0, 0, 0, 0); return t; }
+
+/* 일시 조각과 장소 조각을 짝짓는다. 짝을 못 지으면 null 을 돌려주고,
+   그때는 일시와 장소를 원문 통째로 따로 보여준다.
+
+   **순서대로 짝짓는 것을 기본으로 삼으면 안 된다.** 실제로 어긋나는 자료가 있다 —
+   기장군 사업은 일시가 "장안읍…, 정관읍…, 철마면…" 순인데
+   장소는 "기장읍…, 일광읍…, 장안읍…" 순이라 그대로 붙이면 틀린 안내가 된다.
+   그래서 ① 일시에 지역 이름이 있으면 그 이름으로 찾아 짝짓고,
+   ② 지역 이름이 아예 없고 회차가 3번 이상일 때만 순서대로 짝짓는다. */
+const PLACE_HINT_RE = /[가-힣]{2,10}?(읍|면|동|리|시|군|구)(?![가-힣])/g;
+
+function matchPlaces(pieces, places){
+  if(!places.length || !pieces.length) return null;
+
+  // ① 일시 조각에 적힌 지역 이름으로 찾기 (가장 구체적인 이름 = 마지막 것부터)
+  const hints = pieces.map(t => (t.split(/\d/)[0] || "").match(PLACE_HINT_RE) || []);
+  if(hints.some(h => h.length)){
+    const out = [];
+    for(let i = 0; i < pieces.length; i++){
+      const list = hints[i].slice().reverse();
+      let hit = null;
+      for(const h of list){
+        const found = places.filter(pl => pl.includes(h));
+        if(found.length === 1){ hit = found[0]; break; }
+      }
+      if(!hit) return null;             // 하나라도 못 찾으면 통째로 포기한다
+      out.push(hit);
+    }
+    return out;
+  }
+
+  // ② 지역 이름이 없는 목록형(예: 9회차) — 개수가 같고 3회 이상일 때만 순서대로
+  if(places.length === pieces.length && pieces.length >= 3) return places.slice();
+  return null;
+}
+
+/* 설명회 안내를 회차 단위로 정리한다.
+   { items:[{when, place, date}], next, dday, past, upcoming, total, text } */
+function briefInfo(p){
+  const raw = (p.briefWhen || "").trim();
+  const rawPlace = (p.briefPlace || "").trim();
+  if(!raw) return { items:[], next:null, dday:null, past:false, upcoming:0, total:0, text:null, place:rawPlace || null };
+
+  // 조각 나누기 (시각만 있는 조각은 앞에 붙인다)
+  const pieces = [];
+  splitSessions(raw).forEach(x => {
+    // 날짜가 없고 시각만 있는 조각만 앞에 붙인다.
+    // ("20260715(수) 10:00" 은 날짜가 있으므로 따로 둔다 — 붙이면 9회차가 한 덩어리가 된다)
+    // (연도가 생략된 "08월 03일(월)~04일(화)" 도 붙이면 안 되므로 월·일이 있으면 제외한다)
+    const noDate = datesInPiece(x, [null, null]).dates.length === 0 && !/\d\s*[월일]/.test(x);
+    if(pieces.length && noDate && TIME_ONLY_RE.test(x)) pieces[pieces.length - 1] += ", " + x;
+    else pieces.push(x);
+  });
+  const places = splitSessions(rawPlace);
+  const matched = matchPlaces(pieces, places);
+
+  const items = [];
+  let carry = [null, null];
+  pieces.forEach((text, i) => {
+    const r = datesInPiece(text, carry);
+    carry = r.carry;
+    const pl = matched ? matched[i] : null;
+    if(r.dates.length){
+      r.dates.forEach((d, k) => items.push({ when:text, place:pl, date:d, extra:k > 0 }));
+    }else{
+      items.push({ when:text, place:pl, date:null, extra:false });
+    }
+  });
+  const paired = !!matched;
+
+  const t = today0();
+  const future = items.filter(x => x.date && x.date >= t).sort((a, b) => a.date - b.date);
+  const dated = items.filter(x => x.date);
+  const next = future[0] || null;
+  return {
+    items, paired, next,
+    dday: next ? Math.round((next.date - t) / 86400000) : null,
+    past: !next && dated.length > 0,      // 날짜는 읽었는데 앞으로 남은 게 없다
+    upcoming: future.length,
+    total: items.length,
+    text: raw,
+    place: rawPlace || null
+  };
+}
+
+/* 의견 받는 곳 — EIASS에 적힌 그대로 쓴다. 전화번호는 넣지 않는다.
+   앞에 기관명을 붙이지 않는 이유: `org`는 협의기관(유역환경청)이고
+   `deptName`은 사업자 쪽 부서라서, 붙이면
+   "낙동강유역환경청 창원시청 도시계획과" 같은 없는 이름이 만들어진다.
+   부서명만 적힌 몇 건은 기관을 알 수 없으므로 그대로 둔다(지어내지 않는다). */
+function deptFull(p){
+  return (p.deptName || "")
+    .replace(/\(?\s*0\d{1,2}[-‑]\d{3,4}[-‑]\d{4}\s*\)?/g, "")   // 부서명 안에 박혀 있는 전화번호
+    .replace(/\s*,\s*$/, "").replace(/\s{2,}/g, " ").trim() || null;
+}
+
+/* ============================================================
    설명회 · 공람 · 의견제출 정보
    EIASS 원문을 그대로 보여준다. (일시 표기가 사업마다 자유 형식이라 손대지 않는다)
    ============================================================ */
@@ -708,7 +878,7 @@ function participationSection(p){
     ["공람 장소", p.viewPlace],
     ["설명회 일시", p.briefWhen],
     ["설명회 장소", p.briefPlace],
-    ["의견 받는 곳", p.deptName ? `${p.deptName}${p.deptTel ? " · " + p.deptTel : ""}` : null]
+    ["의견 받는 곳", deptFull(p)]
   ].filter(([, v]) => v);
 
   if(!rows.length) return null;
@@ -760,8 +930,8 @@ function openOpinion(id){
     <h4>이렇게 쓰면 검토에 반영되기 쉽습니다</h4>
     <p>소음, 교통, 먼지, 일조, 생활환경 등 <b>내가 겪을 일을 구체적으로</b> 적습니다.
       "언제, 어디서, 어떤 점이 걱정된다"처럼 쓰면 좋습니다.</p>
-    ${p.deptName ? `<p style="margin-top:12px">전화로 문의하려면
-      ${esc(p.deptName)}${p.deptTel ? ` (${esc(p.deptTel)})` : ""} 로 연락하세요.</p>` : ""}`;
+    ${deptFull(p) ? `<p style="margin-top:12px">이 사업의 의견을 받는 곳은
+      <b>${esc(deptFull(p))}</b>입니다. 연락처는 EIASS 원문 페이지에 있습니다.</p>` : ""}`;
   openModal("m-opinion");
 }
 $("#btn-opinion-go").addEventListener("click", () => {
@@ -798,6 +968,18 @@ function updateDashboardStats(){
   }else{
     $("#stat-open-note").textContent = "";
   }
+
+  // 예정 설명회 — 사업이 아니라 **설명회 횟수**를 센다.
+  // 한 사업이 여러 지역에서 여러 번 열기 때문에 사업 수보다 많을 수 있다.
+  const briefs = openRows.map(p => briefInfo(p));
+  const events = briefs.reduce((n, b) => n + b.upcoming, 0);
+  const nextDdays = briefs.map(b => b.dday).filter(v => v !== null);
+  const unknown = briefs.filter(b => b.dday === null && !b.past).length;
+  $("#stat-events").dataset.count = events;
+  $("#stat-events-note").textContent = nextDdays.length
+    ? `가장 빠른 설명회 ${Math.min(...nextDdays) === 0 ? "오늘" : "D-" + Math.min(...nextDdays)}`
+      + (unknown ? ` · 일시 미정 ${unknown}건` : "")
+    : (unknown ? `일시가 정해진 설명회가 없습니다` : "남은 설명회가 없습니다");
   countUp();
 }
 
@@ -860,7 +1042,7 @@ function visibleProjects(){
    per = 0 이면 "전체"라서 나누지 않는다.
    ============================================================ */
 const PAGER = {
-  proj: { page:1, per:9 },
+  proj: { page:1, per:6 },
   open: { page:1, per:10 }
 };
 
@@ -991,9 +1173,21 @@ function bindProjectActions(rootSel, opts = {}){
 }
 bindProjectActions("#projGrid");
 
-/* 의견 낼 수 있는 초안 공람 목록 */
+/* 주민 설명회 안내 목록
+   "언제·어디서 열리고, 의견은 어디로 내면 되는지"를 앞에 내놓는다.
+
+   정렬은 **공람 마감 임박 순**이다. 지난 설명회를 뒤로 보내지 않는다 —
+   36건 중 17건이 이미 지난 설명회라, 뒤로 보내면 마감이 하루 남은 사업이
+   목록 맨 아래로 내려간다. 설명회가 끝났어도 공람 기간 안이면 의견은 낼 수 있다.
+   지난 것은 "지남" 표시를 붙이고 흐리게 해서 구분한다. */
 function renderOpenList(){
-  const rows = scopedProjects().filter(p => p.dday !== null).sort((a, b) => a.dday - b.dday);
+  // 앞으로 열리는 설명회(가까운 순) → 일시를 알 수 없는 것 → 이미 지난 것
+  const rank = b => b.next ? 0 : (b.past ? 2 : 1);
+  const rows = scopedProjects().filter(p => p.dday !== null)
+    .map(p => ({ p, brief: briefInfo(p) }))
+    .sort((a, b) => rank(a.brief) - rank(b.brief)
+      || ((a.brief.dday ?? 9999) - (b.brief.dday ?? 9999))
+      || (a.p.dday - b.p.dday));
   const box = $("#openList");
   const note = $("#openListNote");
   note.textContent = homeNearbyOnly
@@ -1008,16 +1202,55 @@ function renderOpenList(){
     box.innerHTML = `<p class="proj-empty" style="border-radius:var(--r-md)">${where} 의견을 낼 수 있는 사업이 없습니다.</p>`;
     return;
   }
-  box.innerHTML = cut.rows.map(p => `
-    <div class="row-item">
-      <span class="dpill ${p.dday <= 3 ? "urgent" : ""}">D-${p.dday}</span>
+  box.innerHTML = cut.rows.map(({ p, brief }) => `
+    <div class="row-item${brief.past ? " row-item--past" : ""}">
+      ${briefPillHtml(brief)}
       <div class="row-body">
         <p class="t">${esc(p.name)}</p>
-        <p class="m">~${esc(p.period.split("~")[1] || "")} · ${esc(p.org)}${p.tel ? " · " + esc(p.tel) : ""}</p>
+        ${briefRowsHtml(p, brief)}
       </div>
-      <button class="btn btn--primary btn--sm btn--pill" type="button" data-opinion="${esc(p.id)}">의견 제출</button>
-      <button class="btn btn--line btn--sm btn--pill" type="button" data-detail="${esc(p.id)}">자세히 보기</button>
+      <div class="row-btns">
+        <button class="btn btn--primary btn--sm btn--pill" type="button" data-opinion="${esc(p.id)}">의견 제출</button>
+        <button class="btn btn--line btn--sm btn--pill" type="button" data-detail="${esc(p.id)}">자세히 보기</button>
+      </div>
     </div>`).join("");
+}
+
+/* 왼쪽 알약 — 다음 설명회까지 남은 날. 날짜를 모르면 그렇게 적는다. */
+function briefPillHtml(b){
+  if(b.dday === null){
+    return `<span class="dpill done">${b.past ? "지남" : "미정"}</span>`;
+  }
+  return `<span class="dpill ${b.dday <= 3 ? "urgent" : ""}">${b.dday === 0 ? "오늘" : "D-" + b.dday}</span>`;
+}
+
+/* 원문에 날짜가 아니라 사유가 적혀 있는 경우 — 뜻만 덧붙이고 원문은 그대로 둔다. */
+const BRIEF_PLAIN = {
+  "미정": "아직 정해지지 않았습니다",
+  "타법에 의한 생략": "다른 법에 따라 설명회를 열지 않습니다"
+};
+
+function briefRowsHtml(p, b){
+  const rows = [];
+  const place = v => v ? ` <span class="brief-at">${esc(v)}</span>` : "";
+
+  if(!b.text){
+    rows.push(["설명회", `<span class="brief-none">원문에 안내가 없습니다</span>`]);
+  }else if(BRIEF_PLAIN[b.text]){
+    rows.push(["설명회", `${esc(b.text)} <span class="brief-none">— ${esc(BRIEF_PLAIN[b.text])}</span>`]);
+  }else if(b.next){
+    rows.push(["다음 설명회", `${esc(b.next.when)}${place(b.next.place)}`]);
+    if(!b.next.place && b.place) rows.push(["장소", esc(b.place)]);
+    if(b.upcoming > 1) rows.push(["그 밖에", `앞으로 ${b.upcoming - 1}회 더 있습니다`]);
+  }else{
+    rows.push(["설명회", `${esc(b.text)}${b.past ? ` <span class="brief-past">지남</span>` : ""}`]);
+    if(b.place && b.place !== b.text) rows.push(["장소", esc(b.place)]);
+  }
+  const dept = deptFull(p);
+  if(dept) rows.push(["의견 받는 곳", esc(dept)]);
+
+  return `<dl class="brief">${rows.map(([k, v]) =>
+    `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>`;
 }
 bindProjectActions("#openList");
 bindPager("#projPager", "#projPerPage", "proj", render, "#projects");
@@ -1032,7 +1265,7 @@ function openDetail(id){
     <div class="contact-card" style="margin-bottom:4px">
       <div class="contact-row"><span class="k">유형</span><span class="v">${esc(p.typeLabel)}</span></div>
       <div class="contact-row"><span class="k">위치</span><span class="v">${esc(p.where)}</span></div>
-      <div class="contact-row"><span class="k">기관</span><span class="v">${esc(p.org)}${p.tel ? " · " + esc(p.tel) : ""}</span></div>
+      <div class="contact-row"><span class="k">기관</span><span class="v">${esc(p.org)}</span></div>
       <div class="contact-row"><span class="k">공람기간</span><span class="v">${esc(p.period)}${p.dday !== null ? ` (D-${p.dday})` : ""}</span></div>
     </div>
     ${tabsHtml([participationSection(p), segmentsSection(p), eiaSection(p)])}
@@ -1318,7 +1551,7 @@ function renderGisDetail(){
     <div class="kv"><span class="k">위치</span><span class="v">${esc(p.where)}</span></div>
     <div class="kv"><span class="k">거리</span><span class="v">${p.dist != null ? "우리 집에서 " + p.dist.toFixed(1) + "km" : "모름"}</span></div>
     ${p.bizType ? `<div class="kv"><span class="k">사업구분</span><span class="v">${esc(p.bizType)}</span></div>` : ""}
-    <div class="kv"><span class="k">기관</span><span class="v">${esc(p.org)}${p.tel ? " · " + esc(p.tel) : ""}</span></div>
+    <div class="kv"><span class="k">기관</span><span class="v">${esc(p.org)}</span></div>
     ${r ? `<div class="kv"><span class="k">노선</span><span class="v">${esc(ROUTE_SOURCE_TEXT[r.source] || "지도에 표시된 노선입니다.")}</span></div>` : ""}
     ${p.dday !== null ? `
       <button class="btn btn--primary btn--sm btn--block" type="button"
