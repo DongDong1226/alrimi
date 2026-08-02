@@ -50,6 +50,17 @@ jobs:
           echo "--- 올라갈 파일 ---"
           find _site -type f | sort
 
+      # 브라우저가 옛 app.js·app.css 를 붙잡고 있어서, 고친 내용이 안 보이는 일이 생긴다.
+      # (2026-08-02 실제로 겪음 — 배포는 됐는데 화면은 옛 코드로 돌고 있었다)
+      # index.html 의 "?v=dev" 를 커밋 번호로 바꿔 두면 배포할 때마다 주소가 달라져
+      # 브라우저가 반드시 새로 받는다.
+      - name: 파일 주소에 판 번호 붙이기 (브라우저 캐시 비우기)
+        run: |
+          VER="${GITHUB_SHA::7}"
+          sed -i "s/?v=dev/?v=${VER}/g" _site/index.html
+          echo "판 번호: ${VER}"
+          grep -o 'assets/[a-z.]*\?v=[a-z0-9]*' _site/index.html | sort -u
+
       - name: VWorld 키 심기
         env:
           VWORLD_KEY: ${{ secrets.VWORLD_KEY }}
