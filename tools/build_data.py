@@ -42,6 +42,7 @@ import os
 import re
 import sys
 import time
+from urllib.parse import quote
 
 import requests
 from dotenv import load_dotenv
@@ -224,6 +225,83 @@ def fetch_open_items(category_key, today, max_pages, delay):
         time.sleep(delay)
 
     return open_items
+
+
+# ============================================================
+# 1-2) 협의 진행 중인 사업 수 — EIASS "사업조회" 화면의 검색 결과 건수
+#
+#  주민 공람과는 다른 목록이다. 공람은 "지금 의견을 낼 수 있는 사업"이고,
+#  이쪽은 "환경청과 협의가 진행 중인 사업 전체"라 훨씬 많다.
+#  사업 하나하나를 받지 않고 **건수만** 가져오므로 요청 3번, 비용 0원이다.
+#
+#  화면의 검색 조건을 그대로 흉내낸다.
+#   · 진행현황 = 진행중            → completeFl "진행"
+#   · 진행구분 = 초안·평가서·재협의·약식평가·변경협의 모두 체크
+#                                   → businessExquery 아래 EXQUERY 문자열
+#  (2026-08-02 실측: 전략 115 / 환경 121 / 소규모 391 — 화면 숫자와 일치)
+# ============================================================
+REVIEW_EXQUERY_PER = "<CHOAN:contains:Y> | (<BONAN:contains:Y> <BIZ_TYPE_CD:contains:0|A|B|C>)"
+REVIEW_EXQUERY_EIA = ("<CHOAN:contains:Y> | (<BONAN:contains:Y> <BIZ_TYPE_CD:contains:A|B|C>)"
+                      " | <BYUN:contains:Y>")
+
+REVIEW_CATEGORIES = [
+    # (저장할 키, 화면에 쓰는 이름, alias, perssGubn, 진행구분 조건)
+    ("strat", "전략환경영향평가", 2, "S", REVIEW_EXQUERY_PER),
+    ("main",  "환경영향평가",     1, "E", REVIEW_EXQUERY_EIA),
+    ("small", "소규모환경영향평가", 2, "M", REVIEW_EXQUERY_PER),
+]
+
+
+def _url_string(params):
+    """검색엔진이 받는 urlString('&키=값&키=값' 형태)을 만든다."""
+    return "".join(f"&{k}={quote(str(v), safe='')}" for k, v in params.items())
+
+
+def fetch_review_count(alias, perss_gubn, exquery):
+    """협의 진행 중인 사업 건수 하나를 가져온다. 실패하면 None."""
+    search_params = {
+        "alias": alias,
+        "completeFl": "진행",     # 진행현황 = 진행중
+        "openFl": "",
+        "businessExquery": exquery,
+        "whrChFl": "", "aSYear": "", "aEYear": "", "rSYear": "", "rEYear": "",
+        "orgnCd": "", "nrvFl": "", "bizGubunCd": "",
+        "perssGubn": perss_gubn,
+    }
+    view_char = "Eia" if alias == 1 else "Per"
+    r = requests.post(f"{BASE}/searchApi/search.do", data={
+        "query": "",
+        "collection": "business",
+        "urlString": _url_string(search_params),
+        "viewName": f"/eiass/user/biz/base/info/searchList{view_char}_searchApi",
+        "currentPage": 1,
+        "sort": "DATE/DESC",
+        "listCount": 10,
+    }, headers=HEADERS, verify=VERIFY_SSL, timeout=25)
+    r.raise_for_status()
+    m = re.search(r'detailPage">\s*검색결과\s*:\s*([\d,]+)\s*건', r.text)
+    return int(m.group(1).replace(",", "")) if m else None
+
+
+def fetch_review_counts(delay):
+    """세 가지 평가의 '협의 진행 중' 건수를 모은다.
+    한 종류가 실패해도 나머지는 그대로 담는다(화면에서 없는 값은 표시하지 않는다)."""
+    counts = {}
+    for key, label, alias, perss, exquery in REVIEW_CATEGORIES:
+        try:
+            n = fetch_review_count(alias, perss, exquery)
+        except Exception as e:
+            log(f"  [협의 진행 중 조회 실패:{label}] {e}")
+            n = None
+        if n is None:
+            log(f"  [협의 진행 중] {label}: 건수를 읽지 못했습니다")
+        else:
+            counts[key] = n
+            log(f"  [협의 진행 중] {label}: {n}건")
+        time.sleep(delay)
+    if counts:
+        counts["total"] = sum(counts.values())
+    return counts
 
 
 # ============================================================
@@ -655,10 +733,30 @@ def load_existing(path):
     return {p["id"]: p for p in rows if isinstance(p, dict) and p.get("id")}
 
 
-def refresh_cached(cached, item, vworld_key, skip_geocode):
+# 재사용하는 사업에서도 매번 다시 받아 덮어쓰는 항목.
+# 상세 페이지 조회 한 번(0.2초, 무료)이면 되고, 돈이 드는 PDF·AI 는 건드리지 않는다.
+# 이 값들은 공람 도중에 실제로 바뀐다 — 특히 설명회 일시가 "미정"에서 날짜로 정해진다.
+REFRESHABLE = ["viewPlace", "briefPlace", "briefWhen", "opinionPeriod", "deptName", "deptTel"]
+
+
+def needs_detail_refresh(cached):
+    """상세를 다시 받아야 하는가.
+
+    설명회 안내가 화면의 중심이 된 뒤로, 한 번 "미정"으로 받아 둔 사업이
+    영영 "미정"으로 남는 문제가 생겼다. 아직 정해지지 않은 값이 있으면 다시 받는다.
+    """
+    for key in REFRESHABLE:
+        v = (cached.get(key) or "").strip()
+        if not v or v in ("미정", "-"):
+            return True
+    return False
+
+
+def refresh_cached(cached, item, vworld_key, skip_geocode, category_key, delay):
     """재사용하는 사업에서 '싸게 고칠 수 있는 것'만 손본다.
 
     · 공람 기간: 목록에 나온 최신 값으로 갱신한다 (기간이 연장되는 경우가 있다).
+    · 설명회·공람 장소·의견 받는 곳: 아직 안 정해진 값이 있으면 상세를 다시 받는다.
     · 좌표: 지난번에 못 찾았으면 다시 시도한다 (지오코딩은 돈이 들지 않는다).
     · AI 해석: 다시 하지 않는다. 한 번 실패한 요약문은 내일도 실패할 가능성이 크고,
       매일 다시 부르면 그만큼 비용이 계속 나간다. 전부 다시 받으려면 --full 을 쓴다.
@@ -666,6 +764,20 @@ def refresh_cached(cached, item, vworld_key, skip_geocode):
     if item.get("period_start"):
         cached["periodStart"] = item["period_start"]
         cached["periodEnd"] = item["period_end"]
+
+    if needs_detail_refresh(cached):
+        try:
+            html = fetch_detail_html(category_key, item["biz_cd"], item["biz_seq"], item["step_cd"])
+            detail = parse_detail_html(html)
+            changed = [k for k in REFRESHABLE if detail.get(k) and detail[k] != cached.get(k)]
+            for k in REFRESHABLE:
+                if detail.get(k):
+                    cached[k] = detail[k]
+            if changed:
+                log(f"    (재사용) 새로 정해진 값을 덮어썼습니다: {', '.join(changed)}")
+            time.sleep(delay)
+        except Exception as e:
+            log(f"    [상세 재조회 실패 — 지난 값을 그대로 씁니다] {e}")
 
     if cached.get("lat") is None and cached.get("address") and not skip_geocode:
         lat, lon = geocode_address(cached["address"], vworld_key)
@@ -724,7 +836,8 @@ def build(args):
             if cached:
                 log(f"  = {it['name']} (이미 받아 둠)")
                 all_projects.append(
-                    refresh_cached(cached, it, vworld_key, args.skip_geocode))
+                    refresh_cached(cached, it, vworld_key, args.skip_geocode,
+                                   category_key, args.delay))
                 reused_count += 1
                 continue
 
@@ -830,12 +943,32 @@ def build(args):
     if gone > 0:
         log(f"[안내] 지난 결과의 {gone}건은 EIASS 목록에서 사라져(공람 종료) 빼냈습니다.")
 
+    # 협의 진행 중인 사업 수 (건수만 — 요청 3번, 비용 0원)
+    stats = {}
+    if not args.skip_stats:
+        log("[협의 진행 중] 사업조회 건수 확인")
+        stats = fetch_review_counts(args.delay)
+        # 못 읽었으면 지난 파일의 값을 그대로 쓴다 (숫자가 갑자기 사라지지 않도록)
+        if not stats and existing:
+            try:
+                with open(OUT_PATH, encoding="utf-8") as f:
+                    stats = (json.load(f).get("stats") or {}).get("underReview", {})
+                if stats:
+                    log("  [협의 진행 중] 이번엔 못 읽어서 지난 값을 그대로 씁니다")
+            except (FileNotFoundError, ValueError, OSError):
+                stats = {}
+
     os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
     with open(OUT_PATH, "w", encoding="utf-8") as f:
         json.dump({
             "generatedAt": end_day.isoformat(),
             "note": ("이 파일은 tools/build_data.py가 EIASS 공개 자료를 바탕으로 자동 생성합니다. "
                      "생성 시점에 초안 공람 기간 안에 있던 사업만 담겨 있습니다."),
+            "stats": {
+                # EIASS 사업조회에서 '진행현황=진행중'으로 세어 온 건수.
+                # 공람 중인 사업(projects)과는 다른 모수다.
+                "underReview": stats,
+            },
             "projects": kept,
         }, f, ensure_ascii=False, indent=2)
 
@@ -851,6 +984,8 @@ def main():
     parser.add_argument("--skip-geocode", action="store_true", help="vworld 지오코딩 건너뛰기")
     parser.add_argument("--skip-summary", action="store_true", help="요약문 PDF 다운로드/LLM 요약 건너뛰기")
     parser.add_argument("--skip-route", action="store_true", help="하천 노선 도형 조회 건너뛰기")
+    parser.add_argument("--skip-stats", action="store_true",
+                        help="협의 진행 중 사업 건수 조회 건너뛰기")
     parser.add_argument("--full", action="store_true",
                         help="이미 받아 둔 결과를 무시하고 전부 다시 받는다 "
                              "(EIA_FIELDS 를 바꿨을 때는 반드시 이걸로 돌려야 한다)")

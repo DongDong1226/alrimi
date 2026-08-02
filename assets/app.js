@@ -23,13 +23,7 @@ const DEFAULTS = {
   org: "기후에너지환경부 국립환경과학원",
   person: "김동윤",
   tel: "032-560-xxxx",
-  defHood: { sido:"경기도", sgg:"하남시", dong:"미사동" },
-  /* 첫 화면 전국 현황 — 실제 집계값이 나오면 관리자 화면에서 교체 */
-  nation: [
-    { k:"등록된 개발사업", v:"48,231", u:"건" },
-    { k:"지금 공람 중",    v:"228",    u:"건" },
-    { k:"이번 주 새 사업",  v:"34",     u:"건" }
-  ]
+  defHood: { sido:"경기도", sgg:"하남시", dong:"미사동" }
 };
 
 const LSKEY = "wdn.settings";
@@ -95,6 +89,12 @@ let PROJECTS = [];          // 공람 기간 안에 있는 사업 (화면에 보
 let CLOSED_PROJECTS = [];   // 기간이 지난 사업 (화면에서 빼지만, 참조되면 최소 정보만 보여준다)
 let dataReady = false;
 let usingSample = false;    // 실제 파일을 못 읽어 표본으로 대신하고 있는가
+/* 협의 진행 중인 사업 수 — EIASS 사업조회에서 세어 온 건수.
+   공람 중인 사업(PROJECTS)과는 **모수가 다르다.**
+   공람은 "지금 의견을 낼 수 있는 사업", 이쪽은 "환경청과 협의가 진행 중인 사업 전체". */
+let UNDER_REVIEW = {};
+const REVIEW_LABEL = { strat:"전략환경영향평가", main:"환경영향평가", small:"소규모환경영향평가" };
+const REVIEW_SHORT = { strat:"전략", main:"환경", small:"소규모" };
 const CATEGORY_BADGE = { strat:"badge--navy", main:"badge--blue" };
 
 /* 우리 집(기준 위치). 동네를 정하면 좌표를 찾아 여기에 넣는다. */
@@ -173,6 +173,8 @@ async function loadProjects(){
     if(!res.ok) throw new Error("HTTP " + res.status);
     const json = await res.json();
     if(Array.isArray(json.projects) && json.projects.length) list = json.projects;
+    // 협의 진행 중인 사업 수 (EIASS 사업조회에서 세어 온 건수)
+    UNDER_REVIEW = (json.stats && json.stats.underReview) || {};
   }catch(e){
     console.warn("data/projects.json 을 불러오지 못해 표본 데이터를 표시합니다.", e);
   }
@@ -190,6 +192,7 @@ async function loadProjects(){
 
   dataReady = true;
   applyDemoBanner();
+  renderNation();          // 첫 화면 숫자는 자료를 읽은 뒤에야 채울 수 있다
   recomputeDistances();
   refreshAll();
 }
@@ -395,16 +398,28 @@ async function resolveHome(hood){
   }
 }
 
+/* 첫 화면 아래의 전국 숫자 3칸.
+   **전부 수집한 실제 값이다.** 값이 없으면 그 칸을 만들지 않는다(지어내지 않는다). */
+function renderNation(){
+  const brief = PROJECTS.reduce((n, p) => n + briefInfo(p).upcoming, 0);
+  const cells = [
+    UNDER_REVIEW.total ? { v:UNDER_REVIEW.total, u:"건", k:"협의 진행 중" } : null,
+    dataReady && !usingSample ? { v:PROJECTS.length, u:"건", k:"지금 공람 중" } : null,
+    dataReady && !usingSample ? { v:brief, u:"회", k:"예정 설명회" } : null
+  ].filter(Boolean);
+
+  $("#nationRow").innerHTML = cells.map(n => `
+    <div class="nation-i">
+      <p class="v">${esc(n.v.toLocaleString())}<small>${esc(n.u)}</small></p>
+      <p class="k">${esc(n.k)}</p>
+    </div>`).join("");
+}
+
 /* ============================================================
    설정 적용
    ============================================================ */
 function applySettings(){
-  $("#nationRow").innerHTML = (S.nation || []).map(n => `
-    <div class="nation-i">
-      <p class="v">${esc(n.v)}<small>${esc(n.u || "")}</small></p>
-      <p class="k">${esc(n.k)}</p>
-    </div>`).join("");
-
+  renderNation();
   applyDemoBanner();
   $("#v-radius").innerHTML = `${esc(S.radiusKm)}<small>km 이내</small>`;
   $("#scope-radius").textContent = S.radiusKm;
@@ -545,7 +560,7 @@ function renderScope(){
     ? `우리 집 반경 ${esc(S.radiusKm)}km 안, <span class="em">계획 중인 사업</span>입니다.`
     : `<span class="em">전국</span>에서 계획 중인 사업입니다.`;
   $("#h-hood").textContent = near ? (hoodShortName || "우리 동네") : "전국";
-  $("#stat-total-lab").textContent = near ? "우리 동네 개발사업" : "전국 개발사업";
+  $("#stat-open-lab").textContent = near ? "우리 동네에서 의견 낼 수 있는 사업" : "전국에서 의견 낼 수 있는 사업";
 }
 
 function setScope(near){
@@ -872,22 +887,49 @@ function deptFull(p){
    EIASS 원문을 그대로 보여준다. (일시 표기가 사업마다 자유 형식이라 손대지 않는다)
    ============================================================ */
 function participationSection(p){
+  const b = briefInfo(p);
+  const sessions = briefListHtml(b);   // 회차별로 짝지어 나눌 수 있으면 그 HTML, 아니면 null
+
+  // [이름, 값, HTML 인가]
   const rows = [
-    ["공람 기간", p.period],
-    ["의견제출 기간", p.opinionPeriod],
-    ["공람 장소", p.viewPlace],
-    ["설명회 일시", p.briefWhen],
-    ["설명회 장소", p.briefPlace],
-    ["의견 받는 곳", deptFull(p)]
+    ["공람 기간", p.period, false],
+    ["의견제출 기간", p.opinionPeriod, false],
+    ["공람 장소", p.viewPlace, false],
+    ...(sessions
+      ? [[`설명회 ${b.items.length}회`, sessions, true]]
+      : [["설명회 일시", p.briefWhen, false], ["설명회 장소", p.briefPlace, false]]),
+    ["의견 받는 곳", deptFull(p), false]
   ].filter(([, v]) => v);
 
   if(!rows.length) return null;
   return {
     title: "공람 · 설명회",
-    hint: p.briefWhen ? "설명회 있음" : "",
-    body: rows.map(([k, v]) => `
-      <div class="eia-row"><p class="k">${esc(k)}</p><p class="v">${esc(v)}</p></div>`).join("")
+    hint: !b.text ? ""
+      : (/생략/.test(b.text) ? "설명회 없음"
+        : b.upcoming ? `설명회 ${b.upcoming}회 남음`
+          : b.past ? "설명회 지남" : "설명회 있음"),
+    body: rows.map(([k, v, isHtml]) => `
+      <div class="eia-row"><p class="k">${esc(k)}</p>${isHtml ? v : `<p class="v">${esc(v)}</p>`}</div>`).join("")
   };
+}
+
+/* 설명회를 회차별로 "일시 — 장소" 한 줄씩 나눈다.
+   짝을 못 지었거나 한 번뿐이면 null 을 돌려주고, 그때는 원문 두 줄을 그대로 낸다. */
+function briefListHtml(b){
+  if(!b.paired || b.items.length < 2) return null;
+  const t = today0();
+  const seen = new Set();
+  const lis = b.items.filter(i => {                      // 날짜 범위로 두 번 들어온 회차는 한 번만
+    const key = i.when + "|" + (i.place || "");
+    if(seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }).map(i => `
+    <li${i.date && i.date < t ? ' class="past"' : ""}>
+      <span class="bs-when">${esc(i.when)}${i.date && i.date < t ? ` <span class="brief-past">지남</span>` : ""}</span>
+      ${i.place ? `<span class="bs-at">${esc(i.place)}</span>` : ""}
+    </li>`).join("");
+  return `<ul class="v brief-list">${lis}</ul>`;
 }
 
 /* 선형 사업의 구간 목록 (시점 → 종점, 연장) */
@@ -954,20 +996,23 @@ function updateFilterCounts(){
 function updateDashboardStats(){
   const rows = scopedProjects();
   const openRows = rows.filter(p => p.dday !== null);
-  $("#stat-total").dataset.count = rows.length;
   $("#stat-open").dataset.count = openRows.length;
   $("#h-count").textContent = rows.length;
 
+  // 반경 밖 사업 수는 '전국 개발사업' 칸이 없어졌으므로 이 칸 아래에 함께 적는다.
   const outside = PROJECTS.length - rows.length;
-  $("#stat-total-note").textContent = (homeNearbyOnly && outside > 0)
-    ? `반경 밖에 ${outside}건 더 있음` : "";
+  const notes = [];
+  if(openRows.length) notes.push(`가장 빠른 마감 D-${Math.min(...openRows.map(p => p.dday))}`);
+  if(homeNearbyOnly && outside > 0) notes.push(`반경 밖에 ${outside}건 더 있음`);
+  $("#stat-open-note").textContent = notes.join(" · ");
 
-  if(openRows.length){
-    const minDday = Math.min(...openRows.map(p => p.dday));
-    $("#stat-open-note").textContent = `가장 빠른 마감 D-${minDday}`;
-  }else{
-    $("#stat-open-note").textContent = "";
-  }
+  // 협의 진행 중 — EIASS 사업조회에서 세어 온 전국 건수 (우리 동네 범위와 무관)
+  const ur = UNDER_REVIEW;
+  $("#stat-nego").dataset.count = ur.total || 0;
+  $("#stat-nego-note").textContent = ur.total
+    ? ["strat", "main", "small"].filter(k => ur[k] != null)
+        .map(k => `${REVIEW_SHORT[k]} ${ur[k].toLocaleString()}`).join(" · ")
+    : "아직 수집하지 않음";
 
   // 예정 설명회 — 사업이 아니라 **설명회 횟수**를 센다.
   // 한 사업이 여러 지역에서 여러 번 열기 때문에 사업 수보다 많을 수 있다.
@@ -1043,7 +1088,7 @@ function visibleProjects(){
    ============================================================ */
 const PAGER = {
   proj: { page:1, per:6 },
-  open: { page:1, per:10 }
+  open: { page:1, per:5 }
 };
 
 /* 필터·검색·범위가 바뀌면 보던 페이지 번호는 의미가 없어진다. */
@@ -1219,7 +1264,9 @@ function renderOpenList(){
 /* 왼쪽 알약 — 다음 설명회까지 남은 날. 날짜를 모르면 그렇게 적는다. */
 function briefPillHtml(b){
   if(b.dday === null){
-    return `<span class="dpill done">${b.past ? "지남" : "미정"}</span>`;
+    // "타법에 의한 생략" 은 일정이 미정인 게 아니라 설명회를 아예 안 여는 경우다
+    const label = b.past ? "지남" : (/생략/.test(b.text || "") ? "생략" : "미정");
+    return `<span class="dpill done">${label}</span>`;
   }
   return `<span class="dpill ${b.dday <= 3 ? "urgent" : ""}">${b.dday === 0 ? "오늘" : "D-" + b.dday}</span>`;
 }
@@ -1873,11 +1920,6 @@ function fillAdmin(){
   $("#a-d-sgg").value       = S.defHood.sgg;
   $("#a-d-dong").value      = S.defHood.dong;
   $("#a-pw").value          = S.adminPw;
-  ["1","2","3"].forEach((n, i) => {
-    const item = (S.nation || [])[i] || { k:"", v:"" };
-    $(`#a-n${n}-k`).value = item.k || "";
-    $(`#a-n${n}-v`).value = item.v || "";
-  });
 }
 
 $("#admSave").addEventListener("click", () => {
@@ -1893,12 +1935,6 @@ $("#admSave").addEventListener("click", () => {
   S.tel            = $("#a-tel").value.trim();
   S.defHood        = { sido:$("#a-d-sido").value.trim(), sgg:$("#a-d-sgg").value.trim(), dong:$("#a-d-dong").value.trim() };
   S.adminPw        = $("#a-pw").value || DEFAULTS.adminPw;
-  S.nation         = ["1","2","3"].map(n => ({
-    k: $(`#a-n${n}-k`).value.trim(),
-    v: $(`#a-n${n}-v`).value.trim(),
-    u: "건"
-  }));
-
   const ok = lsSet(LSKEY, S);
   applySettings();
   if(dataReady) refreshAll();

@@ -147,6 +147,7 @@ AI는 **번역만** 한다. 분석·판단·보충을 하지 않는다.
 |---|---|
 | 목록 | `POST /searchApi/search.do` — 화면의 검색엔진 AJAX를 그대로 흉내낸다.<br>`collection=draft`, `urlString=&alias=1(전략)/2(환경)&orgnCd=&sido=`,<br>`viewName=eiass/user/partcptn/choan/choan{Sperss|Eiass}List_searchApi`<br>**함정 2개 (둘 다 겪음)**: ① 한 페이지에 `tbl01` 표가 **두 개** 있고 내용이 같다 → 사업 번호로 걸러내지 않으면 전부 두 번씩 처리된다. ② 목록이 **시작일 순으로 정렬돼 있지 않다** → "오래된 게 나오면 그만" 방식은 공람 중인 사업을 놓친다. 공람 중인 사업이 없는 페이지가 5쪽 이어질 때까지 넘긴다. |
 | 상세 | `POST /partcptn/choan/choan{Sperss|Eiass}View.do`<br>전략: `BIZ_CD, BIZ_SEQ, CCIL_STEP1_CD_CK` / 환경: `BIZ_CD, BIZ_SEQ` |
+| **협의 진행 중 건수** | 같은 `search.do`에 `collection=business`.<br>`viewName=/eiass/user/biz/base/info/searchList{Per|Eia}_searchApi`,<br>`urlString`에 `completeFl=진행`·`businessExquery`(진행구분 5개)·`perssGubn=S/M/E`.<br>건수는 응답 HTML의 `detailPage` 문구에서 뽑는다.<br>**사업을 하나도 받지 않고 건수만** 가져오므로 요청 3번·비용 0원.<br>2026-08-02 실측: 전략 115 / 환경 121 / 소규모 391 (화면 숫자와 일치) |
 | 첨부파일 | 상세 HTML의 `generalView('FILE_SEQ','파일명')` 링크에서 뽑는다 |
 | 파일 받기 | `GET /common/file/downloadFileByFileSeq.do?FILE_SEQ=..&SYSTEM_NAME=PERSS`<br>**로그인·세션 없이 그대로 내려온다** (확인함) |
 
@@ -282,7 +283,10 @@ EIASS 주민의견등록은 **본인인증 로그인이 필수**다. 접수 페�
 EIASS에 없는 정보는 화면에 만들어 넣지 않는다.
 
 - 주민 의견 수, 설명회 참가 신청 현황 → 수집 안 됨. 0 또는 표시 안 함
-- 대시보드의 "예정 설명회·공청회", "협의 진행 중" → "아직 수집하지 않음"
+- **첫 화면 숫자 3칸과 대시보드는 전부 수집한 실제 값이다.** 관리자가 손으로 넣는
+  가짜 숫자는 없앴다. 값이 없으면 그 칸을 아예 만들지 않는다
+- **소규모환경영향평가는 건수만** 가져온다. 사업 목록·지도에는 넣지 않는다
+  (공람·설명회 절차가 달라 지금 화면 구조와 맞지 않는다)
 - 설명회 일시는 사업마다 자유 형식(`260814 오전 10시` / `2026.08.06(목) 14:00`)이라
   **원문 그대로** 보여준다. 날짜로 파싱하면 틀릴 위험이 있다.
   **예외**: 다음 설명회까지 남은 날(D-n)과 "지남" 표시를 내야 해서

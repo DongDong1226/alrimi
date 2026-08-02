@@ -95,7 +95,7 @@
         <ul>
           <li><a href="#projects" data-nav="near">우리 동네 사업</a></li>
           <li><a href="#projects" data-nav="all">전국 사업</a></li>
-          <li><a href="#participate" data-nav="participate">의견 참여</a></li>
+          <li><a href="#participate" data-nav="participate">주민 설명회 안내</a></li>
           <li><button type="button" data-nav="map">지도로 보기</button></li>
           <li><button type="button" data-modal="m-guide">이용안내</button></li>
         </ul>
@@ -164,12 +164,8 @@
       <div class="dash reveal">
         <div class="dash-top">
           <div class="stat feat">
-            <span class="lab" id="stat-total-lab">우리 동네 개발사업</span>
-            <span class="num"><span data-count="0" id="stat-total">0</span><small>건</small></span>
-            <span class="delta up" id="stat-total-note"></span>
-          </div>
-          <div class="stat">
-            <span class="lab">의견 낼 수 있는 사업</span>
+            <!-- 문구는 보는 범위(우리 동네 / 전국)에 따라 app.js 가 바꾼다 -->
+            <span class="lab" id="stat-open-lab">우리 동네에서 의견 낼 수 있는 사업</span>
             <span class="num"><span data-count="0" id="stat-open">0</span><small>건</small></span>
             <span class="delta hot" id="stat-open-note"></span>
           </div>
@@ -179,9 +175,9 @@
             <span class="delta" id="stat-events-note"></span>
           </div>
           <div class="stat">
-            <span class="lab">협의 진행 중</span>
+            <span class="lab">전국 협의 진행 중</span>
             <span class="num"><span data-count="0" id="stat-nego">0</span><small>건</small></span>
-            <span class="delta" id="stat-nego-note">아직 수집하지 않음</span>
+            <span class="delta" id="stat-nego-note"></span>
           </div>
           <button class="dash-cta" type="button" id="btn-openmap">
             <svg class="pin" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.6"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg>
@@ -243,8 +239,8 @@
               <label class="perpage" for="openPerPage">
                 <span>한 페이지에</span>
                 <select id="openPerPage">
-                  <option value="5">5개</option>
-                  <option value="10" selected>10개</option>
+                  <option value="5" selected>5개</option>
+                  <option value="10">10개</option>
                   <option value="20">20개</option>
                   <option value="0">전체</option>
                 </select>
@@ -366,34 +362,6 @@
           </div>
           <div class="fld">
             <label class="toggle"><input type="checkbox" id="a-demo"> 표본 데이터일 때 상단에 안내 띠 표시</label>
-          </div>
-        </div>
-      </div>
-
-      <div class="adm-card">
-        <h3>첫 화면 · 전국 현황</h3>
-        <div class="inner">
-          <p class="hint" style="margin-bottom:12px">첫 화면 아래쪽에 표시되는 숫자 세 개입니다. 실제 집계값이 나오면 여기에 넣으세요.</p>
-          <div class="fld">
-            <label for="a-n1-k">항목 1</label>
-            <div class="fld-2">
-              <input id="a-n1-k" type="text" placeholder="등록된 개발사업">
-              <input id="a-n1-v" type="text" placeholder="48,231">
-            </div>
-          </div>
-          <div class="fld">
-            <label for="a-n2-k">항목 2</label>
-            <div class="fld-2">
-              <input id="a-n2-k" type="text" placeholder="지금 공람 중">
-              <input id="a-n2-v" type="text" placeholder="228">
-            </div>
-          </div>
-          <div class="fld">
-            <label for="a-n3-k">항목 3</label>
-            <div class="fld-2">
-              <input id="a-n3-k" type="text" placeholder="이번 주 새 사업">
-              <input id="a-n3-v" type="text" placeholder="34">
-            </div>
           </div>
         </div>
       </div>
@@ -523,7 +491,7 @@
     </div>
     <div class="modal-bd-in">
       <h4>어떤 서비스인가요</h4>
-      <p>전국에서 진행되는 개발사업의 환경영향평가 정보 가운데, 설정하신 동네에 해당하는 것만 골라 보여드립니다. 주민 의견을 낼 수 있는 기간과 설명회·공청회 일정을 놓치지 않도록 안내하는 것이 목적입니다.</p>
+      <p>전국에서 진행되는 개발사업의 환경영향평가 정보 가운데, 설정하신 동네에 해당하는 것만 골라 보여드립니다. 주민 의견을 낼 수 있는 기간과 주민 설명회 일정을 놓치지 않도록 안내하는 것이 목적입니다.</p>
 
       <h4>의견은 이렇게 냅니다</h4>
       <ol>
