@@ -291,26 +291,37 @@ button{cursor:pointer}
   border:1px dashed var(--line-2);border-radius:var(--r-md);grid-column:1/-1}
 
 /* ---------- 페이지 나누기 ----------
-   목록이 아래로 한없이 이어지지 않도록 끊어서 보여준다. */
-.perpage{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-body-s);
-  font-weight:600;color:var(--ink-3)}
-.perpage select{font-size:var(--fs-body-s);font-weight:600;color:var(--ink-2);
-  background:var(--bg);border:1px solid var(--line-2);border-radius:var(--r-sm);
-  padding:6px 8px;min-height:34px}
-.perpage select:hover{border-color:var(--line-strong)}
-.pager{display:flex;align-items:center;justify-content:space-between;gap:14px;
-  flex-wrap:wrap;margin-top:22px}
+   목록이 아래로 한없이 이어지지 않도록 끊어서 보여준다.
+   단추 모양은 EIASS 원본의 캐러셀 컨트롤(.car-btn / .car-count)을 따랐다. */
+.perpage{position:relative;display:inline-flex;align-items:center;gap:8px;
+  font-size:var(--fs-body-s);font-weight:600;color:var(--ink-3)}
+.perpage select{appearance:none;-webkit-appearance:none;
+  font-size:var(--fs-body-s);font-weight:700;color:var(--ink-2);
+  background:var(--bg);border:1px solid var(--line-2);border-radius:var(--r-pill);
+  padding:8px 32px 8px 15px;min-height:38px;transition:.15s var(--ease)}
+.perpage select:hover{border-color:var(--primary);color:var(--primary)}
+/* 화살표는 직접 그린다 — 브라우저 기본 화살표는 모양을 맞출 수 없다 */
+.perpage::after{content:"";position:absolute;right:15px;top:50%;width:7px;height:7px;
+  border-right:2px solid var(--ink-4);border-bottom:2px solid var(--ink-4);
+  transform:translateY(-70%) rotate(45deg);pointer-events:none}
+
+.pager{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:26px}
 .pager:empty{display:none}
-.pager-count{font-size:var(--fs-body-s);color:var(--ink-3);font-weight:600}
-.pager-count b{color:var(--ink);font-weight:800;font-variant-numeric:tabular-nums}
-.pager-btns{display:flex;align-items:center;gap:4px;margin-left:auto}
-.pg{min-width:36px;min-height:36px;padding:0 9px;border:1px solid var(--line-2);
-  background:var(--bg);border-radius:var(--r-sm);font-size:var(--fs-body-s);font-weight:700;
+.pager-count{font-size:var(--fs-body-s);color:var(--ink-3);font-weight:600;
+  font-variant-numeric:tabular-nums}
+.pager-count b{color:var(--ink);font-weight:800}
+.pager-btns{display:flex;align-items:center;gap:6px;margin-left:auto}
+.pg{display:inline-flex;align-items:center;justify-content:center;
+  min-width:40px;height:40px;padding:0 12px;border:1px solid var(--line-2);
+  background:#fff;border-radius:var(--r-pill);font-size:var(--fs-body-s);font-weight:700;
   color:var(--ink-2);font-variant-numeric:tabular-nums;transition:.15s var(--ease)}
-.pg:hover:not(:disabled){border-color:var(--primary);color:var(--primary)}
-.pg.on{background:var(--primary);border-color:var(--primary);color:var(--bg)}
-.pg:disabled{color:var(--ink-4);opacity:.45;cursor:default}
-.pg-gap{padding:0 2px;color:var(--ink-4);font-weight:700}
+.pg:hover:not(:disabled){border-color:var(--primary);color:var(--primary);background:var(--primary-tint)}
+.pg--nav{width:40px;min-width:40px;padding:0}
+.pg--nav svg{width:17px;height:17px}
+.pg.on{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:var(--sh-sm)}
+.pg.on:hover{background:var(--p60);border-color:var(--p60);color:#fff}
+.pg:disabled{color:var(--line-strong);border-color:var(--line);background:var(--bg-2);cursor:default}
+.pg-gap{padding:0 4px;color:var(--ink-4);font-weight:700}
 .panel-head-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 
 .split{display:grid;grid-template-columns:1.25fr 1fr;gap:36px;align-items:start}
@@ -486,6 +497,9 @@ button{cursor:pointer}
   font-size:var(--fs-body-s);font-weight:700;color:var(--primary);background:none;border:0;padding:0}
 #gisDetail .eiass-link svg{width:15px;height:15px}
 #gisDetail .eiass-link:hover{color:var(--p60)}
+.gis-detail-nav{display:flex;align-items:center;justify-content:space-between;gap:10px}
+/* '지도 보기'는 지도가 감춰지는 휴대폰에서만 쓴다 */
+.gis-to-map{display:none}
 .gis-detail-back{display:inline-flex;align-items:center;gap:6px;background:none;border:0;padding:0;
   font-size:var(--fs-body-s);font-weight:700;color:var(--ink-3)}
 .gis-detail-back:hover{color:var(--primary)}
@@ -710,8 +724,17 @@ button{cursor:pointer}
   .tab{min-height:42px;padding:9px 12px}
   .eia-list .eia-row.lead{padding:13px 13px 14px}
 
-  /* 지도 화면 — 지도가 화면을 다 먹으면 목록을 못 본다 */
-  .gis-map-wrap{height:42vh}
+  /* 지도 화면 — 좁은 화면에서는 '지도' 아니면 '사업 내용' 하나만 보여준다.
+     처음 들어오면 지도가 화면을 채우고, 목록은 그 아래로 이어진다. */
+  .gis-map-wrap{height:62vh}
+  /* 사업을 고르면(on-detail) 지도와 주소칸을 감추고 사업 내용만 남긴다.
+     넓은 화면에는 이 규칙이 없으므로 지금까지와 똑같이 좌우로 나뉜다. */
+  #scr-map.on-detail .gis-map-wrap,
+  #scr-map.on-detail .gis-addr{display:none}
+  #scr-map.on-detail .gis-side{flex:1;border-bottom:0}
+  .gis-to-map{display:inline-flex}
+  .pager{justify-content:center}
+  .pager-btns{margin-left:0}
   /* 범례가 작은 지도의 3분의 1을 가려서 두 줄로 눕힌다 */
   .gis-legend{left:8px;bottom:8px;flex-direction:row;flex-wrap:wrap;max-width:calc(100% - 60px);
     gap:4px 10px;padding:7px 9px}

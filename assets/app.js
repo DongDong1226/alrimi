@@ -875,6 +875,10 @@ function pageSlice(rows, st){
   return { rows: rows.slice(from, from + st.per), pages, from: from + 1, to: Math.min(from + st.per, rows.length) };
 }
 
+/* 화살표는 EIASS 원본(docs/reference)의 캐러셀 단추와 같은 모양을 쓴다. */
+const CHEV_L = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg>`;
+const CHEV_R = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg>`;
+
 /* 페이지 번호 줄을 그린다. 번호가 많으면 앞뒤 두 칸씩만 보여준다. */
 function renderPager(sel, key, cut, total){
   const box = $(sel);
@@ -892,12 +896,12 @@ function renderPager(sel, key, cut, total){
   box.innerHTML = `
     <p class="pager-count">${total}건 중 <b>${cut.from}–${cut.to}</b>번째</p>
     <div class="pager-btns">
-      <button type="button" class="pg" data-page="${cur - 1}" ${cur === 1 ? "disabled" : ""} aria-label="이전 페이지">‹</button>
+      <button type="button" class="pg pg--nav" data-page="${cur - 1}" ${cur === 1 ? "disabled" : ""} aria-label="이전 페이지">${CHEV_L}</button>
       ${nums.map(n => n === "…"
         ? `<span class="pg-gap" aria-hidden="true">…</span>`
         : `<button type="button" class="pg${n === cur ? " on" : ""}" data-page="${n}"
              ${n === cur ? 'aria-current="page"' : ""} aria-label="${n}페이지">${n}</button>`).join("")}
-      <button type="button" class="pg" data-page="${cur + 1}" ${cur === cut.pages ? "disabled" : ""} aria-label="다음 페이지">›</button>
+      <button type="button" class="pg pg--nav" data-page="${cur + 1}" ${cur === cut.pages ? "disabled" : ""} aria-label="다음 페이지">${CHEV_R}</button>
     </div>`;
 }
 
@@ -1270,10 +1274,15 @@ $("#gisList").addEventListener("click", e => {
   if(b) selectProject(b.dataset.gis, true);
 });
 
-/* 왼쪽 패널을 목록 화면 / 상세 화면 중 하나로 바꾼다. */
+/* 왼쪽 패널을 목록 화면 / 상세 화면 중 하나로 바꾼다.
+   #scr-map 에 붙는 on-detail 표시는 **휴대폰에서만** 뜻이 있다.
+   (좁은 화면에서는 지도와 사업 내용을 한 화면에 같이 두면 둘 다 못 쓴다.
+    넓은 화면에서는 이 표시가 붙어도 아무 일도 일어나지 않는다 — CSS가
+    @media (max-width:560px) 안에서만 반응하기 때문이다) */
 function showGisPane(which){
   $("#gisList").hidden = which !== "list";
   $("#gisDetail").hidden = which !== "detail";
+  $("#scr-map").classList.toggle("on-detail", which === "detail");
   $(".gis-side-body").scrollTop = 0;
 }
 
@@ -1288,10 +1297,17 @@ function renderGisDetail(){
   if(!p){ box.innerHTML = ""; return; }
   const r = routeOf(p);
   box.innerHTML = `
-    <button class="gis-detail-back" type="button" id="btn-gis-back-list">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"></path></svg>
-      목록으로
-    </button>
+    <div class="gis-detail-nav">
+      <button class="gis-detail-back" type="button" id="btn-gis-back-list">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"></path></svg>
+        목록으로
+      </button>
+      <!-- 휴대폰에서는 상세를 보는 동안 지도가 감춰지므로 되돌아갈 길을 준다 -->
+      <button class="btn btn--line btn--sm btn--pill gis-to-map" type="button" id="btn-gis-to-map">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4 3 6.5v13L9 17l6 2.5 6-2.5v-13L15 6.5Z"></path><path d="M9 4v13M15 6.5v13"></path></svg>
+        지도 보기
+      </button>
+    </div>
     <p class="gis-detail-tags">
       <span class="badge ${p.badge} badge--dot">${esc(p.typeLabel)}</span>
       ${locTagHtml(p)}
@@ -1314,6 +1330,11 @@ function renderGisDetail(){
         EIASS 원문 페이지 열기
       </button>` : ""}`;
   $("#btn-gis-back-list").addEventListener("click", backToGisList);
+  // '지도 보기'는 고른 사업을 그대로 둔 채 지도만 다시 보여준다.
+  $("#btn-gis-to-map").addEventListener("click", () => {
+    showGisPane("list");
+    if(gisMap) setTimeout(() => gisMap.invalidateSize(), 60);
+  });
 }
 bindProjectActions("#gisDetail");
 
