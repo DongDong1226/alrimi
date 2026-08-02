@@ -1344,6 +1344,16 @@ function runSearch(){
   render();
   $("#projects").scrollIntoView({ behavior:"smooth", block:"start" });
 }
+/* 좁은 화면에서는 검색칸 안내 문구가 잘려 보인다. 폭에 맞춰 짧은 문구로 바꾼다.
+   (CSS로는 placeholder 글자를 바꿀 수 없어서 여기서 처리한다) */
+const Q_HINT_WIDE = "사업명 / 사업유형으로 우리 동네 안에서 찾기";
+const Q_HINT_NARROW = "사업명·유형으로 찾기";
+function fitSearchHint(){
+  $("#q").placeholder = innerWidth <= 560 ? Q_HINT_NARROW : Q_HINT_WIDE;
+}
+addEventListener("resize", fitSearchHint, { passive:true });
+fitSearchHint();
+
 $("#btn-search").addEventListener("click", runSearch);
 $("#q").addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); runSearch(); } });
 $$("[data-kw]").forEach(b => b.addEventListener("click", () => { $("#q").value = b.dataset.kw; runSearch(); }));

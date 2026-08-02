@@ -499,17 +499,26 @@ button{cursor:pointer}
 .gis-legend span{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;color:var(--ink-2)}
 .gis-legend .lg{width:11px;height:11px;border-radius:50%;flex:none}
 .gis-legend .lg--home{background:var(--eco);border:2px solid #fff;box-shadow:0 0 0 1px var(--line-2)}
-.gis-legend .lg--strat{background:var(--navy)}
-.gis-legend .lg--main{background:var(--primary)}
+.gis-legend .lg--strat{background:var(--p80)}
+/* 마커와 같은 마름모 모양으로 맞춘다 */
+.gis-legend .lg--main{background:var(--warn);border-radius:2px;transform:rotate(45deg)}
 .gis-legend .lg--circle{background:transparent;border:1.5px dashed var(--primary)}
 .gis-legend .lg--route{background:var(--teal);border-radius:2px;height:4px}
 
 /* 지도 마커 (Leaflet divIcon 안에서 쓰는 점) */
-.mk{width:15px;height:15px;border-radius:50%;border:2.5px solid #fff;box-shadow:0 1px 4px rgba(16,28,54,.45)}
+/* 지도 마커.
+   바탕지도가 옅은 베이지·하늘색이라 파랑 계열은 묻힌다. 그래서
+   ① 색을 멀리 떨어뜨리고(짙은 남색 ↔ 앰버)
+   ② 모양까지 다르게 준다(원 ↔ 마름모).
+   색만으로 나누면 색을 구분하기 어려운 사람은 둘을 못 가른다.
+   (색은 모두 tokens.css 에 있는 값이다) */
+.mk{width:16px;height:16px;border-radius:50%;border:3px solid #fff;
+  box-shadow:0 2px 6px rgba(16,28,54,.5)}
 .mk--home{background:var(--eco)}
-.mk--strat{background:var(--navy)}
-.mk--main{background:var(--primary)}
-.mk--on{transform:scale(1.45)}
+.mk--strat{background:var(--p80)}
+.mk--main{background:var(--warn);border-radius:3px;transform:rotate(45deg)}
+.mk--on{transform:scale(1.5)}
+.mk--main.mk--on{transform:rotate(45deg) scale(1.5)}
 
 .gis-detail-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
 #gisDetail .ttl{font-size:var(--fs-h-xs);font-weight:800;color:var(--ink);line-height:1.4;margin:10px 0 14px}
@@ -758,6 +767,12 @@ button{cursor:pointer}
   .gis-to-map{display:inline-flex}
   .pager{justify-content:center}
   .pager-btns{margin-left:0}
+  /* '많이 찾는 사업'을 한 줄로 — 두 줄로 넘어가며 어수선했다.
+     네 개는 폭이 모자라 마지막 하나(공원)는 이 폭에서만 감춘다. */
+  .hero-home .kw-row{flex-wrap:nowrap;gap:7px;margin-top:12px}
+  .hero-home .kw-row .lbl,.hero-home .kw-chip{flex:none;white-space:nowrap}
+  .hero-home .kw-row .kw-chip:nth-of-type(4){display:none}
+  .hero-home .kw-chip{padding:7px 12px}
   /* 관리자 저장 버튼 줄 — "저장되었습니다" 문구가 옆으로 삐져나갔다 */
   .adm-actions{flex-wrap:wrap}
   /* 설명회 목록 — 좁은 화면에서는 단추를 아래로 내린다 */
