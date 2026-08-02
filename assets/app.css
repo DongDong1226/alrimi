@@ -10,6 +10,9 @@ a{color:inherit;text-decoration:none}
 img{display:block;max-width:100%}
 button,input,select,textarea{font-family:inherit}
 button{cursor:pointer}
+/* hidden 을 붙였는데도 클래스의 display 에 밀려 그대로 보이는 일이 잦다.
+   (예: .gis-back{display:inline-flex} 가 브라우저 기본 [hidden] 을 이긴다) */
+[hidden]{display:none!important}
 :focus-visible{outline:3px solid color-mix(in srgb,var(--primary) 55%,#fff);outline-offset:2px;border-radius:4px}
 ::selection{background:color-mix(in srgb,var(--primary) 22%,#fff)}
 
@@ -287,6 +290,29 @@ button{cursor:pointer}
 .proj-empty{padding:36px;text-align:center;color:var(--ink-3);background:#fff;
   border:1px dashed var(--line-2);border-radius:var(--r-md);grid-column:1/-1}
 
+/* ---------- 페이지 나누기 ----------
+   목록이 아래로 한없이 이어지지 않도록 끊어서 보여준다. */
+.perpage{display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-body-s);
+  font-weight:600;color:var(--ink-3)}
+.perpage select{font-size:var(--fs-body-s);font-weight:600;color:var(--ink-2);
+  background:var(--bg);border:1px solid var(--line-2);border-radius:var(--r-sm);
+  padding:6px 8px;min-height:34px}
+.perpage select:hover{border-color:var(--line-strong)}
+.pager{display:flex;align-items:center;justify-content:space-between;gap:14px;
+  flex-wrap:wrap;margin-top:22px}
+.pager:empty{display:none}
+.pager-count{font-size:var(--fs-body-s);color:var(--ink-3);font-weight:600}
+.pager-count b{color:var(--ink);font-weight:800;font-variant-numeric:tabular-nums}
+.pager-btns{display:flex;align-items:center;gap:4px;margin-left:auto}
+.pg{min-width:36px;min-height:36px;padding:0 9px;border:1px solid var(--line-2);
+  background:var(--bg);border-radius:var(--r-sm);font-size:var(--fs-body-s);font-weight:700;
+  color:var(--ink-2);font-variant-numeric:tabular-nums;transition:.15s var(--ease)}
+.pg:hover:not(:disabled){border-color:var(--primary);color:var(--primary)}
+.pg.on{background:var(--primary);border-color:var(--primary);color:var(--bg)}
+.pg:disabled{color:var(--ink-4);opacity:.45;cursor:default}
+.pg-gap{padding:0 2px;color:var(--ink-4);font-weight:700}
+.panel-head-right{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+
 .split{display:grid;grid-template-columns:1.25fr 1fr;gap:36px;align-items:start}
 .panel-head{display:flex;align-items:center;justify-content:space-between;
   border-bottom:2px solid var(--ink);padding-bottom:12px}
@@ -493,8 +519,30 @@ button{cursor:pointer}
 .eia-row .k{display:flex;align-items:center;gap:6px;font-size:var(--fs-body-xs);
   font-weight:800;color:var(--p70);margin-bottom:4px}
 .eia-row .v{font-size:var(--fs-body-s);line-height:1.7;color:var(--ink-2)}
-.eia-row.none .k{color:var(--ink-4)}
-.eia-row.none .v{color:var(--ink-4)}
+
+/* 환경영향분석 탭 안쪽만 — 글이 길어서 그냥 나열하면 눈에 안 들어온다.
+   (공람·설명회, 구간 탭은 짧은 표라서 위 기본 모양을 그대로 쓴다) */
+.eia-list .eia-row{padding:13px 0 14px}
+.eia-list .eia-row:last-of-type{border-bottom:0}
+/* 항목 이름은 알약 모양으로 띄운다 — 눈으로 훑을 때 걸리는 지점이 필요하다 */
+.eia-list .eia-row .k{display:inline-flex;background:var(--primary-soft);
+  padding:4px 11px;border-radius:var(--r-pill);margin-bottom:9px}
+.eia-list .eia-row .v{line-height:1.75}
+/* 문장마다 점을 찍어 줄을 나눈다 (글자는 그대로, 보기만 나눈 것) */
+.eia-list .v-list{list-style:none;display:grid;gap:7px;padding:0;margin:0}
+.eia-list .v-list li{position:relative;padding-left:15px}
+.eia-list .v-list li::before{content:"";position:absolute;left:3px;top:.65em;
+  width:5px;height:5px;border-radius:50%;background:var(--p30)}
+/* 사업개요 — "무슨 사업인지"가 먼저 들어와야 하므로 카드로 강조한다 */
+.eia-list .eia-row.lead{background:var(--primary-tint);border:1px solid var(--line);
+  border-left:3px solid var(--primary);border-radius:var(--r-md);
+  padding:15px 16px;margin-bottom:6px}
+.eia-list .eia-row.lead .k{background:var(--bg)}
+.eia-list .eia-row.lead .v{color:var(--ink)}
+/* 요약문에 내용이 없는 항목은 맨 아래에 한 줄로 모은다 */
+.eia-missing{margin-top:13px;padding:10px 12px;background:var(--bg-1);
+  border-radius:var(--r-sm);font-size:var(--fs-body-xs);color:var(--ink-4);line-height:1.65}
+.eia-missing b{color:var(--ink-3);font-weight:800;margin-right:6px}
 
 @media (max-width:1400px){
   .gis-side{width:460px}
@@ -566,7 +614,11 @@ button{cursor:pointer}
   .brand-sub{display:none}
   .gnb>ul{gap:18px}
   .gnb>ul>li>a,.gnb>ul>li>button{font-size:15.5px}
-  .hero-home{grid-template-columns:1fr;gap:26px;padding-bottom:110px}
+  /* 그냥 1fr 로 두면 열 너비가 '가장 안 줄어드는 자식'에 맞춰 커져서
+     상자보다 넓어지고, .hero 의 overflow:hidden 이 오른쪽을 잘라 버린다.
+     minmax(0,1fr) 로 두어야 상자 너비를 넘지 않는다. (휴대폰에서 실제로 잘렸다) */
+  .hero-home{grid-template-columns:minmax(0,1fr);gap:26px;padding-bottom:110px}
+  .hero-home>*{min-width:0}
   .hood-card{max-width:520px}
   .proj-grid{grid-template-columns:repeat(2,1fr)}
   .dash-top{grid-template-columns:repeat(2,1fr)}
@@ -590,13 +642,20 @@ button{cursor:pointer}
   .header-main{height:60px;gap:16px;justify-content:space-between}
   .section-head--row{flex-direction:column;align-items:flex-start}
   .onb h1{font-size:var(--fs-display-s)}
-  .proj-grid{grid-template-columns:1fr}
+  /* 여기도 minmax(0,1fr) — 1fr 이면 카드 안의 버튼 줄 길이만큼 열이 넓어진다 */
+  .proj-grid{grid-template-columns:minmax(0,1fr)}
+  .proj{min-width:0}
+  .proj .foot{flex-wrap:wrap}
   .dash-tick{flex-direction:column}
   .tick+.tick{border-left:0;border-top:1px solid var(--line)}
   .footer-main .wrap{grid-template-columns:1fr}
 }
+/* ---------- 휴대폰 (세로로 든 화면) ----------
+   휴대폰용 사이트를 따로 만들지 않고 이 폭에서 같은 화면이 바뀌게 한다.
+   손가락으로 누르는 곳은 44px 이상, 글자는 데스크톱보다 오히려 키운다.
+   (팔레트·클래스명은 그대로 두고 크기와 배치만 손댄다) */
 @media (max-width:560px){
-  :root{--tscale:.86}
+  :root{--tscale:.95}
   .wrap{width:calc(100% - 32px)}
   .dash-top{grid-template-columns:1fr}
   .brand-sub{display:none}
@@ -605,6 +664,33 @@ button{cursor:pointer}
   .header-actions{flex:0 1 auto;min-width:0}
   .hood-pill{min-width:0;overflow:hidden}
   .hood-pill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  /* 첫 화면 동네 설정 — 네 칸이 한 줄에 끼어 있어 20px 높이였다. 한 줄에 하나씩. */
+  .setbar{flex-direction:column;align-items:stretch;gap:8px;padding:12px}
+  .setcell{flex:1 1 auto;width:100%;padding:8px 14px;background:var(--bg-1);border-radius:var(--r-sm)}
+  .setcell label{font-size:12px;margin-bottom:4px}
+  /* 16px 미만이면 아이폰이 입력할 때 화면을 확대해 버린다 — 그래서 여기만 고정값 */
+  .setcell input,.setcell select{height:40px;font-size:16px}
+  .setcell.sel::after{bottom:16px}
+
+  /* 손가락으로 누르는 것들 — 최소 44px */
+  .btn{min-height:44px}
+  .btn--sm{min-height:40px;padding:10px 14px}
+  .chip,.scope-seg button,.kw-chip{min-height:40px}
+  .chg,.sort-btn{display:inline-flex;align-items:center;min-height:40px}
+  .searchbar{padding:8px 10px 8px 16px}
+  .searchbar input{font-size:16px;min-height:36px}
+
+  /* 사업 상세 — 탭과 본문이 좁은 화면에서 답답하지 않게 */
+  .tab{min-height:42px;padding:9px 12px}
+  .eia-list .eia-row.lead{padding:13px 13px 14px}
+
+  /* 지도 화면 — 지도가 화면을 다 먹으면 목록을 못 본다 */
+  .gis-map-wrap{height:42vh}
+  /* 범례가 작은 지도의 3분의 1을 가려서 두 줄로 눕힌다 */
+  .gis-legend{left:8px;bottom:8px;flex-direction:row;flex-wrap:wrap;max-width:calc(100% - 60px);
+    gap:4px 10px;padding:7px 9px}
+  .gis-legend span{font-size:11px}
 }
 @media (prefers-reduced-motion:reduce){
   *{transition:none!important;animation:none!important;scroll-behavior:auto!important}

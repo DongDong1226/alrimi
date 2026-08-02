@@ -66,8 +66,8 @@ function esc(v){
    (없는 내용을 지어내지 않기 위해 항목을 고정한다)
    ============================================================ */
 const EIA_FIELDS = [
-  { key:"overview", label:"어떤 사업인가" },
-  { key:"air",      label:"공기 · 먼지 · 냄새" },
+  { key:"overview", label:"사업개요" },
+  { key:"air",      label:"대기 · 악취" },
   { key:"noise",    label:"소음 · 진동" },
   { key:"water",    label:"물 (수질 · 지하수)" },
   { key:"nature",   label:"동식물 · 생태" },
@@ -550,6 +550,7 @@ function renderScope(){
 
 function setScope(near){
   homeNearbyOnly = near;
+  resetPages();
   renderScope();
   updateFilterCounts();
   updateDashboardStats();
@@ -582,15 +583,28 @@ function eiaSection(p){
       <p class="eia-src">공람 기간이 끝난 사업이라 요약문에 대한 해석 결과는 표시하지 않습니다.
         사업 내용은 EIASS 원문에서 확인하세요.</p>` };
   }
-  const rows = EIA_FIELDS.map(f => {
+  // 내용이 있는 항목만 카드로 보여주고, 없는 항목은 맨 아래에 한 줄로 모은다.
+  // (8개 항목 중 절반이 "내용 없습니다"로 채워지면 정작 읽어야 할 내용이 묻힌다)
+  const has = [], missing = [];
+  EIA_FIELDS.forEach(f => {
     const v = p.analysis ? p.analysis[f.key] : null;
-    return v
-      ? `<div class="eia-row"><p class="k">${esc(f.label)}</p><p class="v">${esc(v)}</p></div>`
-      : `<div class="eia-row none"><p class="k">${esc(f.label)}</p><p class="v">요약문에 관련 내용이 없습니다</p></div>`;
+    (v ? has : missing).push(v ? { f, v } : f);
+  });
+
+  const rows = has.map(({ f, v }, i) => {
+    const lead = i === 0 && f.key === "overview" ? " lead" : "";
+    return `<section class="eia-row${lead}">
+      <p class="k">${esc(f.label)}</p>
+      ${sentenceListHtml(v)}
+    </section>`;
   }).join("");
 
+  const missingRow = missing.length
+    ? `<p class="eia-missing"><b>요약문에 내용이 없는 항목</b>
+        ${missing.map(f => esc(f.label)).join(" · ")}</p>` : "";
+
   const legacy = (!p.analysis && p.summaryEasy)
-    ? `<div class="eia-row"><p class="v">${esc(p.summaryEasy)}</p></div>` : "";
+    ? `<section class="eia-row">${sentenceListHtml(p.summaryEasy)}</section>` : "";
 
   const filled = p.analysis ? Object.values(p.analysis).filter(Boolean).length : 0;
   const hint = p.analysis ? `${filled}/${EIA_FIELDS.length}개 항목` : (p.summaryEasy ? "요약" : "없음");
@@ -598,7 +612,21 @@ function eiaSection(p){
   return { title:"환경영향분석", hint, body:`
     <p class="eia-src">사업자가 낸 평가서 초안의 <b>요약문</b>에 적힌 내용만 쉬운 말로 옮긴 것입니다.
       판단이나 의견은 담지 않았고, 요약문에 없는 항목은 비워 둡니다.</p>
-    ${legacy || rows}` };
+    <div class="eia-list">${legacy || rows}${legacy ? "" : missingRow}</div>` };
+}
+
+/* 한 덩어리로 붙어 있는 문장을 문장 단위로 끊어 목록으로 만든다.
+   글자는 그대로 두고 보기만 나눈다 — 내용을 고치거나 요약하지 않는다.
+   문장이 하나뿐이면 목록으로 만들지 않고 그냥 한 문단으로 둔다. */
+function sentenceListHtml(text){
+  // '~다.' '~함.' 처럼 문장이 끝나는 자리에서만 끊는다.
+  // ('1.5km' 처럼 숫자 사이의 점은 앞 글자가 달라서 안 끊긴다)
+  const parts = (String(text).replace(/\s+/g, " ").trim()
+    .match(/.*?[다요음임함됨]\.(?=\s|$)|.+$/g) || [])
+    .map(s => s.trim())
+    .filter(Boolean);
+  if(parts.length <= 1) return `<p class="v">${esc(text)}</p>`;
+  return `<ul class="v v-list">${parts.map(s => `<li>${esc(s)}</li>`).join("")}</ul>`;
 }
 
 /* ============================================================
@@ -826,9 +854,74 @@ function visibleProjects(){
   return rows;
 }
 
+/* ============================================================
+   페이지 나누기
+   목록이 길어서 한 화면에 다 깔면 아래로 한없이 이어진다.
+   per = 0 이면 "전체"라서 나누지 않는다.
+   ============================================================ */
+const PAGER = {
+  proj: { page:1, per:9 },
+  open: { page:1, per:10 }
+};
+
+/* 필터·검색·범위가 바뀌면 보던 페이지 번호는 의미가 없어진다. */
+function resetPages(){ PAGER.proj.page = 1; PAGER.open.page = 1; }
+
+function pageSlice(rows, st){
+  if(!st.per) return { rows, pages:1, from:1, to:rows.length };
+  const pages = Math.max(1, Math.ceil(rows.length / st.per));
+  st.page = Math.min(Math.max(1, st.page), pages);
+  const from = (st.page - 1) * st.per;
+  return { rows: rows.slice(from, from + st.per), pages, from: from + 1, to: Math.min(from + st.per, rows.length) };
+}
+
+/* 페이지 번호 줄을 그린다. 번호가 많으면 앞뒤 두 칸씩만 보여준다. */
+function renderPager(sel, key, cut, total){
+  const box = $(sel);
+  if(!box) return;
+  if(total === 0 || cut.pages <= 1){
+    box.innerHTML = total ? `<p class="pager-count">모두 ${total}건</p>` : "";
+    return;
+  }
+  const st = PAGER[key], cur = st.page;
+  const nums = [];
+  for(let i = 1; i <= cut.pages; i++){
+    if(i === 1 || i === cut.pages || Math.abs(i - cur) <= 2) nums.push(i);
+    else if(nums[nums.length - 1] !== "…") nums.push("…");
+  }
+  box.innerHTML = `
+    <p class="pager-count">${total}건 중 <b>${cut.from}–${cut.to}</b>번째</p>
+    <div class="pager-btns">
+      <button type="button" class="pg" data-page="${cur - 1}" ${cur === 1 ? "disabled" : ""} aria-label="이전 페이지">‹</button>
+      ${nums.map(n => n === "…"
+        ? `<span class="pg-gap" aria-hidden="true">…</span>`
+        : `<button type="button" class="pg${n === cur ? " on" : ""}" data-page="${n}"
+             ${n === cur ? 'aria-current="page"' : ""} aria-label="${n}페이지">${n}</button>`).join("")}
+      <button type="button" class="pg" data-page="${cur + 1}" ${cur === cut.pages ? "disabled" : ""} aria-label="다음 페이지">›</button>
+    </div>`;
+}
+
+/* 페이지 단추와 '한 페이지에 N개' 고르는 칸을 한 번만 연결해 둔다. */
+function bindPager(pagerSel, perSel, key, redraw, scrollTo){
+  $(pagerSel).addEventListener("click", e => {
+    const b = e.target.closest("[data-page]");
+    if(!b || b.disabled) return;
+    PAGER[key].page = Number(b.dataset.page);
+    redraw();
+    if(scrollTo) $(scrollTo).scrollIntoView({ behavior:"smooth", block:"start" });
+  });
+  $(perSel).addEventListener("change", e => {
+    PAGER[key].per = Number(e.target.value);
+    PAGER[key].page = 1;
+    redraw();
+  });
+}
+
 function render(){
   const rows = visibleProjects();
   const grid = $("#projGrid");
+  const cut = pageSlice(rows, PAGER.proj);
+  renderPager("#projPager", "proj", cut, rows.length);
 
   if(!rows.length){
     const outside = PROJECTS.length;
@@ -844,7 +937,7 @@ function render(){
     return;
   }
 
-  grid.innerHTML = rows.map(p => `
+  grid.innerHTML = cut.rows.map(p => `
     <article class="proj" data-id="${esc(p.id)}">
       <div class="badges">
         <span class="badge ${p.badge} badge--dot">${esc(p.typeLabel)}</span>
@@ -903,12 +996,15 @@ function renderOpenList(){
     ? (HOME.label ? `${HOME.label} 반경 ${S.radiusKm}km 기준` : "")
     : "전국 기준";
 
+  const cut = pageSlice(rows, PAGER.open);
+  renderPager("#openPager", "open", cut, rows.length);
+
   if(!rows.length){
     const where = homeNearbyOnly ? `반경 ${esc(S.radiusKm)}km 안에` : "전국에";
     box.innerHTML = `<p class="proj-empty" style="border-radius:var(--r-md)">${where} 의견을 낼 수 있는 사업이 없습니다.</p>`;
     return;
   }
-  box.innerHTML = rows.map(p => `
+  box.innerHTML = cut.rows.map(p => `
     <div class="row-item">
       <span class="dpill ${p.dday <= 3 ? "urgent" : ""}">D-${p.dday}</span>
       <div class="row-body">
@@ -920,6 +1016,8 @@ function renderOpenList(){
     </div>`).join("");
 }
 bindProjectActions("#openList");
+bindPager("#projPager", "#projPerPage", "proj", render, "#projects");
+bindPager("#openPager", "#openPerPage", "open", renderOpenList, "#participate");
 
 /* 사업 상세 모달 */
 function openDetail(id){
@@ -947,15 +1045,18 @@ $$("[data-filter]").forEach(c => c.addEventListener("click", () => {
   $$("[data-filter]").forEach(x => x.classList.remove("on"));
   c.classList.add("on");
   filter = c.dataset.filter;
+  resetPages();
   render();
 }));
 $("#sortBtn").addEventListener("click", () => {
   sortBy = sortBy === "dist" ? "dday" : "dist";
   $("#sortLabel").textContent = sortBy === "dist" ? "가까운 순" : "마감 임박 순";
+  resetPages();
   render();
 });
 function runSearch(){
   query = $("#q").value.trim();
+  resetPages();
   render();
   $("#projects").scrollIntoView({ behavior:"smooth", block:"start" });
 }

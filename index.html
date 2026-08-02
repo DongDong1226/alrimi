@@ -216,9 +216,21 @@
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M6 12h12M10 18h4"></path></svg>
             <span id="sortLabel">가까운 순</span>
           </button>
+          <!-- 한 페이지에 몇 개씩 볼지 고른다 -->
+          <label class="perpage" for="projPerPage">
+            <span>한 페이지에</span>
+            <select id="projPerPage">
+              <option value="6">6개</option>
+              <option value="9" selected>9개</option>
+              <option value="12">12개</option>
+              <option value="24">24개</option>
+              <option value="0">전체</option>
+            </select>
+          </label>
         </div>
 
         <div class="proj-grid" id="projGrid"></div>
+        <nav class="pager" id="projPager" aria-label="사업 목록 페이지"></nav>
       </div>
     </section>
 
@@ -227,9 +239,21 @@
         <div class="reveal">
           <div class="panel-head">
             <h3>의견을 낼 수 있는 초안 공람</h3>
-            <span id="openListNote" style="font-size:var(--fs-body-s);color:var(--ink-3);font-weight:600"></span>
+            <div class="panel-head-right">
+              <label class="perpage" for="openPerPage">
+                <span>한 페이지에</span>
+                <select id="openPerPage">
+                  <option value="5">5개</option>
+                  <option value="10" selected>10개</option>
+                  <option value="20">20개</option>
+                  <option value="0">전체</option>
+                </select>
+              </label>
+              <span id="openListNote" style="font-size:var(--fs-body-s);color:var(--ink-3);font-weight:600"></span>
+            </div>
           </div>
           <div id="openList"></div>
+          <nav class="pager" id="openPager" aria-label="공람 목록 페이지"></nav>
         </div>
       </div>
     </section>
