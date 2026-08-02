@@ -283,6 +283,8 @@ button{cursor:pointer}
 .proj .ttl{font-size:var(--fs-h-xs);font-weight:700;color:var(--ink);line-height:1.45;
   display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;min-height:2.9em}
 .proj .desc{font-size:var(--fs-body-s);color:var(--ink-3);line-height:1.55;margin-top:-3px}
+/* 실제로 행동해야 하는 날짜는 공람 종료일이 아니라 의견 마감일이다 (시행령 제38조) */
+.proj .op-end{color:var(--primary-strong);font-weight:800}
 .proj .rows{display:flex;flex-direction:column;gap:6px;font-size:var(--fs-body-s);color:var(--ink-2)}
 .proj .rows div{display:flex;align-items:flex-start;gap:7px}
 .proj .rows svg{width:15px;height:15px;color:var(--ink-4);flex:none;margin-top:3px}

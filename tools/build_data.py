@@ -64,6 +64,11 @@ ROUTE_SIMPLIFY_TOL = 0.0004        # 약 40m — 도형을 이 정도까지 단�
 ROUTE_MAX_KM = 60                  # 사업 위치에서 이만큼 떨어진 동명이천은 버린다
 EMPTY_PAGE_STREAK = 5              # 공람 중인 사업이 없는 페이지가 이만큼 이어지면 목록 조회를 멈춘다
 
+# 공람이 끝난 뒤에도 의견은 더 받는다 (환경영향평가법 시행령 제38조: 공람 종료 후 7일 이내).
+# 목록에는 공람 기간만 나오므로, 공람이 끝난 사업도 이 일수까지는 상세를 받아 두고
+# 실제 의견제출 마감일로 마지막에 걸러 낸다. (7일 + 주말·공휴일로 밀리는 며칠을 감안해 넉넉히)
+OPINION_GRACE_DAYS = 14
+
 # 이 저장소를 만든 개발 환경(샌드박스)에서만 인증서 검증이 막혀 있었다.
 # 실제 사용자 PC에서는 기본값(검증함)을 그대로 쓰면 된다.
 # 검증 오류가 나서 도저히 안 될 때만 EIASS_INSECURE_SSL=1 로 잠깐 꺼서 확인해본다.
@@ -121,6 +126,19 @@ def fetch_list_page(category_key, page):
                        headers=HEADERS, verify=VERIFY_SSL, timeout=20)
     r.raise_for_status()
     return r.text
+
+
+def parse_opinion_end(text):
+    """'2026.07.30 ~ 2026.09.23' 에서 뒤쪽 날짜만 ISO 형식으로 돌려준다.
+    읽지 못하면 None (그때는 화면이 공람 종료일을 대신 쓴다)."""
+    m = re.search(r"(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})\s*~\s*(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})",
+                  text or "")
+    if not m:
+        return None
+    try:
+        return datetime.date(int(m.group(4)), int(m.group(5)), int(m.group(6))).isoformat()
+    except ValueError:
+        return None
 
 
 def parse_period(text):
@@ -206,7 +224,8 @@ def fetch_open_items(category_key, today, max_pages, delay):
                 continue
             start = datetime.date.fromisoformat(it["period_start"])
             end = datetime.date.fromisoformat(it["period_end"])
-            if not (start <= today <= end):
+            # 공람이 끝났어도 의견 제출 기한이 남았을 수 있으므로 여유를 두고 담는다.
+            if not (start <= today <= end + datetime.timedelta(days=OPINION_GRACE_DAYS)):
                 continue
             key = (it["biz_cd"], it["biz_seq"])
             if key in seen:      # 같은 사업이 여러 페이지에 나오는 경우 대비
@@ -927,13 +946,33 @@ def build(args):
                 "sourceViewPath": cat["view_path"],
             })
 
+    # 의견제출 마감일을 읽어 담아 둔다("2026.07.30 ~ 2026.09.23" 형식).
+    # 화면은 이 날짜를 기준으로 사업을 보여줄지 판단한다.
+    for p in all_projects:
+        p["opinionEnd"] = parse_opinion_end(p.get("opinionPeriod"))
+
     # 마지막으로 한 번 더 걸러낸다. 수집이 자정을 넘겨 오래 돌면
-    # 시작할 때는 공람 중이었지만 저장 시점엔 끝난 사업이 섞일 수 있다.
+    # 시작할 때는 기한이 남아 있었지만 저장 시점엔 지난 사업이 섞일 수 있다.
+    #
+    # **기준은 공람 종료일이 아니라 의견제출 마감일이다.**
+    # 환경영향평가법 시행령 제38조에 따라 공람이 끝난 뒤 7일 이내까지 의견을 낼 수 있어서,
+    # 공람 종료일로 끊으면 아직 의견을 낼 수 있는 사업이 파일에서 빠져 화면에 안 뜬다.
     end_day = datetime.date.today()
-    kept = [p for p in all_projects
-            if p["periodStart"] and p["periodEnd"]
-            and datetime.date.fromisoformat(p["periodStart"]) <= end_day
-            <= datetime.date.fromisoformat(p["periodEnd"])]
+
+    def still_open(p):
+        if not p["periodStart"] or not p["periodEnd"]:
+            return False
+        start = datetime.date.fromisoformat(p["periodStart"])
+        deadline = datetime.date.fromisoformat(p["opinionEnd"] or p["periodEnd"])
+        # 의견제출 마감이 공람 종료보다 앞서 적혀 있으면 늦은 쪽을 쓴다(표기 오류 대비)
+        deadline = max(deadline, datetime.date.fromisoformat(p["periodEnd"]))
+        return start <= end_day <= deadline
+
+    kept = [p for p in all_projects if still_open(p)]
+    grace = sum(1 for p in kept
+                if datetime.date.fromisoformat(p["periodEnd"]) < end_day)
+    if grace:
+        log(f"[안내] 공람은 끝났지만 의견 제출 기한이 남은 사업 {grace}건을 함께 담았습니다.")
     dropped = len(all_projects) - len(kept)
     if dropped:
         log(f"[안내] 공람 기간이 끝난 {dropped}건은 저장하지 않았습니다.")

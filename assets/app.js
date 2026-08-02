@@ -85,7 +85,7 @@ const SAMPLE_PROJECTS = [
     address:"하남시 교산동 일원", org:"한국토지주택공사", lat:null, lon:null }
 ];
 
-let PROJECTS = [];          // 공람 기간 안에 있는 사업 (화면에 보이는 것)
+let PROJECTS = [];          // 아직 의견을 낼 수 있는 사업 (화면에 보이는 것)
 let CLOSED_PROJECTS = [];   // 기간이 지난 사업 (화면에서 빼지만, 참조되면 최소 정보만 보여준다)
 let dataReady = false;
 let usingSample = false;    // 실제 파일을 못 읽어 표본으로 대신하고 있는가
@@ -110,16 +110,41 @@ function haversineKm(lat1, lon1, lat2, lon2){
 
 /* EIASS에서 수집한 원본 항목을 화면에서 쓰는 모양으로 바꾼다.
    원문에 없는 값(예: 주민 의견 수)은 만들어내지 않는다. */
+/* 의견제출 기간의 끝날을 읽는다. "2026.07.30 ~ 2026.09.23" 형식.
+   못 읽으면 null 을 돌려주고, 그때는 공람 종료일을 대신 쓴다. */
+function opinionEndOf(p){
+  if(p.opinionEnd) return p.opinionEnd;                 // 수집기가 이미 계산해 둔 값
+  const m = /(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})\s*~\s*(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/
+    .exec(p.opinionPeriod || "");
+  if(!m) return null;
+  const pad = v => String(v).padStart(2, "0");
+  return `${m[4]}-${pad(m[5])}-${pad(m[6])}`;
+}
+
 function normalizeProject(p){
-  // 파일을 만든 날과 보는 날이 다를 수 있으므로, 공람 중인지는 화면에서 매번 다시 따진다.
+  // 파일을 만든 날과 보는 날이 다를 수 있으므로, 화면에서 매번 다시 따진다.
+  //
+  // **기준은 '공람 종료일'이 아니라 '의견 제출 마감일'이다.**
+  // 환경영향평가법 시행령 제38조: 주민은 공람이 끝난 뒤 7일 이내까지 의견을 낼 수 있다.
+  // 공람 종료일로 끊으면 아직 의견을 낼 수 있는 사업이 화면에서 사라진다
+  // (실제로 36건 중 30건이 공람 종료보다 7~10일 뒤에 마감된다).
   const today = new Date(); today.setHours(0, 0, 0, 0);
   const start = p.periodStart ? new Date(p.periodStart + "T00:00:00") : null;
-  const end = p.periodEnd ? new Date(p.periodEnd + "T00:00:00") : null;
+  const viewEnd = p.periodEnd ? new Date(p.periodEnd + "T00:00:00") : null;
+  const oEndStr = opinionEndOf(p);
+  const oEnd = oEndStr ? new Date(oEndStr + "T00:00:00") : null;
+  const deadline = oEnd && viewEnd ? new Date(Math.max(oEnd, viewEnd)) : (oEnd || viewEnd);
+
   const started = !start || today >= start;
-  const ended = end && today > end;
-  const open = Boolean(start && end && started && !ended);
-  const dday = open ? Math.round((end - today) / 86400000) : null;
-  const stage = open ? "초안 공람 중" : (ended ? "공람 종료" : "공람 시작 전");
+  const ended = deadline && today > deadline;
+  const open = Boolean(start && deadline && started && !ended);
+  const dday = open ? Math.round((deadline - today) / 86400000) : null;
+  // 공람은 끝났지만 의견은 아직 낼 수 있는 기간
+  const viewClosed = Boolean(viewEnd && today > viewEnd);
+  // **공람 기간 안인가** — 평가서 초안을 볼 수 있는 기간. 환경영향분석은 이때만 보여준다.
+  const viewOpen = Boolean(start && viewEnd && started && !viewClosed);
+  const stage = !open ? (ended ? "의견 접수 종료" : "공람 시작 전")
+    : (viewClosed ? "공람 종료 · 의견 접수 중" : "초안 공람 중");
 
   const hasCoord = typeof p.lat === "number" && typeof p.lon === "number";
   return {
@@ -128,8 +153,11 @@ function normalizeProject(p){
     typeLabel: p.categoryLabel || p.category,
     badge: CATEGORY_BADGE[p.category] || "badge--gray",
     name: p.name,
-    open,                       // 공람 기간 안에 있는가
+    open,                       // 아직 의견을 낼 수 있는가 (의견제출 마감 기준)
     stage, dday,
+    viewClosed,                 // 공람은 끝났지만 의견은 낼 수 있는 상태
+    viewOpen,                   // 공람 기간 안인가 (환경영향분석은 이때만 보여준다)
+    opinionEnd: oEndStr,        // 의견 제출 마감일 (없으면 null)
     dist: null,                 // 우리 집 좌표가 정해진 뒤 계산한다
     period: (p.periodStart && p.periodEnd) ? `${p.periodStart} ~ ${p.periodEnd}` : "정보 없음",
     where: p.address || "위치 정보 없음",
@@ -218,12 +246,12 @@ async function loadProjects(){
   usingSample = !list.length;
   const all = (list.length ? list : SAMPLE_PROJECTS).map(normalizeProject);
 
-  // 화면에는 '초안 공람 기간 안'에 있는 사업만 올린다.
-  // 기간이 끝난 사업은 CLOSED_PROJECTS 로 따로 빼서 목록·지도·통계에서 제외한다.
+  // 화면에는 '아직 의견을 낼 수 있는' 사업만 올린다 (공람 종료가 아니라 의견제출 마감 기준).
+  // 마감이 지난 사업은 CLOSED_PROJECTS 로 따로 빼서 목록·지도·통계에서 제외한다.
   PROJECTS = all.filter(p => p.open);
   CLOSED_PROJECTS = all.filter(p => !p.open);
   if(CLOSED_PROJECTS.length){
-    console.info(`공람 기간이 지난 사업 ${CLOSED_PROJECTS.length}건은 화면에서 제외했습니다.`);
+    console.info(`의견 제출 기한이 지난 사업 ${CLOSED_PROJECTS.length}건은 화면에서 제외했습니다.`);
   }
 
   dataReady = true;
@@ -496,17 +524,42 @@ function pushRecent(h){
 /* ============================================================
    화면 전환
    ============================================================ */
-function show(id){
+function show(id, push = true){
   $$(".screen").forEach(s => s.classList.remove("on"));
   $(id).classList.add("on");
   window.scrollTo(0, 0);
+  rememberScreen(id, push);
 }
+
+/* ---------- 브라우저 뒤로가기 ----------
+   화면을 <div> 로 갈아 끼우는 방식이라, 그냥 두면 뒤로가기가 이 사이트를 아예 벗어난다.
+   화면을 바꿀 때마다 방문 기록을 하나 남겨 두면 뒤로가기가 앞 화면으로 돌아온다.
+   push=false 는 '뒤로가기로 되돌아온 경우'라 기록을 새로 남기지 않는다. */
+function rememberScreen(id, push){
+  const cur = history.state && history.state.screen;
+  if(!history.state){
+    history.replaceState({ screen:id }, "");     // 첫 진입 — 지금 기록에 표시만 해 둔다
+  }else if(push && cur !== id){
+    history.pushState({ screen:id }, "");
+  }
+}
+
+addEventListener("popstate", e => {
+  // 모달 위에서 뒤로가기를 누르면 **모달만 닫는다.** 화면까지 넘어가면 하던 것을 잃는다.
+  const open = $$(".modal:not([hidden])");
+  if(open.length){
+    open.forEach(m => closeModal(m));
+    const now = $$(".screen").find(s => s.classList.contains("on"));
+    if(now) history.pushState({ screen:"#" + now.id }, "");   // 물러난 기록을 도로 채운다
+    return;
+  }
+  // 화면 표시가 없는 기록(#projects 같은 본문 이동)은 건드리지 않는다
+  if(e.state && e.state.screen) show(e.state.screen, false);
+});
 
 $("#setForm").addEventListener("submit", e => {
   e.preventDefault();
-  const name = ($("#f-name").value || "이웃").trim();
   const hood = onbHood.get();
-  $("#greet-name").textContent = name;
   pushRecent(hood);
   show("#scr-home");
   startReveal();
@@ -629,12 +682,18 @@ $$("[data-nav]").forEach(el => el.addEventListener("click", e => {
    환경영향분석 그리기
    ============================================================ */
 function eiaSection(p){
-  // 공람 기간이 지난 사업은 AI 해석 결과를 보여주지 않는다.
-  // (의견을 낼 수 없는 시점에 해석만 남아 잘못 참고되는 것을 막기 위함)
-  if(!p.open){
-    return { title:"환경영향분석", hint:"표시하지 않음", body:`
-      <p class="eia-src">공람 기간이 끝난 사업이라 요약문에 대한 해석 결과는 표시하지 않습니다.
-        사업 내용은 EIASS 원문에서 확인하세요.</p>` };
+  // ★ 환경영향분석은 **공람 기간 안에서만** 보여준다.
+  //   평가서 초안은 법적으로 공람 기간에만 열람할 수 있다. 공람이 끝난 뒤에도
+  //   그 내용을 옮긴 해석을 계속 띄우면 볼 수 없는 문서를 대신 보여주는 셈이 된다.
+  //   그래서 의견 제출 기한(p.open)이 아니라 **공람 기간(p.viewOpen)** 을 기준으로 잠근다.
+  if(!p.viewOpen){
+    const note = p.open
+      ? `공람 기간이 끝나 평가서 초안을 볼 수 없으므로 해석 결과도 표시하지 않습니다.
+         <b>의견은 ${esc(p.opinionEnd || "")}까지 낼 수 있습니다.</b> 사업 내용은 EIASS 원문에서 확인하세요.`
+      : `공람 기간이 아니라서 평가서 초안에 대한 해석 결과는 표시하지 않습니다.
+         사업 내용은 EIASS 원문에서 확인하세요.`;
+    return { title:"환경영향분석", hint:"표시하지 않음",
+      body:`<p class="eia-src">${note}</p>` };
   }
   // 내용이 있는 항목만 카드로 보여주고, 없는 항목은 맨 아래에 한 줄로 모은다.
   // (8개 항목 중 절반이 "내용 없습니다"로 채워지면 정작 읽어야 할 내용이 묻힌다)
@@ -1040,7 +1099,7 @@ function updateDashboardStats(){
   // 반경 밖 사업 수는 '전국 개발사업' 칸이 없어졌으므로 이 칸 아래에 함께 적는다.
   const outside = PROJECTS.length - rows.length;
   const notes = [];
-  if(openRows.length) notes.push(`가장 빠른 마감 D-${Math.min(...openRows.map(p => p.dday))}`);
+  if(openRows.length) notes.push(`가장 빠른 의견 마감 D-${Math.min(...openRows.map(p => p.dday))}`);
   if(homeNearbyOnly && outside > 0) notes.push(`반경 밖에 ${outside}건 더 있음`);
   $("#stat-open-note").textContent = notes.join(" · ");
 
@@ -1214,10 +1273,10 @@ function render(){
         ${p.dday !== null
           ? `<span class="badge ${p.dday <= 3 ? "badge--live" : "badge--dday"}">D-${p.dday}</span>`
           : `<span class="badge badge--line">${esc(p.stage)}</span>`}
-        ${!isNearby(p) ? `<span class="badge badge--gray">반경 밖</span>` : ``}
+        ${p.viewClosed ? `<span class="badge badge--line">공람 종료 · 의견 접수 중</span>` : ``}${!isNearby(p) ? `<span class="badge badge--gray">반경 밖</span>` : ``}
       </div>
       <p class="ttl">${esc(p.name)}</p>
-      <p class="desc">공람기간 ${esc(p.period)}</p>
+      <p class="desc">공람기간 ${esc(p.period)}${p.opinionEnd ? `<br><b class="op-end">의견 마감 ${esc(p.opinionEnd)}</b>` : ""}</p>
       <div class="rows">
         <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg><span>${esc(p.where)}${distText(p) ? " · 우리 집에서 " + esc(distText(p)) : ""}</span></div>
         <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"></path><path d="M15 3v4h4"></path></svg><span>${esc(p.org)} · ${esc(p.stage)}</span></div>
@@ -1351,7 +1410,8 @@ function openDetail(id){
       <div class="contact-row"><span class="k">유형</span><span class="v">${esc(p.typeLabel)}</span></div>
       <div class="contact-row"><span class="k">위치</span><span class="v">${esc(p.where)}</span></div>
       <div class="contact-row"><span class="k">기관</span><span class="v">${esc(p.org)}</span></div>
-      <div class="contact-row"><span class="k">공람기간</span><span class="v">${esc(p.period)}${p.dday !== null ? ` (D-${p.dday})` : ""}</span></div>
+      <div class="contact-row"><span class="k">공람기간</span><span class="v">${esc(p.period)}</span></div>
+      ${p.opinionEnd ? `<div class="contact-row"><span class="k">의견 마감</span><span class="v">${esc(p.opinionEnd)}${p.dday !== null ? ` (D-${p.dday})` : ""}</span></div>` : ""}
     </div>
     ${tabsHtml([participationSection(p), segmentsSection(p), eiaSection(p)])}
     <p style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap">
@@ -1395,11 +1455,6 @@ fitSearchHint();
 $("#btn-search").addEventListener("click", runSearch);
 $("#q").addEventListener("keydown", e => { if(e.key === "Enter"){ e.preventDefault(); runSearch(); } });
 $$("[data-kw]").forEach(b => b.addEventListener("click", () => { $("#q").value = b.dataset.kw; runSearch(); }));
-$("#btn-focus-search").addEventListener("click", () => {
-  // 아래로 스크롤한 상태에서 눌러도 검색칸이 보이도록 함께 올려준다.
-  $(".searchbar").scrollIntoView({ behavior:"smooth", block:"center" });
-  $("#q").focus({ preventScroll:true });
-});
 
 /* ============================================================
    지도 — 공통
@@ -2036,6 +2091,10 @@ $("#miniMap").addEventListener("click", () => openMapScreen());
 $("#miniMap").addEventListener("keydown", e => {
   if(e.key === "Enter" || e.key === " "){ e.preventDefault(); openMapScreen(); }
 });
+
+/* 첫 방문 기록에도 '지금 화면'을 적어 둔다.
+   이게 없으면 뒤로가기로 첫 화면까지 돌아오지 못하고 사이트 밖으로 나가 버린다. */
+rememberScreen("#scr-onboard", false);
 
 applySettings();
 loadRegions();
