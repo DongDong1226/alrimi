@@ -1132,7 +1132,6 @@ function ensureGisMap(){
    우선순위: 관리자가 직접 그린 것 > 수집한 하천 도형
    ============================================================ */
 const LSROUTES = "wdn.routes";
-let adminUnlocked = false;
 
 /* 직접 지정한 노선.
    data/routes.json (모두에게 보이는 것) 을 먼저 깔고,
@@ -1330,7 +1329,7 @@ function backToGisList(){
   renderGisList();
   renderGisDetail();
   showGisPane("list");
-  $("#btn-route-edit").hidden = true;
+  exitRouteEdit();
 }
 
 function selectProject(id, moveMap){
@@ -1348,7 +1347,8 @@ function selectProject(id, moveMap){
   renderGisList();
   renderGisDetail();
   showGisPane("detail");
-  if(adminUnlocked) $("#btn-route-edit").hidden = false;
+  // 관리자가 그리기 모드로 들어온 경우에만, 사업을 고르는 즉시 그리기가 시작된다.
+  if(routeArmed) enterRouteEdit();
 }
 
 function openMapScreen(focusId){
@@ -1377,7 +1377,7 @@ function openMapScreen(focusId){
 
 $("#btn-openmap").addEventListener("click", () => openMapScreen());
 $("#btn-map-back").addEventListener("click", () => {
-  exitRouteEdit();
+  setRouteArmed(false);   // 지도를 떠나면 그리기 모드도 함께 끝난다
   show("#scr-home");
   renderMiniMap();
 });
@@ -1395,6 +1395,18 @@ $("#mapNearbyOnly").addEventListener("change", e => {
    "JSON 복사"로 받아 data/routes.json 에 넣어 두면 모두가 볼 수 있다.
    ============================================================ */
 let routeEdit = { on:false, pts:[], layers:[], target:null };
+
+/* 관리자 화면에서 '지도에서 노선 그리기'로 들어왔는지.
+   이 값이 true 일 때만 사업을 고르면 그리기가 시작된다.
+   (주민 화면에는 그리기 관련 단추가 아예 나오지 않는다) */
+let routeArmed = false;
+
+function setRouteArmed(on){
+  routeArmed = on;
+  const note = $("#gisArmed");
+  if(note) note.hidden = !on;
+  if(!on) exitRouteEdit();
+}
 
 /* 그리는 중인 선과 점을 다시 그린다. */
 function redrawEdit(){
@@ -1456,7 +1468,12 @@ function manualGeoJson(){
   };
 }
 
-$("#btn-route-edit").addEventListener("click", enterRouteEdit);
+/* 관리자 화면 → 지도 화면(그리기 모드). 비밀번호를 푼 사람만 이 단추를 볼 수 있다. */
+$("#btn-admin-route").addEventListener("click", () => {
+  openMapScreen();
+  setRouteArmed(true);
+});
+/* '닫기'는 이 사업 그리기만 멈춘다. 다른 사업을 고르면 다시 그릴 수 있다. */
 $("#btn-draw-cancel").addEventListener("click", exitRouteEdit);
 $("#btn-draw-undo").addEventListener("click", () => { routeEdit.pts.pop(); redrawEdit(); });
 $("#btn-draw-clear").addEventListener("click", () => { routeEdit.pts = []; redrawEdit(); });
@@ -1579,7 +1596,6 @@ function unlock(){
   if($("#admPw").value === S.adminPw){
     $("#admLock").hidden = true;
     $("#admPanel").hidden = false;
-    adminUnlocked = true;   // 지도 화면의 '노선 직접 그리기'가 열린다
     fillAdmin();
   }else{
     $("#admErr").textContent = "비밀번호가 맞지 않습니다.";

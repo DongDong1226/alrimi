@@ -491,6 +491,10 @@ button{cursor:pointer}
 .gis-detail-back:hover{color:var(--primary)}
 .gis-detail-back svg{width:15px;height:15px}
 
+/* 관리자가 '노선 그리기'로 들어왔을 때만 목록 위에 뜨는 안내 */
+.gis-armed{margin-bottom:10px;padding:10px 12px;border-radius:var(--r-sm);
+  background:var(--primary-soft);color:var(--p70);font-size:var(--fs-body-s);font-weight:700}
+
 /* 노선 그리기 도구 (관리자) */
 .gis-draw{position:absolute;right:12px;top:12px;z-index:600;width:300px;background:#fff;
   border:1px solid var(--line-2);border-radius:var(--r-sm);box-shadow:var(--sh-md);padding:13px 15px}
@@ -638,6 +642,16 @@ button{cursor:pointer}
 }
 @media (max-width:860px){
   :root{--tscale:.92}
+  /* 제목 단계는 큰 화면 기준이라 여기서부터 한 단계씩 낮춘다.
+     새 토큰을 만드는 게 아니라 tokens.css 의 같은 이름을 이 폭에서만 다시 잡는 것.
+     본문(--fs-body-*)은 건드리지 않는다 — 읽는 글자는 줄이면 안 된다. */
+  :root{
+    --fs-display-l:calc(40px*var(--tscale));
+    --fs-display-m:calc(36px*var(--tscale));
+    --fs-display-s:calc(30px*var(--tscale));
+    --fs-h-l:calc(26px*var(--tscale));
+    --fs-h-m:calc(22px*var(--tscale));
+  }
   .util-bar{display:none}
   .header-main{height:60px;gap:16px;justify-content:space-between}
   .section-head--row{flex-direction:column;align-items:flex-start}
@@ -655,7 +669,18 @@ button{cursor:pointer}
    손가락으로 누르는 곳은 44px 이상, 글자는 데스크톱보다 오히려 키운다.
    (팔레트·클래스명은 그대로 두고 크기와 배치만 손댄다) */
 @media (max-width:560px){
-  :root{--tscale:.95}
+  :root{--tscale:.9}
+  /* 휴대폰에서는 제목을 한 단계 더 낮춘다.
+     (360px 에서 홈 큰제목이 41.8px 라 화면 3분의 1을 제목이 먹었다) */
+  :root{
+    --fs-display-l:calc(32px*var(--tscale));
+    --fs-display-m:calc(28px*var(--tscale));
+    --fs-display-s:calc(25px*var(--tscale));
+    --fs-h-l:calc(22px*var(--tscale));
+    --fs-h-m:calc(20px*var(--tscale));
+    --fs-h-s:calc(18px*var(--tscale));
+    --fs-h-xs:calc(16px*var(--tscale));
+  }
   .wrap{width:calc(100% - 32px)}
   .dash-top{grid-template-columns:1fr}
   .brand-sub{display:none}
