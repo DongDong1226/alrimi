@@ -53,61 +53,91 @@ jobs:
               print(f"  공인 IP : {d.get('ip')}")
               print(f"  나라/도시: {d.get('country')} / {d.get('city')}")
               print(f"  통신사   : {d.get('org')}")
+              # 주석으로도 남겨 둔다 (로그를 못 보는 사람도 읽을 수 있게)
+              print(f"::notice::[러너위치] IP={d.get('ip')} "
+                    f"{d.get('country')}/{d.get('city')} {d.get('org')}")
           except Exception as e:
               print(f"위치 확인 실패(중요하지 않음): {e}")
+              print(f"::notice::[러너위치] 확인 실패 {e}")
           PY
 
       - name: EIASS 에 닿는지 확인
         run: |
           python - <<'PY'
-          import socket, sys, time
+          import socket, sys, time, traceback
           import requests
 
           HOST = "www.eiass.go.kr"
           ok = True
 
+          # 진단 결과를 GitHub 주석(annotation) 으로도 내보낸다.
+          # 로그 본문은 저장소 주인만 받을 수 있지만 주석은 누구나 API 로 읽을 수 있어서,
+          # 도와주는 사람이 로그를 복사해 붙이지 않아도 원인을 볼 수 있다.
+          FINDINGS = []
+
+          def note(line):
+              print(line)
+              FINDINGS.append(line)
+
+          def flush(level):
+              body = " || ".join(FINDINGS)[:3000]
+              print(f"::{level}::[진단] {body}")
+
+          # ── 1단계 : 주소록(DNS) 에서 EIASS 의 IP 를 찾을 수 있나
           print("=" * 62)
-          print("1단계 — 주소록(DNS) 에서 EIASS 의 IP 를 찾을 수 있나")
+          print("1단계 — DNS 조회")
           print("=" * 62)
+          t = time.time()
           try:
               ip = socket.gethostbyname(HOST)
-              print(f"  성공: {HOST} -> {ip}")
+              note(f"1.DNS 성공 {ip} ({time.time() - t:.1f}s)")
           except Exception as e:
-              print(f"  실패: 주소를 못 찾습니다 ({e})")
-              print("  -> 인터넷 설정 문제입니다. EIASS 차단과는 다른 얘기입니다.")
+              note(f"1.DNS 실패 {type(e).__name__}:{e} ({time.time() - t:.1f}s)")
+              flush("error")
               sys.exit(1)
 
+          # ── 2단계 : 443 번 문이 열리나 (순수 TCP)
           print()
           print("=" * 62)
-          print("2단계 — 그 IP 의 443 번 문을 두드리면 열리나 (TCP 연결)")
+          print("2단계 — TCP 443 연결")
           print("=" * 62)
           t = time.time()
           try:
               s = socket.create_connection((HOST, 443), timeout=20)
               s.close()
-              print(f"  성공: {time.time() - t:.2f}초 만에 연결됐습니다.")
-              print("  -> IP 차단이 아닙니다. 차단이면 여기서 조용히 시간만 흐릅니다.")
+              note(f"2.TCP443 성공 ({time.time() - t:.1f}s) -> IP차단 아님")
           except socket.timeout:
-              print(f"  실패: {time.time() - t:.2f}초 동안 아무 대답이 없습니다.")
-              print("  -> 방화벽이 이 서버의 IP 를 버리고 있을 가능성이 큽니다.")
-              print("     (거부당하면 '거절' 이 즉시 오는데, 조용한 것은 차단의 특징입니다)")
+              note(f"2.TCP443 시간초과 ({time.time() - t:.1f}s) -> IP차단 의심")
               ok = False
           except Exception as e:
-              print(f"  실패: {type(e).__name__}: {e}")
+              note(f"2.TCP443 실패 {type(e).__name__}:{e} ({time.time() - t:.1f}s)")
               ok = False
 
           if not ok:
-              print()
-              print("=" * 62)
-              print("결론: GitHub 서버에서는 EIASS 에 닿지 못합니다.")
-              print("      이 로그의 '공인 IP' 를 근거로 남겨 두세요.")
-              print("=" * 62)
+              flush("error")
               sys.exit(1)
 
+          # ── 3단계 : 첫 화면을 그냥 받아 보기 (가장 단순한 GET)
+          #    이게 되는데 4단계가 안 되면 IP 차단이 아니라 '그 요청만' 막힌 것이다.
           print()
           print("=" * 62)
-          print("3단계 — 실제로 쓰는 목록 API 가 자료를 주나")
+          print("3단계 — 첫 화면 GET")
           print("=" * 62)
+          t = time.time()
+          try:
+              r = requests.get(f"https://{HOST}/",
+                               headers={"User-Agent": "Mozilla/5.0"}, timeout=20)
+              note(f"3.GET/ HTTP{r.status_code} {len(r.content)}B ({time.time() - t:.1f}s)")
+          except Exception as e:
+              note(f"3.GET/ 실패 {type(e).__name__}:{str(e)[:200]} ({time.time() - t:.1f}s)")
+              ok = False
+
+          # ── 4단계 : 수집이 실제로 쓰는 목록 API
+          print()
+          print("=" * 62)
+          print("4단계 — 목록 API POST (수집이 실제로 쓰는 요청)")
+          print("=" * 62)
+          t = time.time()
           try:
               r = requests.post(
                   f"https://{HOST}/searchApi/search.do",
@@ -116,26 +146,23 @@ jobs:
                         "viewName": "eiass/user/partcptn/choan/choanSperssList_searchApi",
                         "currentPage": 1},
                   headers={"User-Agent": "Mozilla/5.0"}, timeout=20)
+              took = time.time() - t
               print(f"  HTTP {r.status_code}, 받은 자료 {len(r.content):,}바이트")
-              if r.status_code == 403:
-                  print("  실패: 403 — 서버가 우리를 알아보고 거부했습니다.")
-                  ok = False
-              elif r.status_code != 200:
-                  print(f"  실패: 예상 못 한 상태코드 {r.status_code}")
+              if r.status_code != 200:
+                  note(f"4.POST HTTP{r.status_code} ({took:.1f}s) 본문:{r.text[:150]}")
                   ok = False
               elif "tbl01" not in r.text:
-                  print("  경고: 응답은 왔는데 사업 목록 표가 없습니다.")
-                  print("        EIASS 화면이 개편됐을 수 있습니다(차단과는 다른 문제).")
-                  print("  응답 앞부분:", r.text[:200].replace("\n", " "))
+                  note(f"4.POST HTTP200 이지만 목록표없음 {len(r.content)}B ({took:.1f}s) "
+                       f"본문:{r.text[:200]}")
                   ok = False
               else:
-                  print("  성공: 사업 목록을 정상으로 받아왔습니다.")
-          except requests.exceptions.ConnectTimeout:
-              print("  실패: 연결 시간 초과")
-              ok = False
+                  note(f"4.POST 성공 HTTP200 {len(r.content)}B ({took:.1f}s) 목록 정상")
           except Exception as e:
-              print(f"  실패: {type(e).__name__}: {e}")
+              note(f"4.POST 실패 {type(e).__name__}:{str(e)[:250]} ({time.time() - t:.1f}s)")
+              traceback.print_exc()
               ok = False
+
+          flush("error" if not ok else "notice")
 
           print()
           print("=" * 62)
