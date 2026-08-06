@@ -320,6 +320,39 @@ const FALLBACK_REGIONS = {
   "경기도": { short:"경기", sgg:{ "하남시":["미사동","덕풍동","신장동","감일동"] }, dong:[] }
 };
 
+/* 세 칸을 다 고르지 않아도 되게 하려고 쓰는 표시값.
+   ALL_SIDO 는 시·도 칸 맨 위의 "전국", ANY 는 시군구·읍면동 칸 맨 위의 "전체". */
+const ALL_SIDO = "전국";
+const ANY = "전체";
+
+/* 같은 시·도를 다르게 적은 경우. EIASS 주소는 옛 이름으로 적힌 것이 섞여 있다
+   (예: regions.json 은 "전남광주통합특별시", 주소 한 건은 "전라남도").
+   짧은 이름("전남")은 다른 지역과 헷갈릴 수 있어 넣지 않는다. */
+const SIDO_ALIAS = {
+  "전남광주통합특별시": ["전라남도", "광주광역시"],
+  "강원특별자치도": ["강원도"],
+  "전북특별자치도": ["전라북도"],
+  "제주특별자치도": ["제주도"],
+  "세종특별자치시": ["세종시"]
+};
+function sidoNames(sido){ return [sido].concat(SIDO_ALIAS[sido] || []); }
+
+/* 고른 동네를 읽는 도우미. "전국"/"전체"는 '고르지 않음'으로 본다. */
+function isNation(h){ return !h || !h.sido || h.sido === ALL_SIDO; }
+function hoodSgg(h){ return (h && h.sgg && h.sgg !== ANY) ? h.sgg : ""; }
+function hoodDong(h){ return (h && h.dong && h.dong !== ANY) ? h.dong : ""; }
+
+function hoodLabel(h, short){
+  if(isNation(h)) return "전국";
+  const s = short ? shortSido(h.sido) : h.sido;
+  return `${s} ${hoodSgg(h)} ${hoodDong(h)}`.replace(/\s+/g, " ").trim();
+}
+/* 화면에 크게 쓰는 짧은 이름 — 고른 것 중 가장 좁은 단위 */
+function hoodShort(h){
+  if(isNation(h)) return "전국";
+  return hoodDong(h) || hoodSgg(h) || shortSido(h.sido);
+}
+
 function fillSelect(sel, arr, pick){
   sel.innerHTML = arr.map(v =>
     `<option${v === pick ? " selected" : ""}>${esc(v)}</option>`).join("");
@@ -339,15 +372,21 @@ function shortSido(sido){
 }
 
 /* 시도 → 시군구 → 읍면동 순서로 이어지는 셀렉트 묶음을 만든다.
-   첫 화면과 지도 화면에서 같은 방식으로 쓴다. */
+   첫 화면과 지도 화면, 동네 변경 모달에서 같은 방식으로 쓴다.
+
+   **세 칸을 다 고를 필요는 없다.** 시군구·읍면동 칸에는 늘 맨 위에 "전체"가 있고,
+   시·도 칸 맨 위에는 "전국"이 있다. 위 칸을 고르지 않으면 아래 칸은 잠긴다
+   (시군구를 안 정한 채 읍면동만 고르면 같은 이름이 전국에 여럿이라 뜻이 없다). */
 function bindRegionSelects(sidoSel, sggSel, dongSel){
   const syncDong = pick => {
-    const list = dongList(sidoSel.value, sggSel.value);
-    fillSelect(dongSel, list.length ? list : ["전체"], pick);
+    const list = sidoSel.value === ALL_SIDO ? [] : dongList(sidoSel.value, sggSel.value);
+    fillSelect(dongSel, [ANY].concat(list), pick);
+    dongSel.disabled = !list.length;
   };
   const syncSgg = (sggPick, dongPick) => {
-    const list = sggList(sidoSel.value);
-    fillSelect(sggSel, list.length ? list : ["전체"], sggPick);
+    const list = sidoSel.value === ALL_SIDO ? [] : sggList(sidoSel.value);
+    fillSelect(sggSel, [ANY].concat(list), sggPick);
+    sggSel.disabled = !list.length;
     syncDong(dongPick);
   };
   sidoSel.addEventListener("change", () => syncSgg());
@@ -356,9 +395,10 @@ function bindRegionSelects(sidoSel, sggSel, dongSel){
     set(hood){
       if(!REGIONS) return;
       const sidoKeys = Object.keys(REGIONS);
-      const sido = REGIONS[hood.sido] ? hood.sido : sidoKeys[0];
-      fillSelect(sidoSel, sidoKeys, sido);
-      syncSgg(hood.sgg, hood.dong);
+      // 모르는 시·도 이름이 들어오면 임의로 다른 지역을 고르지 않고 "전국"으로 둔다.
+      const sido = (hood && REGIONS[hood.sido]) ? hood.sido : ALL_SIDO;
+      fillSelect(sidoSel, [ALL_SIDO].concat(sidoKeys), sido);
+      syncSgg((hood && hood.sgg) || ANY, (hood && hood.dong) || ANY);
     },
     get(){
       return { sido:sidoSel.value, sgg:sggSel.value, dong:dongSel.value };
@@ -395,10 +435,13 @@ async function loadRegions(){
    브라우저에서 직접 부르면 CORS 에 막히는 경우가 있어 JSONP 방식으로 부른다.
    못 찾으면 관리자 설정의 기준 좌표를 그대로 쓴다.
    ============================================================ */
-function geocodeJsonp(address, timeoutMs = 6000){
+let jsonpSeq = 0;
+
+/* VWorld 를 JSONP 로 부르는 공통 통로. 실패·시간초과는 모두 null 로 돌려준다
+   (지도나 경계가 안 나오는 것뿐이고, 화면 나머지는 그대로 동작해야 한다). */
+function jsonp(base, params, timeoutMs = 8000){
   return new Promise(resolve => {
-    if(!S.vworldKey){ resolve(null); return; }
-    const cbName = "wdnGeo" + Date.now() + Math.floor(Math.random() * 1000);
+    const cbName = "wdnCb" + (++jsonpSeq) + Date.now().toString(36);
     const script = document.createElement("script");
     let done = false;
     const cleanup = () => {
@@ -407,47 +450,96 @@ function geocodeJsonp(address, timeoutMs = 6000){
       delete window[cbName];
       script.remove();
     };
-    window[cbName] = res => {
-      const point = res && res.response && res.response.result && res.response.result.point;
-      cleanup();
-      resolve(point ? { lat:+point.y, lon:+point.x } : null);
-    };
-    const q = new URLSearchParams({
-      service:"address", request:"getCoord", version:"2.0", crs:"epsg:4326",
-      address, format:"json", type:"parcel", key:S.vworldKey, callback:cbName
-    });
-    script.src = `https://api.vworld.kr/req/address?${q}`;
+    window[cbName] = data => { cleanup(); resolve(data); };
+    const q = new URLSearchParams(Object.assign({}, params, { callback:cbName }));
+    script.src = `${base}?${q}`;
     script.onerror = () => { cleanup(); resolve(null); };
     document.head.appendChild(script);
     setTimeout(() => { if(!done){ cleanup(); resolve(null); } }, timeoutMs);
   });
 }
 
-async function resolveHome(hood){
-  currentHood = Object.assign({}, hood);
-  const dong = hood.dong && hood.dong !== "전체" ? hood.dong : "";
-  const sgg = hood.sgg && hood.sgg !== "전체" ? hood.sgg : "";
-  const full = `${hood.sido} ${sgg} ${dong}`.replace(/\s+/g, " ").trim();
-  HOME.label = full;
+const VWORLD_ADDR = "https://api.vworld.kr/req/address";
+const VWORLD_DATA = "https://api.vworld.kr/req/data";
 
-  // 동까지 못 찾으면 시군구, 그것도 못 찾으면 시도로 범위를 넓혀가며 찾는다.
-  const hit = await geocodeJsonp(full)
-    || (dong ? await geocodeJsonp(`${hood.sido} ${sgg}`.trim()) : null)
-    || (sgg ? await geocodeJsonp(hood.sido) : null);
-  if(hit){
-    HOME.lat = hit.lat; HOME.lon = hit.lon; HOME.exact = true;
-  }else{
+/* 주소 → 좌표 */
+async function geocodeJsonp(address){
+  if(!S.vworldKey || !address) return null;
+  const res = await jsonp(VWORLD_ADDR, {
+    service:"address", request:"getCoord", version:"2.0", crs:"epsg:4326",
+    address, format:"json", type:"parcel", key:S.vworldKey
+  }, 6000);
+  const point = res && res.response && res.response.result && res.response.result.point;
+  return point ? { lat:+point.y, lon:+point.x } : null;
+}
+
+/* 좌표 → 주소 (내 위치 찾기에 쓴다) */
+async function reverseGeocode(lat, lon){
+  if(!S.vworldKey) return null;
+  const res = await jsonp(VWORLD_ADDR, {
+    service:"address", request:"getAddress", version:"2.0", crs:"epsg:4326",
+    point:`${lon},${lat}`, format:"json", type:"parcel", key:S.vworldKey
+  }, 8000);
+  const r = res && res.response && res.response.status === "OK"
+    && res.response.result && res.response.result[0];
+  return r ? { text:r.text, st:r.structure || {} } : null;
+}
+
+/* 역지오코딩 결과(시도/시군구/법정동)를 regions.json 의 항목으로 맞춘다.
+   regions.json 이 VWorld 읍면동 레이어에서 만들어졌으므로 대개 그대로 들어맞지만,
+   못 맞추면 한 단계 넓혀서(동 → 시군구 → 시도) 돌려준다. 지어내지 않는다. */
+function matchHood(sido, sgg, dong){
+  if(!REGIONS || !sido) return null;
+  const key = REGIONS[sido] ? sido
+    : Object.keys(REGIONS).find(k => sidoNames(k).indexOf(sido) >= 0);
+  if(!key) return null;
+
+  const sggKeys = Object.keys(REGIONS[key].sgg);
+  let sggHit = ANY;
+  if(sgg && sggKeys.length){
+    sggHit = sggKeys.indexOf(sgg) >= 0 ? sgg
+      : (sggKeys.find(k => k === sgg || k.endsWith(" " + sgg) || k.split(/\s+/)[0] === sgg) || ANY);
+  }
+  const dongs = dongList(key, sggHit);
+  const dongHit = (dong && dongs.indexOf(dong) >= 0) ? dong : ANY;
+  return { sido:key, sgg:sggHit, dong:dongHit };
+}
+
+/* 동네를 정한다.
+   coord 를 주면(내 위치로 찾은 경우) 지오코딩하지 않고 그 좌표를 그대로 쓴다. */
+async function resolveHome(hood, coord){
+  currentHood = Object.assign({}, hood);
+  const dong = hoodDong(hood), sgg = hoodSgg(hood);
+  HOME.label = hoodLabel(hood, false);
+  HOME.gps = !!coord;
+
+  if(coord){
+    HOME.lat = coord.lat; HOME.lon = coord.lon; HOME.exact = true;
+  }else if(isNation(hood)){
+    // 전국을 보는 중에는 기준점이 뜻을 갖지 않는다. 설정의 기준 좌표를 그대로 둔다.
     HOME.lat = +S.centerLat; HOME.lon = +S.centerLon; HOME.exact = false;
+  }else{
+    // 동까지 못 찾으면 시군구, 그것도 못 찾으면 시도로 범위를 넓혀가며 찾는다.
+    const full = `${hood.sido} ${sgg} ${dong}`.replace(/\s+/g, " ").trim();
+    const hit = await geocodeJsonp(full)
+      || (dong ? await geocodeJsonp(`${hood.sido} ${sgg}`.trim()) : null)
+      || (sgg ? await geocodeJsonp(hood.sido) : null);
+    if(hit){
+      HOME.lat = hit.lat; HOME.lon = hit.lon; HOME.exact = true;
+    }else{
+      HOME.lat = +S.centerLat; HOME.lon = +S.centerLon; HOME.exact = false;
+    }
   }
 
   // 화면 곳곳의 동네 이름을 맞춘다.
-  const label = `${shortSido(hood.sido)} ${sgg} ${dong}`.replace(/\s+/g, " ").trim();
-  hoodShortName = dong || sgg || hood.sido;
+  const label = hoodLabel(hood, true);
+  hoodShortName = hoodShort(hood);
   $("#hood-pill-label").textContent = label;
   $("#hood-card-name").textContent = label;
   mapHood.set(hood);
   pickHood.set(hood);
 
+  applyAutoScope();
   recomputeDistances();
   refreshAll();
 
@@ -460,7 +552,255 @@ async function resolveHome(hood){
     }
     backToGisList();
   }
+
+  // 경계는 시간이 걸리므로 화면을 먼저 그린 뒤에 받아서 덧붙인다.
+  loadHoodBoundary();
 }
+
+/* ============================================================
+   읍면동 · 시군구 경계
+   VWorld 2D데이터 API 에서 고른 동네의 실제 경계 도형을 받아
+   ① 지도에 그리고 ② "이 동네 안에 있는 사업"을 가리는 데 쓴다.
+
+   시·도만 고른 경우에는 받지 않는다 — 도 하나의 도형이 수 MB라 화면이 느려지고,
+   그 정도 범위는 주소 글자만으로도 정확히 가려진다.
+   ============================================================ */
+let HOOD_BOUNDARY = null;      // { name, level, geom, bbox }
+let boundarySeq = 0;           // 늦게 도착한 옛 응답이 새 것을 덮어쓰지 않게
+
+const BOUND_LAYER = {
+  dong: { data:"LT_C_ADEMD_INFO",  attr:"emd_kor_nm" },
+  sgg:  { data:"LT_C_ADSIGG_INFO", attr:"sig_kor_nm" }
+};
+
+function normName(s){ return String(s || "").replace(/\s+/g, " ").trim(); }
+
+/* 발급 때 등록한 서비스 URL. 배포 사이트에서는 지금 열려 있는 주소가 곧 그 주소다. */
+function vworldDomain(){
+  return location.protocol.startsWith("http")
+    ? location.origin + location.pathname.replace(/[^/]*$/, "")
+    : S.serviceUrl;
+}
+
+async function fetchBoundary(layer, like){
+  const base = {
+    service:"data", request:"GetFeature", data:layer.data, key:S.vworldKey,
+    format:"json", size:30, geometry:"true", crs:"EPSG:4326",
+    attrFilter:`${layer.attr}:like:${like}`
+  };
+  // domain 없이 먼저 부른다(브라우저는 Referer 로 확인된다).
+  // 거부되면 지금 열려 있는 주소를 domain 으로 붙여 한 번 더 시도한다.
+  let res = await jsonp(VWORLD_DATA, base, 12000);
+  let ok = res && res.response && res.response.status === "OK";
+  if(!ok){
+    res = await jsonp(VWORLD_DATA, Object.assign({}, base, { domain:vworldDomain() }), 12000);
+    ok = res && res.response && res.response.status === "OK";
+  }
+  if(!ok) return [];
+  const fc = res.response.result && res.response.result.featureCollection;
+  return (fc && fc.features) || [];
+}
+
+async function loadHoodBoundary(){
+  const seq = ++boundarySeq;
+  const prev = HOOD_BOUNDARY;
+  HOOD_BOUNDARY = null;
+
+  const dong = hoodDong(currentHood), sgg = hoodSgg(currentHood);
+  if(!S.vworldKey || isNation(currentHood) || (!dong && !sgg)){
+    if(prev) afterBoundary();
+    return;
+  }
+
+  const level = dong ? "dong" : "sgg";
+  // like 는 앞에서부터 맞춘다("의창구"로는 안 찾아지고 "창원시"로는 찾아진다).
+  const like = dong || sgg.split(/\s+/)[0];
+  const feats = await fetchBoundary(BOUND_LAYER[level], like);
+  if(seq !== boundarySeq) return;      // 그 사이에 동네가 또 바뀌었다
+
+  const want = sidoNames(currentHood.sido)
+    .map(n => normName(`${n} ${sgg} ${dong}`));
+  const hit = feats.find(f => want.indexOf(normName(f.properties && f.properties.full_nm)) >= 0)
+    || (feats.length === 1 ? feats[0] : null);
+
+  if(hit && hit.geometry){
+    HOOD_BOUNDARY = {
+      name: (hit.properties && hit.properties.full_nm) || hoodLabel(currentHood, false),
+      level,
+      geom: hit.geometry,
+      bbox: geomBbox(hit.geometry)
+    };
+  }
+  afterBoundary();
+}
+
+/* 경계가 들어오거나 사라지면 지도에 다시 그리고, 목록도 다시 가린다
+   (경계 안/밖 판정이 바뀌기 때문). */
+function afterBoundary(){
+  drawBoundary();
+  if(dataReady) refreshAll();
+}
+
+function geomBbox(g){
+  let minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+  const walk = c => {
+    if(!Array.isArray(c)) return;
+    if(typeof c[0] === "number"){
+      if(c[0] < minX) minX = c[0];
+      if(c[0] > maxX) maxX = c[0];
+      if(c[1] < minY) minY = c[1];
+      if(c[1] > maxY) maxY = c[1];
+      return;
+    }
+    c.forEach(walk);
+  };
+  walk(g.coordinates);
+  return [minX, minY, maxX, maxY];
+}
+
+/* 점이 다각형 안에 있는지 (교차 횟수 세기). 구멍(호수 등)도 처리한다. */
+function ptInRing(x, y, ring){
+  let inside = false;
+  for(let i = 0, j = ring.length - 1; i < ring.length; j = i++){
+    const xi = ring[i][0], yi = ring[i][1], xj = ring[j][0], yj = ring[j][1];
+    if((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+  }
+  return inside;
+}
+function ptInPoly(x, y, poly){
+  if(!poly.length || !ptInRing(x, y, poly[0])) return false;
+  for(let i = 1; i < poly.length; i++) if(ptInRing(x, y, poly[i])) return false;
+  return true;
+}
+function ptInBoundary(lat, lon){
+  const b = HOOD_BOUNDARY;
+  if(!b || lat == null || lon == null) return false;
+  const bb = b.bbox;
+  if(lon < bb[0] || lon > bb[2] || lat < bb[1] || lat > bb[3]) return false;   // 빠른 걸러내기
+  const g = b.geom;
+  if(g.type === "Polygon") return ptInPoly(lon, lat, g.coordinates);
+  if(g.type === "MultiPolygon") return g.coordinates.some(poly => ptInPoly(lon, lat, poly));
+  return false;
+}
+
+/* ============================================================
+   "이 동네에 있는 사업인가"
+   ① 주소 글자로 맞춰 보고 (경계 자료 없이도 동작한다)
+   ② 경계 도형이 있으면 사업 위치·노선이 그 안을 지나는지도 본다
+      (선형 사업은 대표 주소가 옆 시군구인 경우가 흔하다)
+   ============================================================ */
+function projectAddr(p){ return String(p.where || "").replace(/\(.*$/, "").trim(); }
+
+function inHoodByAddress(p, hood){
+  const a = projectAddr(p);
+  if(!a) return false;
+  if(!sidoNames(hood.sido).some(n => a.startsWith(n))) return false;
+  const sgg = hoodSgg(hood);
+  if(sgg && !sgg.split(/\s+/).every(t => a.indexOf(t) >= 0)) return false;
+  const dong = hoodDong(hood);
+  if(dong && a.indexOf(dong) < 0) return false;
+  return true;
+}
+
+function inHood(p){
+  if(isNation(currentHood)) return true;
+  if(inHoodByAddress(p, currentHood)) return true;
+  if(!HOOD_BOUNDARY) return false;
+  if(ptInBoundary(p.lat, p.lon)) return true;
+  // 노선은 점이 많아 몇 개 걸러 본다 (경계를 스치기만 해도 '우리 동네 사업'이다)
+  const pts = routePointsOf(p);
+  const step = Math.max(1, Math.floor(pts.length / 200));
+  for(let i = 0; i < pts.length; i += step){
+    if(ptInBoundary(pts[i][0], pts[i][1])) return true;
+  }
+  return false;
+}
+
+/* ============================================================
+   지금 내 위치로 보기
+   휴대폰에서 가장 쓸모 있다. 좌표를 받아 그 자리의 동네를 찾아 넣고,
+   거리 기준점은 동 중심이 아니라 **실제 서 있는 자리**로 삼는다.
+   ============================================================ */
+const GEO_ERR = {
+  1: "위치 권한이 거부되었습니다. 브라우저 주소창의 자물쇠에서 위치를 허용해 주세요.",
+  2: "지금 위치를 확인할 수 없습니다. 실내라면 창가에서 다시 시도해 보세요.",
+  3: "위치를 찾는 데 시간이 너무 오래 걸립니다. 잠시 뒤 다시 시도해 주세요."
+};
+
+function geoSay(text){
+  $$(".geo-msg").forEach(el => { el.textContent = text; });
+}
+function geoBusy(on){
+  $$("[data-geo]").forEach(b => { b.disabled = on; });
+}
+
+function getPosition(){
+  return new Promise(resolve => {
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ pos }),
+      err => resolve({ err }),
+      { enableHighAccuracy:true, timeout:12000, maximumAge:30000 }
+    );
+  });
+}
+
+async function useMyLocation(){
+  if(!navigator.geolocation){
+    geoSay("이 브라우저는 위치 기능을 지원하지 않습니다.");
+    return;
+  }
+  if(!location.protocol.startsWith("https") && location.hostname !== "localhost"){
+    geoSay("위치 기능은 보안 연결(https)에서만 동작합니다.");
+    return;
+  }
+  geoBusy(true);
+  geoSay("현재 위치를 확인하고 있어요…");
+
+  const { pos, err } = await getPosition();
+  if(err){
+    geoBusy(false);
+    geoSay(GEO_ERR[err.code] || "위치를 확인하지 못했습니다.");
+    return;
+  }
+  const lat = pos.coords.latitude, lon = pos.coords.longitude;
+  const acc = Math.round(pos.coords.accuracy || 0);
+
+  geoSay("주소를 찾고 있어요…");
+  const rev = await reverseGeocode(lat, lon);
+  const hood = rev ? matchHood(rev.st.level1, rev.st.level2, rev.st.level4L) : null;
+
+  if(hood){
+    onbHood.set(hood);
+    await resolveHome(hood, { lat, lon });
+    pushRecent(hood);
+    geoSay(`현재 위치: ${hoodLabel(hood, true)} (오차 약 ${acc}m)`);
+  }else{
+    // 주소를 못 찾아도 좌표는 있으므로 반경 기준점으로는 쓸 수 있다.
+    HOME.lat = lat; HOME.lon = lon; HOME.exact = true; HOME.gps = true;
+    HOME.label = "현재 위치";
+    hoodShortName = "현재 위치";
+    $("#hood-pill-label").textContent = "현재 위치";
+    $("#hood-card-name").textContent = "현재 위치";
+    homeScope = "near"; mapScope = "near";
+    recomputeDistances();
+    refreshAll();
+    geoSay(S.vworldKey
+      ? `현재 위치를 잡았습니다 (오차 약 ${acc}m). 주소는 찾지 못해 반경으로만 봅니다.`
+      : `현재 위치를 잡았습니다 (오차 약 ${acc}m). VWorld 인증키가 없어 주소는 찾지 못했습니다.`);
+  }
+  geoBusy(false);
+
+  // 첫 화면에서 눌렀으면 그대로 우리 동네 홈으로 넘어간다.
+  if($("#scr-onboard").classList.contains("on")){
+    show("#scr-home");
+    startReveal();
+    countUp();
+  }
+  const hoodModal = $("#m-hood");
+  if(hoodModal && !hoodModal.hidden) closeModal(hoodModal);
+}
+
+$$("[data-geo]").forEach(b => b.addEventListener("click", useMyLocation));
 
 /* 첫 화면 아래의 전국 숫자 3칸.
    **전부 수집한 실제 값이다.** 값이 없으면 그 칸을 만들지 않는다(지어내지 않는다). */
@@ -507,9 +847,9 @@ function renderRecent(){
     const b = document.createElement("button");
     b.type = "button";
     b.className = "kw-chip";
-    b.textContent = `${shortSido(h.sido)} ${h.sgg} ${h.dong}`;
+    b.textContent = hoodLabel(h, true);
     b.addEventListener("click", () => {
-      if(REGIONS && REGIONS[h.sido]) onbHood.set(h);
+      if(REGIONS && (REGIONS[h.sido] || isNation(h))) onbHood.set(h);
     });
     row.appendChild(b);
   });
@@ -624,8 +964,12 @@ addEventListener("keydown", e => {
 /* ============================================================
    반경 안/밖 구분
    ============================================================ */
-let homeNearbyOnly = true;   // 홈 화면 사업 목록 (true = 우리 집 반경, false = 전국)
-let mapNearbyOnly = false;   // 지도 화면
+/* 보는 범위는 세 가지다.
+     region — 고른 행정구역(읍·면·동 또는 시·군·구) 안에 실제로 있는 사업만
+     near   — 우리 집에서 반경 N km 안 (행정구역 경계를 넘어도 가까우면 보인다)
+     all    — 전국 전부                                                        */
+let homeScope = "near";   // 홈 화면 사업 목록
+let mapScope = "all";     // 지도 화면 (지도는 넓게 보는 화면이라 기본이 전국)
 
 /* 반경 안인지 판단할 때는 '주소까지'가 아니라 '주소 또는 노선 중 가까운 쪽'을 쓴다.
    (노선이 우리 집 앞을 지나는데 주소가 멀다고 빼면 안 된다) */
@@ -634,28 +978,78 @@ function isNearby(p){
 }
 function nearbyProjects(){ return PROJECTS.filter(isNearby); }
 
-/* 홈 화면이 지금 보고 있는 범위의 사업들 */
-function scopedProjects(){ return homeNearbyOnly ? nearbyProjects() : PROJECTS; }
+/* 범위 이름에 맞는 '보일 사업인가' 판정 함수를 돌려준다. */
+function scopeTest(scope){
+  if(scope === "region") return inHood;
+  if(scope === "near") return isNearby;
+  return () => true;
+}
+function scopedProjects(){ return PROJECTS.filter(scopeTest(homeScope)); }
 
-/* 범위(우리 집 반경 / 전국)에 따라 제목·라벨·강조를 맞춘다. */
-function renderScope(){
-  const near = homeNearbyOnly;
-  $$("[data-scope]").forEach(b =>
-    b.classList.toggle("on", (b.dataset.scope === "near") === near));
-  $$("[data-nav]").forEach(el => {
-    if(el.dataset.nav === "near" || el.dataset.nav === "all"){
-      el.parentElement.classList.toggle("active", el.dataset.nav === (near ? "near" : "all"));
-    }
-  });
-  $("#projHead").innerHTML = near
-    ? `우리 집 반경 ${esc(S.radiusKm)}km 안, <span class="em">계획 중인 사업</span>입니다.`
-    : `<span class="em">전국</span>에서 계획 중인 사업입니다.`;
-  $("#h-hood").textContent = near ? (hoodShortName || "우리 동네") : "전국";
-  $("#stat-open-lab").textContent = near ? "우리 동네에서 의견 낼 수 있는 사업" : "전국에서 의견 낼 수 있는 사업";
+/* 고른 동네 모양에 맞는 기본 범위.
+   전국이면 전국, 읍·면·동까지 골랐으면 반경(경계 너머 가까운 사업도 봐야 하므로),
+   시·도나 시·군·구만 골랐으면 그 구역 안. (시·도 한가운데를 기준으로 잡은
+   반경 3km 는 아무 뜻이 없다) */
+function autoScopeFor(hood){
+  if(isNation(hood)) return "all";
+  if(hoodDong(hood)) return "near";
+  return "region";
+}
+function applyAutoScope(){
+  homeScope = autoScopeFor(currentHood);
+  mapScope = homeScope;
+  resetPages();
 }
 
-function setScope(near){
-  homeNearbyOnly = near;
+/* 카드에 붙는 '범위 밖' 표시.
+   행정구역으로 보고 있을 때는 보이는 것이 모두 그 구역 안이므로 붙이지 않고,
+   전국을 보는 중이면 반경 자체가 뜻이 없으므로 붙이지 않는다. */
+function outsideBadge(p, scope){
+  if(isNation(currentHood) || scope === "region" || isNearby(p)) return "";
+  return `<span class="badge badge--gray">반경 밖</span>`;
+}
+
+/* "○○에" — 안내 문장에 넣는 말 */
+function scopeWhere(scope){
+  if(scope === "region") return `${esc(hoodLabel(currentHood, true))} 안에`;
+  if(scope === "near") return `반경 ${esc(S.radiusKm)}km 안에`;
+  return "전국에";
+}
+
+/* 범위에 따라 제목·라벨·강조를 맞춘다. */
+function renderScope(){
+  const nation = isNation(currentHood);
+  $$("[data-scope]").forEach(b => {
+    b.classList.toggle("on", b.dataset.scope === homeScope);
+    // 전국을 보는 중이면 '동네 안'·'반경'은 고를 것이 없으므로 잠근다
+    if(b.dataset.scope !== "all") b.disabled = nation;
+  });
+  $$("[data-mapscope]").forEach(b => {
+    b.classList.toggle("on", b.dataset.mapscope === mapScope);
+    if(b.dataset.mapscope !== "all") b.disabled = nation;
+  });
+  const rBtn = $("#scopeRegionBtn");
+  if(rBtn) rBtn.textContent = nation ? "우리 동네 안" : `${hoodShort(currentHood)} 안`;
+
+  $$("[data-nav]").forEach(el => {
+    if(el.dataset.nav === "near" || el.dataset.nav === "all"){
+      el.parentElement.classList.toggle("active",
+        el.dataset.nav === (homeScope === "all" ? "all" : "near"));
+    }
+  });
+
+  const where = esc(hoodLabel(currentHood, true));
+  $("#projHead").innerHTML =
+    homeScope === "region" ? `<span class="em">${where}</span> 안에서 계획 중인 사업입니다.`
+    : homeScope === "near" ? `우리 집 반경 ${esc(S.radiusKm)}km 안, <span class="em">계획 중인 사업</span>입니다.`
+    : `<span class="em">전국</span>에서 계획 중인 사업입니다.`;
+  $("#h-hood").textContent = homeScope === "all" ? "전국" : (hoodShortName || "우리 동네");
+  $("#stat-open-lab").textContent = homeScope === "all"
+    ? "전국에서 의견 낼 수 있는 사업" : "우리 동네에서 의견 낼 수 있는 사업";
+}
+
+function setScope(scope){
+  homeScope = scope;
   resetPages();
   renderScope();
   updateFilterCounts();
@@ -663,9 +1057,10 @@ function setScope(near){
   renderDashTick();
   render();
   renderOpenList();
+  renderMiniMap();
 }
 $$("[data-scope]").forEach(b =>
-  b.addEventListener("click", () => setScope(b.dataset.scope === "near")));
+  b.addEventListener("click", () => setScope(b.dataset.scope)));
 
 /* 상단 메뉴 — 실제로 있는 기능으로만 보낸다. */
 $$("[data-nav]").forEach(el => el.addEventListener("click", e => {
@@ -673,7 +1068,8 @@ $$("[data-nav]").forEach(el => el.addEventListener("click", e => {
   if(kind === "map"){ openMapScreen(); return; }
   if(kind === "near" || kind === "all"){
     e.preventDefault();
-    setScope(kind === "near");
+    // '우리 동네 사업' 메뉴는 지금 고른 동네에 맞는 범위로 보여준다.
+    setScope(kind === "all" ? "all" : autoScopeFor(currentHood));
     $("#projects").scrollIntoView({ behavior:"smooth", block:"start" });
   }
 }));
@@ -1096,11 +1492,13 @@ function updateDashboardStats(){
   $("#stat-open").dataset.count = openRows.length;
   $("#h-count").textContent = rows.length;
 
-  // 반경 밖 사업 수는 '전국 개발사업' 칸이 없어졌으므로 이 칸 아래에 함께 적는다.
+  // 범위 밖 사업 수는 '전국 개발사업' 칸이 없어졌으므로 이 칸 아래에 함께 적는다.
   const outside = PROJECTS.length - rows.length;
   const notes = [];
   if(openRows.length) notes.push(`가장 빠른 의견 마감 D-${Math.min(...openRows.map(p => p.dday))}`);
-  if(homeNearbyOnly && outside > 0) notes.push(`반경 밖에 ${outside}건 더 있음`);
+  if(homeScope !== "all" && outside > 0){
+    notes.push(`${homeScope === "region" ? "이 동네" : "반경"} 밖에 ${outside}건 더 있음`);
+  }
   $("#stat-open-note").textContent = notes.join(" · ");
 
   // 협의 진행 중 — EIASS 사업조회에서 세어 온 전국 건수 (우리 동네 범위와 무관)
@@ -1142,8 +1540,7 @@ function renderDashTick(){
     .sort((a, b) => a.dday - b.dday).slice(0, 2);
   const box = $("#dashTick");
   if(!soon.length){
-    const where = homeNearbyOnly ? `반경 ${esc(S.radiusKm)}km 안에` : "전국에";
-    box.innerHTML = `<div class="tick"><span class="msg">${where} 의견을 낼 수 있는 사업이 없습니다.</span></div>`;
+    box.innerHTML = `<div class="tick"><span class="msg">${scopeWhere(homeScope)} 의견을 낼 수 있는 사업이 없습니다.</span></div>`;
     return;
   }
   box.innerHTML = soon.map(p => `
@@ -1253,15 +1650,24 @@ function render(){
 
   if(!rows.length){
     const outside = PROJECTS.length;
-    grid.innerHTML = homeNearbyOnly && outside
+    // 범위를 좁혀서 비었을 때만 '전국 보기' 버튼을 준다.
+    // (검색어·유형 때문에 빈 것이면 범위를 넓혀도 소용없다)
+    grid.innerHTML = homeScope !== "all" && outside && !query
       ? `<div class="proj-empty">
-           <p><b>${esc(HOME.label || "우리 동네")}</b> 반경 ${esc(S.radiusKm)}km 안에는 지금 공람 중인 사업이 없습니다.</p>
-           <p style="margin-top:6px;font-size:var(--fs-body-s)">수집된 사업은 모두 ${outside}건입니다. 아래 버튼으로 전국 사업을 볼 수 있어요.</p>
-           <button class="btn btn--line btn--sm btn--pill" type="button" id="btnShowAll" style="margin-top:14px">전국 사업 모두 보기</button>
+           <p>${scopeWhere(homeScope)}는 지금 공람 중인 사업이 없습니다.</p>
+           <p style="margin-top:6px;font-size:var(--fs-body-s)">수집된 사업은 모두 ${outside}건입니다.
+             ${homeScope === "region" ? "반경으로 넓혀 보거나, " : ""}아래 버튼으로 전국 사업을 볼 수 있어요.</p>
+           <div class="proj-empty-btns">
+             ${homeScope === "region" && !isNation(currentHood)
+               ? `<button class="btn btn--ghost btn--sm btn--pill" type="button" id="btnShowNear">반경 ${esc(S.radiusKm)}km로 넓혀 보기</button>` : ""}
+             <button class="btn btn--line btn--sm btn--pill" type="button" id="btnShowAll">전국 사업 모두 보기</button>
+           </div>
          </div>`
       : `<p class="proj-empty">조건에 맞는 사업이 없습니다. 다른 유형을 눌러보세요.</p>`;
     const btn = $("#btnShowAll");
-    if(btn) btn.addEventListener("click", () => setScope(false));
+    if(btn) btn.addEventListener("click", () => setScope("all"));
+    const near = $("#btnShowNear");
+    if(near) near.addEventListener("click", () => setScope("near"));
     return;
   }
 
@@ -1273,7 +1679,7 @@ function render(){
         ${p.dday !== null
           ? `<span class="badge ${p.dday <= 3 ? "badge--live" : "badge--dday"}">D-${p.dday}</span>`
           : `<span class="badge badge--line">${esc(p.stage)}</span>`}
-        ${p.viewClosed ? `<span class="badge badge--line">공람 종료 · 의견 접수 중</span>` : ``}${!isNearby(p) ? `<span class="badge badge--gray">반경 밖</span>` : ``}
+        ${p.viewClosed ? `<span class="badge badge--line">공람 종료 · 의견 접수 중</span>` : ``}${outsideBadge(p, homeScope)}
       </div>
       <p class="ttl">${esc(p.name)}</p>
       <p class="desc">공람기간 ${esc(p.period)}${p.opinionEnd ? `<br><b class="op-end">의견 마감 ${esc(p.opinionEnd)}</b>` : ""}</p>
@@ -1332,16 +1738,16 @@ function renderOpenList(){
       || (a.p.dday - b.p.dday));
   const box = $("#openList");
   const note = $("#openListNote");
-  note.textContent = homeNearbyOnly
-    ? (HOME.label ? `${HOME.label} 반경 ${S.radiusKm}km 기준` : "")
+  note.textContent =
+    homeScope === "region" ? `${hoodLabel(currentHood, false)} 안 기준`
+    : homeScope === "near" ? (HOME.label ? `${HOME.label} 반경 ${S.radiusKm}km 기준` : "")
     : "전국 기준";
 
   const cut = pageSlice(rows, PAGER.open);
   renderPager("#openPager", "open", cut, rows.length);
 
   if(!rows.length){
-    const where = homeNearbyOnly ? `반경 ${esc(S.radiusKm)}km 안에` : "전국에";
-    box.innerHTML = `<p class="proj-empty" style="border-radius:var(--r-md)">${where} 의견을 낼 수 있는 사업이 없습니다.</p>`;
+    box.innerHTML = `<p class="proj-empty" style="border-radius:var(--r-md)">${scopeWhere(homeScope)} 의견을 낼 수 있는 사업이 없습니다.</p>`;
     return;
   }
   box.innerHTML = cut.rows.map(({ p, brief }) => `
@@ -1500,7 +1906,7 @@ let gisMap = null, gisMarkers = new Map(), gisHomeMarker = null, gisCircle = nul
 let selectedId = null;
 
 function gisProjects(){
-  const rows = (mapNearbyOnly ? nearbyProjects() : PROJECTS).filter(p => p.lat != null);
+  const rows = PROJECTS.filter(p => p.lat != null).filter(scopeTest(mapScope));
   return rows.sort((a, b) => (a.nearDist ?? 1e9) - (b.nearDist ?? 1e9));
 }
 
@@ -1584,6 +1990,33 @@ function drawRoutes(){
   });
 }
 
+/* ============================================================
+   동네 경계 그리기
+   반경 원은 동그라미일 뿐이지만, 경계선은 "여기까지가 우리 동네"를 그대로 보여준다.
+   ============================================================ */
+const BOUND_STYLE = {
+  color:"#1f8a5b", weight:2.2, dashArray:"6 4", opacity:.95,
+  fillColor:"#1f8a5b", fillOpacity:.07, interactive:false
+};
+let boundLayer = null, miniBoundLayer = null;
+
+function drawBoundary(){
+  if(gisMap){
+    if(boundLayer){ gisMap.removeLayer(boundLayer); boundLayer = null; }
+    if(HOOD_BOUNDARY){
+      boundLayer = L.geoJSON(HOOD_BOUNDARY.geom, { style:BOUND_STYLE }).addTo(gisMap);
+      boundLayer.bringToBack();
+    }
+  }
+  if(miniMap){
+    if(miniBoundLayer){ miniMap.removeLayer(miniBoundLayer); miniBoundLayer = null; }
+    if(HOOD_BOUNDARY){
+      miniBoundLayer = L.geoJSON(HOOD_BOUNDARY.geom,
+        { style:Object.assign({}, BOUND_STYLE, { weight:1.8 }) }).addTo(miniMap);
+    }
+  }
+}
+
 function renderGisMarkers(fit = true){
   if(!gisMap) return;
   gisMarkers.forEach(m => gisMap.removeLayer(m));
@@ -1599,6 +2032,7 @@ function renderGisMarkers(fit = true){
     dashArray:"5 5", fillColor:"#1c47d4", fillOpacity:.05
   }).addTo(gisMap);
 
+  drawBoundary();
   drawRoutes();
 
   const rows = gisProjects();
@@ -1630,25 +2064,44 @@ function gisItemHtml(p){
     </button>`;
 }
 
-/* 왼쪽 목록 — 내 주소 기준으로 '우리 동네'와 '그 밖의 지역'을 나눠 보여준다. */
+/* 왼쪽 목록 — '우리 동네'와 '그 밖의 지역'을 나눠 보여준다.
+   나누는 기준은 지금 고른 범위를 따른다.
+   전국을 보는 중이면 동네가 정해져 있는지에 따라 구역/반경 중 알맞은 쪽으로 나눈다. */
+function localTest(){
+  if(isNation(currentHood)) return null;
+  if(mapScope !== "all") return scopeTest(mapScope);
+  return (hoodDong(currentHood) || hoodSgg(currentHood)) ? inHood : isNearby;
+}
+
 function renderGisList(){
   const rows = gisProjects();
-  const near = rows.filter(isNearby);
-  const far = rows.filter(p => !isNearby(p));
   const box = $("#gisList");
-  const hoodName = HOME.label || "내 동네";
+  const test = localTest();
 
-  let html = `<p class="gis-list-head">${esc(hoodName)} 반경 ${esc(S.radiusKm)}km · ${near.length}건</p>`;
+  if(!test){   // 전국을 보고 있어 나눌 기준이 없다
+    box.innerHTML = `<p class="gis-list-head">전국 · ${rows.length}건</p>`
+      + (rows.length ? rows.map(gisItemHtml).join("")
+        : `<p class="gis-empty">지도에 표시할 사업이 없습니다.</p>`);
+    return;
+  }
+
+  const near = rows.filter(test);
+  const far = rows.filter(p => !test(p));
+  const localName = (mapScope === "near" || (mapScope === "all" && test === isNearby))
+    ? `${esc(HOME.label || "내 동네")} 반경 ${esc(S.radiusKm)}km`
+    : `${esc(hoodLabel(currentHood, false))} 안`;
+
+  let html = `<p class="gis-list-head">${localName} · ${near.length}건</p>`;
   html += near.length
     ? near.map(gisItemHtml).join("")
-    : `<p class="gis-empty">이 주소 반경 ${esc(S.radiusKm)}km 안에는
-        공람 중인 사업이 없습니다.${far.length ? "<br>아래 '그 밖의 지역'에서 확인해 보세요." : ""}</p>`;
+    : `<p class="gis-empty">${localName} 에는 공람 중인 사업이 없습니다.${
+        far.length ? "<br>아래 '그 밖의 지역'에서 확인해 보세요." : ""}</p>`;
 
   if(far.length){
     html += `<p class="gis-list-head gis-list-head--out">그 밖의 지역 · ${far.length}건</p>`;
     html += far.map(gisItemHtml).join("");
-  }else if(mapNearbyOnly){
-    html += `<p class="gis-empty">위쪽 '내 동네 반경만' 체크를 풀면 전국 사업이 보입니다.</p>`;
+  }else if(mapScope !== "all"){
+    html += `<p class="gis-empty">위쪽 <b>전국</b>을 누르면 다른 지역 사업도 보입니다.</p>`;
   }
   box.innerHTML = html;
 }
@@ -1695,7 +2148,7 @@ function renderGisDetail(){
       <span class="badge ${p.badge} badge--dot">${esc(p.typeLabel)}</span>
       ${locTagHtml(p)}
       ${p.dday !== null ? `<span class="badge ${p.dday <= 3 ? "badge--live" : "badge--dday"}">D-${p.dday}</span>` : ""}
-      ${!isNearby(p) ? `<span class="badge badge--gray">반경 밖</span>` : ""}
+      ${outsideBadge(p, mapScope)}
     </p>
     <p class="ttl">${esc(p.name)}</p>
     <div class="kv"><span class="k">위치</span><span class="v">${esc(p.where)}</span></div>
@@ -1759,6 +2212,16 @@ function openMapScreen(focusId){
   show("#scr-map");
   mapHood.set(currentHood);      // 왼쪽 주소 칸을 지금 보고 있는 동네로 맞춘다
 
+  // '지도에서 보기'로 들어온 사업이 지금 범위 밖이면 지도에 아예 안 뜬다.
+  // 그런 경우에는 범위를 전국으로 넓혀 준다.
+  if(focusId){
+    const target = PROJECTS.find(x => String(x.id) === String(focusId));
+    if(target && !scopeTest(mapScope)(target)){
+      mapScope = "all";
+      renderScope();
+    }
+  }
+
   if(S.vworldKey){
     ensureGisMap();
     renderGisMarkers(!focusId);
@@ -1785,12 +2248,13 @@ $("#btn-map-back").addEventListener("click", () => {
   show("#scr-home");
   renderMiniMap();
 });
-$("#mapNearbyOnly").addEventListener("change", e => {
-  mapNearbyOnly = e.target.checked;
+$$("[data-mapscope]").forEach(b => b.addEventListener("click", () => {
+  mapScope = b.dataset.mapscope;
   selectedId = null;
+  renderScope();
   renderGisMarkers(true);
   backToGisList();
-});
+}));
 
 /* ============================================================
    노선 직접 그리기 (관리자)
@@ -1972,14 +2436,24 @@ function renderMiniMap(){
     dashArray:"5 5", fillColor:"#1c47d4", fillOpacity:.06
   }).addTo(miniMap));
 
-  nearbyProjects().forEach(p => {
+  // 동네 경계는 다른 표시보다 아래에 깔린다.
+  drawBoundary();
+
+  // 전국을 보는 중이라도 미리보기 지도에는 가까운 사업만 찍는다
+  // (작은 지도에 전국 마커를 다 찍으면 아무것도 안 보인다).
+  const shown = homeScope === "all" ? nearbyProjects() : scopedProjects();
+  shown.filter(p => p.lat != null).forEach(p => {
     miniLayers.push(L.marker([p.lat, p.lon],
       { icon:markerIcon(p.type), keyboard:false }).addTo(miniMap));
   });
 
-  // 우리 동네가 보이는 정도의 축척 — 반경 원이 화면에 꽉 차게.
+  // 우리 동네가 보이는 정도의 축척 — 경계가 있으면 경계에, 없으면 반경 원에 맞춘다.
   // (지도 없이 계산되는 toBounds 를 써서 초기화 순서에 상관없이 안전하게)
-  miniMap.fitBounds(L.latLng(HOME.lat, HOME.lon).toBounds(S.radiusKm * 2000), { padding:[6, 6] });
+  if(miniBoundLayer){
+    miniMap.fitBounds(miniBoundLayer.getBounds(), { padding:[6, 6] });
+  }else{
+    miniMap.fitBounds(L.latLng(HOME.lat, HOME.lon).toBounds(S.radiusKm * 2000), { padding:[6, 6] });
+  }
 }
 
 /* ============================================================

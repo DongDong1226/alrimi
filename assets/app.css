@@ -136,6 +136,22 @@ button{cursor:pointer}
 .setbar .btn{flex:none;margin-left:8px}
 .onb-note{margin-top:13px;font-size:var(--fs-body-s);color:#9fb6e0}
 
+/* ---------- 지금 내 위치로 보기 ----------
+   첫 화면(어두운 바탕) / 동네 변경 모달 / 지도 화면 세 곳에서 같은 단추를 쓴다. */
+.geo-row{margin-top:14px;display:flex;flex-direction:column;align-items:center;gap:8px}
+.geo-row--modal{margin-top:14px;align-items:flex-start}
+.geo-btn{display:inline-flex;align-items:center;gap:8px}
+.geo-btn svg{width:16px;height:16px;flex:none}
+.geo-btn[disabled]{opacity:.55}
+.geo-btn--sm{flex:0 0 auto;height:38px}
+.geo-msg{font-size:var(--fs-body-xs);color:var(--ink-4);min-height:16px;text-align:center}
+/* 어두운 히어로 위에서는 흰 테두리 단추로 바꾼다 */
+.onb-inner .geo-btn{background:rgba(255,255,255,.08);color:#eaf3ff;border-color:rgba(255,255,255,.34)}
+.onb-inner .geo-btn:hover{background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.6)}
+.onb-inner .geo-msg{color:#9fb6e0}
+/* 지도 화면 주소칸 아래 — 왼쪽 정렬 */
+.gis-addr .geo-msg{text-align:left;margin-top:7px}
+
 /* 전국 현황 — 관리자 화면에서 값 교체 */
 .nation{display:flex;justify-content:center;margin-top:32px;
   border-top:1px solid rgba(255,255,255,.16);padding-top:22px}
@@ -259,15 +275,21 @@ button{cursor:pointer}
   white-space:nowrap;flex:1}
 .tick .date{font-size:var(--fs-body-xs);color:var(--ink-4);flex:none}
 
-/* 보는 범위 바꾸기 — 우리 집 반경 / 전국 */
+/* 보는 범위 바꾸기 — 동네 안 / 우리 집 반경 / 전국 */
 .scope-seg{display:inline-flex;gap:3px;background:var(--bg-1);border:1px solid var(--line);
-  border-radius:var(--r-pill);padding:3px;flex:none}
-.scope-seg button{padding:8px 16px;border:0;background:transparent;border-radius:var(--r-pill);
+  border-radius:var(--r-pill);padding:3px;flex:0 1 auto;max-width:100%;flex-wrap:wrap}
+.scope-seg button{padding:8px 14px;border:0;background:transparent;border-radius:var(--r-pill);
   font-size:var(--fs-body-s);font-weight:600;color:var(--ink-3);white-space:nowrap;
   transition:.16s var(--ease)}
-.scope-seg button:hover{color:var(--primary)}
+.scope-seg button:hover:not([disabled]){color:var(--primary)}
 .scope-seg button.on{background:#fff;color:var(--primary);font-weight:800;box-shadow:var(--sh-sm)}
+.scope-seg button[disabled]{opacity:.4}
 .scope-seg b{font-weight:inherit}
+/* 지도 화면 위쪽 띠는 어두운 바탕이라 색을 뒤집는다 */
+.scope-seg--map{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.22)}
+.scope-seg--map button{color:rgba(255,255,255,.82);padding:7px 12px}
+.scope-seg--map button:hover:not([disabled]){color:#fff}
+.scope-seg--map button.on{background:#fff;color:var(--primary-strong)}
 
 .filter-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .sort-btn{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-body-s);
@@ -292,6 +314,7 @@ button{cursor:pointer}
   padding-top:13px;margin-top:auto}
 .proj-empty{padding:36px;text-align:center;color:var(--ink-3);background:#fff;
   border:1px dashed var(--line-2);border-radius:var(--r-md);grid-column:1/-1}
+.proj-empty-btns{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:14px}
 
 /* ---------- 페이지 나누기 ----------
    목록이 아래로 한없이 이어지지 않도록 끊어서 보여준다.
@@ -448,9 +471,8 @@ button{cursor:pointer}
 .gis-back svg{width:16px;height:16px}
 .gis-ttl{font-size:var(--fs-h-xs);font-weight:800;letter-spacing:-.02em}
 .gis-top-right{margin-left:auto;display:flex;align-items:center;gap:14px}
-.gis-toggle{display:inline-flex;align-items:center;gap:8px;font-size:var(--fs-body-s);
-  font-weight:600;color:rgba(255,255,255,.9);cursor:pointer}
-.gis-toggle input{width:16px;height:16px;accent-color:var(--accent);cursor:pointer}
+/* 위 칸을 안 고르면 아래 칸은 고를 것이 없으므로 잠근다 (잠긴 티가 나게) */
+select:disabled{opacity:.5;cursor:not-allowed}
 
 .gis-body{flex:1;min-height:0;display:flex}
 /* 왼쪽 한 패널에서 목록과 상세를 번갈아 보여준다 (오른쪽 패널 없음) */
@@ -505,6 +527,8 @@ button{cursor:pointer}
 /* 마커와 같은 마름모 모양으로 맞춘다 */
 .gis-legend .lg--main{background:var(--warn);border-radius:2px;transform:rotate(45deg)}
 .gis-legend .lg--circle{background:transparent;border:1.5px dashed var(--primary)}
+/* 읍면동·시군구 경계선 — 지도에 그린 것과 같은 초록 점선 */
+.gis-legend .lg--bound{background:rgba(31,138,91,.12);border:1.5px dashed var(--eco);border-radius:2px}
 .gis-legend .lg--route{background:var(--teal);border-radius:2px;height:4px}
 
 /* 지도 마커 (Leaflet divIcon 안에서 쓰는 점) */
@@ -608,6 +632,12 @@ button{cursor:pointer}
   .gis-map-wrap{flex:none;height:46vh;order:-1}
   .gis-ttl{display:none}
   .gis-draw{width:auto;left:12px;right:12px}
+  /* 좁은 화면에서는 범위 단추 세 개가 한 줄에 안 들어간다.
+     위쪽 띠를 두 줄로 늘려 단추를 아래 줄에 가로로 꽉 채운다. */
+  .gis-top{height:auto;min-height:52px;padding:8px 12px;gap:10px;flex-wrap:wrap}
+  .gis-top-right{width:100%;margin-left:0;gap:8px}
+  .scope-seg--map{width:100%;flex-wrap:nowrap}
+  .scope-seg--map button{flex:1 1 0;padding:8px 4px;text-align:center}
 }
 
 /* ============================================================

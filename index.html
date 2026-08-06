@@ -28,6 +28,7 @@
       <h1>우리 동네에 들어오는 개발사업, 먼저 알려드립니다.</h1>
       <p class="sub">동네를 정하면 그 지역의 환경영향평가 사업만 모아서 보여드려요. 주민 의견을 낼 수 있는 기간과 설명회 일정까지 함께 확인하세요.</p>
 
+      <!-- 세 칸을 다 고를 필요는 없다. 시·도만 골라도, '전국'을 골라도 바로 볼 수 있다. -->
       <form class="setbar" id="setForm">
         <div class="setcell sel">
           <label for="f-sido">시 · 도</label>
@@ -46,7 +47,16 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
         </button>
       </form>
-      <p class="onb-note">로그인 없이 바로 이용할 수 있어요 · 설정한 동네는 언제든 바꿀 수 있습니다</p>
+      <p class="onb-note" id="onbNote">시 · 도만 골라도 됩니다 · 로그인 없이 바로 이용할 수 있어요 · 설정한 동네는 언제든 바꿀 수 있습니다</p>
+
+      <!-- 휴대폰에서 특히 쓸모 있다. 지금 있는 자리의 동네를 자동으로 찾아 넣는다. -->
+      <div class="geo-row">
+        <button class="btn btn--line btn--pill geo-btn" type="button" data-geo>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 2v3.2M12 18.8V22M2 12h3.2M18.8 12H22"></path><circle cx="12" cy="12" r="8"></circle></svg>
+          지금 내 위치로 보기
+        </button>
+        <p class="geo-msg" id="geoMsg-onb" role="status"></p>
+      </div>
 
       <div class="kw-row" style="justify-content:center" id="recentRow">
         <span class="lbl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4l3 2" stroke-linecap="round"></path></svg>최근 설정</span>
@@ -190,7 +200,12 @@
             <!-- 문구는 보는 범위(우리 동네 / 전국)에 따라 app.js 가 바꾼다 -->
             <h2 class="h-l" style="margin-top:8px" id="projHead"></h2>
           </div>
+          <!-- 세 가지 보는 범위.
+               행정구역 = 고른 읍·면·동(또는 시·군·구) 안에 실제로 있는 사업만
+               반경     = 우리 집에서 N km 안 (경계를 넘어도 가까우면 보인다)
+               전국     = 전부 -->
           <div class="scope-seg" role="group" aria-label="보는 범위">
+            <button type="button" data-scope="region" id="scopeRegionBtn">우리 동네 안</button>
             <button type="button" data-scope="near" class="on">우리 집 반경 <b id="scope-radius">3</b>km</button>
             <button type="button" data-scope="all">전국</button>
           </div>
@@ -417,10 +432,12 @@
     </button>
     <span class="gis-ttl">지도로 보는 개발사업</span>
     <div class="gis-top-right">
-      <label class="gis-toggle">
-        <input type="checkbox" id="mapNearbyOnly">
-        <span>내 동네 반경 <b id="gis-radius">3</b>km만</span>
-      </label>
+      <!-- 홈 화면과 같은 세 가지 범위. 기본은 전국(지도는 넓게 보는 화면이라). -->
+      <div class="scope-seg scope-seg--map" role="group" aria-label="지도에 보이는 범위">
+        <button type="button" data-mapscope="region">동네 안</button>
+        <button type="button" data-mapscope="near">반경 <b id="gis-radius">3</b>km</button>
+        <button type="button" data-mapscope="all" class="on">전국</button>
+      </div>
     </div>
   </div>
 
@@ -438,7 +455,12 @@
           <label class="skip" for="m-dong">읍·면·동</label>
           <span class="msel"><select id="m-dong"></select></span>
           <button class="btn btn--primary btn--sm" type="button" id="btn-map-addr">이 주소로 보기</button>
+          <button class="btn btn--line btn--sm geo-btn geo-btn--sm" type="button" data-geo aria-label="지금 내 위치로 보기">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 2v3.2M12 18.8V22M2 12h3.2M18.8 12H22"></path><circle cx="12" cy="12" r="8"></circle></svg>
+            내 위치
+          </button>
         </div>
+        <p class="geo-msg" id="geoMsg-map" role="status"></p>
       </div>
       <div class="gis-side-body">
         <!-- 관리자가 '노선 그리기'로 들어왔을 때만 보이는 안내 -->
@@ -454,6 +476,7 @@
         <span><i class="lg lg--strat"></i>전략환경영향평가</span>
         <span><i class="lg lg--main"></i>환경영향평가</span>
         <span><i class="lg lg--circle"></i>반경</span>
+        <span><i class="lg lg--bound"></i>동네 경계</span>
         <span><i class="lg lg--route"></i>사업 노선</span>
       </div>
       <div class="gis-draw" id="gisDraw" hidden>
@@ -565,7 +588,8 @@
       <button class="modal-x" type="button" data-close aria-label="닫기">&times;</button>
     </div>
     <div class="modal-bd-in">
-      <p style="margin-bottom:16px">보고 싶은 동네를 고르세요. 고른 동네를 기준으로 거리와 반경을 다시 계산합니다.</p>
+      <p style="margin-bottom:16px">보고 싶은 동네를 고르세요. <b>세 칸을 다 고르지 않아도 됩니다</b> —
+        시·도만 고르면 그 도 전체를, 맨 위의 <b>전국</b>을 고르면 전국을 봅니다.</p>
       <div class="hood-pick">
         <label class="skip" for="h-sido">시·도</label>
         <span class="msel"><select id="h-sido"></select></span>
@@ -573,6 +597,13 @@
         <span class="msel"><select id="h-sgg"></select></span>
         <label class="skip" for="h-dong">읍·면·동</label>
         <span class="msel"><select id="h-dong"></select></span>
+      </div>
+      <div class="geo-row geo-row--modal">
+        <button class="btn btn--line btn--sm btn--pill geo-btn" type="button" data-geo>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 2v3.2M12 18.8V22M2 12h3.2M18.8 12H22"></path><circle cx="12" cy="12" r="8"></circle></svg>
+          지금 내 위치로 찾기
+        </button>
+        <p class="geo-msg" id="geoMsg-hood" role="status"></p>
       </div>
       <p class="hood-pick-msg" id="hoodPickMsg"></p>
     </div>
