@@ -306,7 +306,21 @@ python -m http.server 8000
 | | 파일 | 언제 열리나 |
 |---|---|---|
 | 데스크톱·태블릿 | `index.html` + `app.css` | 기본 |
-| 휴대폰 | `m.html` + `mobile.css` | 폭 ≤820px **이고** 손가락 기기(`pointer:coarse`)일 때 자동 |
+| 휴대폰 | `m.html` + `mobile.css` | **짧은 쪽 변 ≤600px** 이고 손가락 기기(`pointer:coarse`)일 때 자동 |
+
+**★ 판정은 폭이 아니라 `짧은 쪽 변`으로 한다.**
+처음에 `폭 ≤820px` 으로 만들었다가 바로 고쳤다 — 요즘 폰은 **가로로 돌리면 폭이
+844~932px**(아이폰14 844 / S23U 915 / 14 ProMax 932)이라, 폭으로 재면
+**돌릴 때마다 휴대폰 화면 ↔ 데스크톱 화면이 왔다 갔다 한다.**
+짧은 변은 돌려도 그대로다 — 폰 320~430, 태블릿 744~834 로 깔끔히 갈린다.
+
+```js
+var shortSide = Math.min(innerWidth, innerHeight);
+var phone = shortSide <= 600 && matchMedia("(pointer:coarse)").matches;
+```
+
+`pointer:coarse` 를 같이 보는 이유는 **데스크톱 창을 좁게 줄인 것과 진짜 휴대폰이 다르기 때문**이다.
+(실측: 폰은 세로·가로 모두 휴대폰 화면 / 아이패드·폴드 편 상태·PC 좁은 창은 모두 데스크톱)
 
 > **★ 끄는 스위치.** `index.html` 맨 위 스크립트의 `var MOBILE_ON = true;` 를 `false` 로 바꾸고
 > 푸시하면 휴대폰도 `index.html` 을 쓴다. **파일을 지우거나 되돌리기(revert)를 할 필요가 없다.**
