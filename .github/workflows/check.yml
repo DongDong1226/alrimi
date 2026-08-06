@@ -1,26 +1,20 @@
-# GitHub 서버(Azure)에서 어디까지 닿는지 한 번에 확인한다.
+# GitHub 러너에서 EIASS 로 가는 두 가지 길을 시험한다: ① 직접 ② Cloudflare WARP 터널.
 #
-# ── 지금까지 밝혀진 것 (2026-08-05 ~ 08-06) ────────────────────
-#   "EIASS 가 해외 IP 를 막는다" 는 사실이 아니었다.
-#     - 전 세계 20개 노드 중 17곳 정상 (미국 LA 0.49초, 댈러스 1.09초,
-#       독일·프랑스·네덜란드·러시아·인도·베트남 전부 HTTP 200)
-#   그런데 GitHub 러너에서는 두 번 다 실패했고, 두 IP 모두 Azure 였다.
-#     1차: 52.159.244.171 (San Jose) — DNS 실패 (간헐적 SERVFAIL)
-#     2차: 9.234.149.180  (Boydton)  — DNS 성공, TCP443 20초 침묵
-#   TCP 가 조용히 시간만 흐르는 것은 방화벽이 패킷을 버릴 때의 모양이다.
+# ── 배경 (2026-08-06, HANDOFF §4) ──────────────────────────────────
+#   - EIASS 는 해외를 막지 않는다: 전 세계 20곳 중 17곳 정상 (미국 LA 0.49초).
+#   - 그런데 GitHub 러너(Azure)에서는 6번 중 1번만 성공했다.
+#   - 같은 러너·같은 순간에 VWorld 는 0.43초에 붙고 EIASS 만 시간 초과
+#     → Azure↔한국 경로 문제가 아니라 EIASS 쪽이 Azure 대역을 불안정하게 거르는 것.
+#   - Cloudflare 서버에서는 EIASS 가 정상 응답했다(확인함).
+#     → EIASS 행 트래픽만 WARP 터널로 태우면 될 가능성이 높다. 이 워크플로가 그걸 확인한다.
 #
-# ── 이 파일이 답하려는 질문 ────────────────────────────────────
-#   Azure 에서 (가) EIASS 만 막히나  (나) 한국 사이트 전체가 막히나
-#   - 구글만 되고 한국이 전부 안 되면  -> Azure~한국 경로 문제
-#   - 한국 사이트는 되는데 EIASS 만 안 되면 -> EIASS 가 Azure 를 막는 것
-#   - VWorld 가 되는지도 같이 본다 (수집에 반드시 필요하다)
-#
-# ── 안전장치 ───────────────────────────────────────────────────
+# ── 이 파일이 하지 않는 것 (안전장치) ──────────────────────────────
 #   저장소를 내려받지 않는다 / data 를 읽지도 쓰지도 않는다 /
 #   커밋·푸시하지 않는다 / Anthropic API 를 부르지 않는다 (비용 0원)
-#   각 대상마다 8초만 기다리므로 1분 안에 끝난다.
 #
-# 쓰는 법: Actions 탭 → 이 워크플로 선택 → Run workflow
+# 쓰는 법: Actions 탭 → 이 워크플로 → Run workflow → 끝나면 주석(Annotations)을 본다.
+#   [1차] 직접 연결과 [2차] WARP 터널의 성패가 각각 나온다.
+#   [2차]가 성공이면 collect.yml 의 자동 수집이 같은 길로 살아난다 (이미 넣어 둠).
 
 name: EIASS 연결 확인 (시험용)
 
@@ -33,106 +27,114 @@ permissions:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 6
+    timeout-minutes: 10
 
     steps:
-      - name: 파이썬 준비
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: requests 설치
-        run: pip install requests
-
-      - name: 어디까지 닿는지 한 번에 확인
+      - name: 이 러너가 어디인지
         run: |
-          python - <<'PY'
-          import socket, ssl, sys, time
-          import requests
+          D=$(curl -s --max-time 15 https://ipinfo.io/json || echo '{}')
+          IP=$(echo "$D"  | python3 -c "import sys,json;print(json.load(sys.stdin).get('ip',''))" 2>/dev/null)
+          LOC=$(echo "$D" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d.get('country',''),'/',d.get('city',''),d.get('org',''))" 2>/dev/null)
+          echo "::notice::[러너위치] IP=${IP} ${LOC}"
 
-          OUT = []
+      - name: 주소 준비 (DNS 를 HTTPS 로 직접 묻고 hosts 에 심음)
+        run: |
+          HOST="www.eiass.go.kr"
+          for URL in \
+            "https://cloudflare-dns.com/dns-query?name=${HOST}&type=A" \
+            "https://dns.google/resolve?name=${HOST}&type=A"; do
+            for I in 1 2 3; do
+              IP=$(curl -s --max-time 10 -H 'accept: application/dns-json' "$URL" \
+                | python3 -c "import sys,json;d=json.load(sys.stdin);a=[x['data'] for x in d.get('Answer',[]) if x.get('type')==1];print(a[0] if a else '')" 2>/dev/null)
+              [ -n "$IP" ] && break 2
+              sleep 2
+            done
+          done
+          [ -n "$IP" ] || IP="211.114.21.111"   # 조회 전부 실패 시 최근 확인 주소 (인증서 검증이 지켜줌)
+          echo "${IP} ${HOST}" | sudo tee -a /etc/hosts
+          echo "EIASS_IP=${IP}" >> "$GITHUB_ENV"
+          echo "::notice::[주소] ${HOST} -> ${IP}"
 
-          def note(s):
-              print(s)
-              OUT.append(s)
+      # 실제 수집이 쓰는 목록 API(POST)까지 두드려 봐야 진짜 확인이다
+      - name: 1차 — 직접 연결
+        run: |
+          T0=$SECONDS
+          CODE=$(curl -s -o /tmp/direct.html -w "%{http_code}" --max-time 15 -A "Mozilla/5.0" \
+            --data-urlencode "query=" \
+            --data-urlencode "collection=draft" \
+            --data-urlencode "urlString=&alias=1&orgnCd=&sido=" \
+            --data-urlencode "viewName=eiass/user/partcptn/choan/choanSperssList_searchApi" \
+            --data-urlencode "currentPage=1" \
+            "https://www.eiass.go.kr/searchApi/search.do" || echo "000")
+          TOOK=$((SECONDS-T0))
+          if [ "$CODE" = "200" ] && grep -q tbl01 /tmp/direct.html; then
+            echo "DIRECT=성공" >> "$GITHUB_ENV"
+            echo "::notice::[1차 직접] 성공 — HTTP 200, 목록 정상 (${TOOK}초)"
+          else
+            echo "DIRECT=실패" >> "$GITHUB_ENV"
+            echo "::warning::[1차 직접] 실패 — HTTP ${CODE} (${TOOK}초)"
+          fi
 
-          # 0) 이 러너가 어디인지
-          try:
-              d = requests.get("https://ipinfo.io/json", timeout=10).json()
-              note(f"러너 IP={d.get('ip')} {d.get('country')}/{d.get('city')} {d.get('org')}")
-          except Exception as e:
-              note(f"러너 위치 확인 실패 {e}")
+      - name: 2차 — WARP 터널로 연결 (EIASS 행 트래픽만)
+        run: |
+          sudo apt-get update -qq >/dev/null 2>&1 || true
+          sudo apt-get install -y -qq wireguard-tools >/dev/null
+          WGCF_URL=$(curl -s --max-time 20 https://api.github.com/repos/ViRb3/wgcf/releases/latest \
+            | python3 -c "import sys,json;print([a['browser_download_url'] for a in json.load(sys.stdin)['assets'] if a['name'].endswith('linux_amd64')][0])")
+          curl -fsSL --max-time 60 "$WGCF_URL" -o wgcf && chmod +x wgcf
+          ./wgcf register --accept-tos >/dev/null 2>&1 || ./wgcf register --accept-tos
+          ./wgcf generate >/dev/null
+          sed -i '/^DNS *=/d' wgcf-profile.conf
+          sed -i '/^AllowedIPs/d' wgcf-profile.conf
+          sed -i "/^\[Peer\]/a AllowedIPs = ${EIASS_IP}/32" wgcf-profile.conf
+          sudo mkdir -p /etc/wireguard
+          sudo cp wgcf-profile.conf /etc/wireguard/wgcf.conf
 
-          print()
-          print("=" * 66)
-          print("대상별 TCP 443 연결 시험 (각 8초까지만 기다린다)")
-          print("=" * 66)
+          try_port() {
+            sudo sed -i "/^Endpoint/s|:[0-9]*$|:$1|" /etc/wireguard/wgcf.conf
+            sudo wg-quick up wgcf >/dev/null 2>&1 || return 1
+            sleep 2
+            HS=$(sudo wg show wgcf latest-handshakes | awk '{print $2}')
+            echo "  포트 $1 — 핸드셰이크: ${HS:-0}"
+            [ "${HS:-0}" != "0" ]
+          }
 
-          # (이름, 호스트, 왜 보는가)
-          TARGETS = [
-              ("EIASS",        "www.eiass.go.kr", "수집 대상"),
-              ("VWorld",       "api.vworld.kr",   "지도·좌표. 수집에 필요"),
-              ("환경부",        "www.me.go.kr",    "다른 정부 사이트"),
-              ("공공데이터포털",  "www.data.go.kr",  "다른 정부 사이트"),
-              ("네이버",        "www.naver.com",   "일반 한국 사이트"),
-              ("구글",          "www.google.com",  "대조군(러너 인터넷 정상 확인)"),
-          ]
+          WARP=실패
+          for PORT in 2408 500; do
+            if try_port "$PORT"; then
+              T0=$SECONDS
+              CODE=$(curl -s -o /tmp/warp.html -w "%{http_code}" --max-time 15 -A "Mozilla/5.0" \
+                --data-urlencode "query=" \
+                --data-urlencode "collection=draft" \
+                --data-urlencode "urlString=&alias=1&orgnCd=&sido=" \
+                --data-urlencode "viewName=eiass/user/partcptn/choan/choanSperssList_searchApi" \
+                --data-urlencode "currentPage=1" \
+                "https://www.eiass.go.kr/searchApi/search.do" || echo "000")
+              TOOK=$((SECONDS-T0))
+              if [ "$CODE" = "200" ] && grep -q tbl01 /tmp/warp.html; then
+                WARP="성공(포트 ${PORT}, ${TOOK}초)"
+                break
+              fi
+              echo "  포트 ${PORT} — 터널은 붙었지만 EIASS 응답 없음 (HTTP ${CODE}, ${TOOK}초)"
+            fi
+            sudo wg-quick down wgcf >/dev/null 2>&1 || true
+          done
 
-          results = {}
-          for label, host, why in TARGETS:
-              line = f"{label}({host})"
-              # DNS
-              t = time.time()
-              try:
-                  ip = socket.gethostbyname(host)
-                  dns = f"DNS={ip} {time.time()-t:.1f}s"
-              except Exception as e:
-                  note(f"  {line:<34} DNS실패 {type(e).__name__} — {why}")
-                  results[label] = "DNS실패"
-                  continue
-              # TCP
-              t = time.time()
-              try:
-                  s = socket.create_connection((ip, 443), timeout=8)
-                  s.close()
-                  took = time.time() - t
-                  note(f"  {line:<34} 성공 ({took:.2f}s) {dns} — {why}")
-                  results[label] = "성공"
-              except socket.timeout:
-                  note(f"  {line:<34} 시간초과({time.time()-t:.1f}s) 침묵=차단신호 {dns} — {why}")
-                  results[label] = "시간초과"
-              except Exception as e:
-                  note(f"  {line:<34} 실패 {type(e).__name__} {dns} — {why}")
-                  results[label] = f"실패({type(e).__name__})"
+          echo "WARP=${WARP}" >> "$GITHUB_ENV"
+          if [ "$WARP" != "실패" ]; then
+            echo "::notice::[2차 WARP] ${WARP} — HTTP 200, 목록 정상"
+          else
+            echo "::warning::[2차 WARP] 실패"
+          fi
 
-          # 판정
-          print()
-          print("=" * 66)
-          print("판정")
-          print("=" * 66)
-          kr_others = [results.get(k) for k in ("환경부", "공공데이터포털", "네이버")]
-          kr_ok = sum(1 for v in kr_others if v == "성공")
-          eiass_ok = results.get("EIASS") == "성공"
-          vworld_ok = results.get("VWorld") == "성공"
-          google_ok = results.get("구글") == "성공"
-
-          if not google_ok:
-              verdict = "러너의 인터넷 자체가 이상하다. 시험을 다시 해야 한다."
-          elif eiass_ok:
-              verdict = "EIASS 에 닿았다. 막히지 않았다."
-          elif kr_ok == 0:
-              verdict = ("한국 사이트가 전부 안 된다 -> EIASS 가 콕 집어 막는 것이 아니라 "
-                         "Azure~한국 경로 문제다.")
-          else:
-              verdict = (f"한국 사이트는 {kr_ok}/3 되는데 EIASS 만 안 된다 "
-                         f"-> EIASS 가 Azure 대역을 막는 것이 맞다.")
-
-          note("판정: " + verdict)
-          note(f"VWorld(수집에 필요): {'된다' if vworld_ok else '안 된다'}")
-          print()
-          print(verdict)
-
-          print("::notice::[결과] " + " || ".join(OUT)[:2800])
-          # 이 워크플로는 '조사'가 목적이므로 실패로 끝내지 않는다.
-          sys.exit(0)
-          PY
+      - name: 판정
+        run: |
+          echo "직접: ${DIRECT} / WARP: ${WARP}"
+          if [ "${WARP}" != "실패" ]; then
+            V="WARP 터널이 통한다 → collect.yml 자동 수집이 이 길로 돈다. 며칠 초록불만 확인하면 된다."
+          elif [ "${DIRECT}" = "성공" ]; then
+            V="이번엔 직접도 됐다(운). WARP 가 안 되는 게 문제 → 몇 번 더 돌려 보고, 계속 WARP 실패면 self-hosted 러너로."
+          else
+            V="둘 다 실패 → GitHub 러너로는 방법이 없다. self-hosted 러너(담당자 PC)가 확실한 길이다. HANDOFF §2."
+          fi
+          echo "::notice::[판정] 직접=${DIRECT} · WARP=${WARP} → ${V}"

@@ -73,28 +73,96 @@ jobs:
       - name: 필요한 패키지 설치
         run: pip install -r requirements.txt
 
-      # 참고용이다. 여기서 실패해도 멈추지 않는다 —
-      # 수집 스크립트가 스스로 재시도하므로, 이 순간 한 번 안 됐다고 포기할 이유가 없다.
-      - name: 연결 확인 (참고용, 실패해도 계속)
-        continue-on-error: true
+      # ── EIASS 로 가는 길을 먼저 확보한다 ─────────────────────────────
+      # GitHub 러너(Azure)에서는 EIASS 직접 접속이 6번 중 1번만 됐다 (HANDOFF §4).
+      # 같은 순간 VWorld(한국)는 0.43초에 붙었으므로, 경로 문제가 아니라
+      # EIASS 쪽(또는 그 앞의 보안장비)이 Azure 대역을 불안정하게 걸러내는 것이다.
+      #
+      # 그래서 **EIASS 로 가는 트래픽만** Cloudflare WARP 터널(무료·계정 불요)로 태운다.
+      #   - EIASS 는 해외 접속을 막지 않는다(전 세계 17/20곳 정상, Cloudflare 서버에서도 정상).
+      #     의도적 차단을 뚫는 게 아니라 "다른 통신사 회선으로 거는 것"에 가깝다.
+      #     발주처가 그 사이트의 주인(기후에너지환경부)이고, EIASS 측이 원치 않는다는
+      #     신호가 있으면 이 방식은 중단한다.
+      #   - GitHub·VWorld·Anthropic 트래픽은 터널을 타지 않는다 (EIASS IP /32 만 라우팅).
+      # 순서: WARP(2408) → WARP(500) → 직접 연결 → 모두 실패면 비용 0원으로 안전 중단.
+      - name: EIASS 가는 길 확보 (WARP 터널 → 안 되면 직접)
         run: |
-          python - <<'PY'
-          import socket, time
-          out = []
-          for label, host in [("EIASS", "www.eiass.go.kr"), ("VWorld", "api.vworld.kr")]:
-              t = time.time()
-              try:
-                  ip = socket.gethostbyname(host)
-                  s = socket.create_connection((ip, 443), timeout=10)
-                  s.close()
-                  line = f"{label} 성공 {ip} ({time.time()-t:.2f}초)"
-              except Exception as e:
-                  line = f"{label} 실패 {type(e).__name__} ({time.time()-t:.1f}초)"
-              print("  " + line)
-              out.append(line)
-          # 로그 본문은 저장소 주인만 볼 수 있어서, 도와주는 사람이 읽을 수 있게 주석으로도 남긴다.
-          print("::notice::[연결확인] " + " || ".join(out))
-          PY
+          HOST="www.eiass.go.kr"
+
+          # EIASS 쪽 DNS 가 가끔 응답하지 않아서(HANDOFF §4) HTTPS 로 직접 묻는다
+          resolve_ip() {
+            for URL in \
+              "https://cloudflare-dns.com/dns-query?name=${HOST}&type=A" \
+              "https://dns.google/resolve?name=${HOST}&type=A"; do
+              for I in 1 2 3; do
+                GOT=$(curl -s --max-time 10 -H 'accept: application/dns-json' "$URL" \
+                  | python3 -c "import sys,json;d=json.load(sys.stdin);a=[x['data'] for x in d.get('Answer',[]) if x.get('type')==1];print(a[0] if a else '')" 2>/dev/null)
+                if [ -n "$GOT" ]; then echo "$GOT"; return 0; fi
+                sleep 2
+              done
+            done
+            # 조회가 전부 실패하면 최근까지 확인된 주소를 쓴다.
+            # 주소가 바뀌었어도 인증서 검증이 있어 엉뚱한 서버와 통신하게 되지는 않는다.
+            echo "211.114.21.111"
+          }
+
+          probe() {
+            curl -s -o /dev/null --max-time 8 "https://${HOST}/" && echo OK || echo FAIL
+          }
+
+          setup_warp_base() {
+            sudo apt-get update -qq >/dev/null 2>&1 || true
+            sudo apt-get install -y -qq wireguard-tools >/dev/null 2>&1 || return 1
+            WGCF_URL=$(curl -s --max-time 20 https://api.github.com/repos/ViRb3/wgcf/releases/latest \
+              | python3 -c "import sys,json;print([a['browser_download_url'] for a in json.load(sys.stdin)['assets'] if a['name'].endswith('linux_amd64')][0])" 2>/dev/null)
+            [ -n "$WGCF_URL" ] || return 1
+            curl -fsSL --max-time 60 "$WGCF_URL" -o wgcf || return 1
+            chmod +x wgcf
+            ./wgcf register --accept-tos >/dev/null 2>&1 || ./wgcf register --accept-tos || return 1
+            ./wgcf generate >/dev/null 2>&1 || return 1
+            sed -i '/^DNS *=/d' wgcf-profile.conf            # 러너의 DNS 는 건드리지 않는다
+            sed -i '/^AllowedIPs/d' wgcf-profile.conf        # 전체 트래픽 라우팅을 지우고
+            sed -i "/^\[Peer\]/a AllowedIPs = ${IP}/32" wgcf-profile.conf   # EIASS 만 터널로
+            sudo mkdir -p /etc/wireguard
+            sudo cp wgcf-profile.conf /etc/wireguard/wgcf.conf
+          }
+          warp_up_port() {
+            sudo sed -i "/^Endpoint/s|:[0-9]*$|:$1|" /etc/wireguard/wgcf.conf
+            sudo wg-quick up wgcf >/dev/null 2>&1 || return 1
+            sleep 2
+          }
+          warp_down() { sudo wg-quick down wgcf >/dev/null 2>&1 || true; }
+
+          IP=$(resolve_ip)
+          echo "${IP} ${HOST}" | sudo tee -a /etc/hosts >/dev/null
+          echo "EIASS 주소: ${IP}"
+          VW=$(curl -s -o /dev/null --max-time 8 https://api.vworld.kr/ && echo OK || echo FAIL)
+
+          ROUTE=""
+          if setup_warp_base; then
+            if warp_up_port 2408 && [ "$(probe)" = "OK" ]; then
+              ROUTE="WARP터널(2408)"
+            else
+              warp_down
+              if warp_up_port 500 && [ "$(probe)" = "OK" ]; then
+                ROUTE="WARP터널(500)"
+              else
+                warp_down
+              fi
+            fi
+          else
+            echo "WARP 준비 실패 — 직접 연결만 시도합니다"
+          fi
+          if [ -z "$ROUTE" ] && [ "$(probe)" = "OK" ]; then
+            ROUTE="직접연결"
+          fi
+
+          if [ -n "$ROUTE" ]; then
+            echo "::notice::[통로] ${ROUTE} 로 EIASS 연결 성공 (${IP}) / VWorld ${VW}"
+          else
+            echo "::error::[통로] WARP·직접 모두 실패 — 수집을 시작하지 않고 멈춥니다 (비용 0원, 자료 안전) / VWorld ${VW}"
+            exit 1
+          fi
 
       # 수집이 부실하게 끝났을 때 멀쩡한 자료를 덮어쓰지 않도록, 먼저 지금 건수를 세어 둔다.
       - name: 수집 전 건수 기록
