@@ -1,27 +1,36 @@
-# ⚠️ 지금은 쓰지 않는다. 자동 실행을 꺼 뒀다.
+# EIASS 공람 자료를 매일 모아서 커밋하고, 사이트를 다시 배포한다.
 #
-#   EIASS(www.eiass.go.kr)가 해외 IP 를 막고 있어서 GitHub 서버(미국)에서는
-#   연결 자체가 안 된다. 2026-08-01 확인:
-#       requests.exceptions.ConnectTimeout — connect timeout=20
-#       (DNS 는 풀리는데 TCP 연결이 조용히 버려진다 = 거부가 아니라 차단)
+# ── 2026-08-06: 자동 실행을 켰다 ───────────────────────────────────
+# 예전에는 "EIASS 가 해외 IP 를 막아서 GitHub 에서는 불가능" 이라고 적고
+# 자동 실행을 꺼 뒀는데, 다시 확인해 보니 **사실이 아니었다.**
 #
-#   그래서 자료 수집은 한국에 있는 PC 에서 tools/run_daily.bat 로 돌린다.
-#   그 스크립트가 수집 후 GitHub 에 올리고, 올리면 deploy.yml 이 사이트를 다시 배포한다.
-#   자세한 건 docs/SETUP.md 의 "6단계 — EIASS가 막혔다면".
+#   - 전 세계 20개 노드 중 17곳에서 EIASS 정상 응답
+#     (미국 LA 0.49초, 댈러스 1.09초, 독일·프랑스·네덜란드·러시아·인도·베트남)
+#   - GitHub 러너(미국 Azure)에서도 EIASS 0.23초, VWorld 0.22초로 정상 접속
+#   - 그 결론은 2026-08-01 에 **딱 한 번** 실행해 실패한 것을 근거로 내려졌고,
+#     원인을 밝히려고 만든 '연결 확인' 단계는 그때 존재하지도 않았다.
 #
-#   이 파일을 지우지 않고 두는 이유: 나중에 EIASS 가 차단을 풀거나,
-#   한국에 있는 self-hosted 러너를 붙이면 그대로 다시 쓸 수 있다.
-#   다시 켜려면 아래 schedule 주석을 풀면 된다.
+# 다만 **접속이 간헐적으로 불안정한 것은 사실이다.** 3번 시험에 1번 성공했다.
+#     1차 52.159.244.171  DNS 조회 실패 (10초)
+#     2차 9.234.149.180   DNS 는 됐는데 TCP 443 이 20초 무응답
+#     3차 20.161.78.74    전부 정상 (0.23초)
+# 2·3차는 같은 데이터센터인데 결과가 달랐다 = 차단이 아니라 불안정.
+#
+# 그래서 build_data.py 안에 재시도 장치를 넣었다(SESSION).
+# 연결이 안 되면 4초·8초·16초 쉬면서 최대 4번까지 스스로 다시 시도한다.
+# 그래도 실패하면 그날 자료가 안 바뀔 뿐이고, 화면은 어제 자료로 정상 동작한다.
+# (워크플로가 실패하면 GitHub 이 저장소 주인에게 메일을 보낸다)
 
-name: EIASS 공람 자료 수집 (사용 안 함 — 해외 IP 차단)
+name: EIASS 공람 자료 수집
 
 on:
-  # EIASS 가 GitHub 서버를 막고 있어 매일 실패하므로 자동 실행을 꺼 뒀다.
-  # 차단이 풀렸는지 확인하려면 아래 두 줄의 주석을 푼다. (00:00 UTC = 한국 오전 9시)
-  #  schedule:
-  #    - cron: "0 0 * * *"
-  #
-  # 손으로 눌러 돌릴 수는 있다. '연결 확인' 단계가 아직도 막혔는지 알려 준다.
+  schedule:
+    # 한국 오전 9시. EIASS 에 새 공람이 올라오는 시간대에 맞춘다.
+    - cron: "0 0 * * *"
+    # 한국 오후 1시 — 오전 실행이 접속 불안정으로 실패했을 때를 위한 두 번째 기회.
+    # 오전에 성공했으면 이미 받아 둔 사업은 건너뛰므로 비용도 시간도 거의 안 든다.
+    - cron: "0 4 * * *"
+
   workflow_dispatch:
     inputs:
       full:
@@ -29,7 +38,7 @@ on:
         type: boolean
         default: false
       limit:
-        description: "유형별 최대 건수 (비워 두면 전건). 처음 시험할 땐 3 정도로."
+        description: "유형별 최대 건수 (시험용). 넣으면 커밋하지 않는다."
         type: string
         default: ""
 
@@ -48,7 +57,6 @@ concurrency:
 jobs:
   collect:
     runs-on: ubuntu-latest
-    # 전국 전건이면 오래 걸린다. 무한정 도는 것은 막되 넉넉히 준다.
     timeout-minutes: 120
 
     steps:
@@ -64,81 +72,39 @@ jobs:
       - name: 필요한 패키지 설치
         run: pip install -r requirements.txt
 
-      # GitHub 서버(미국)에서 EIASS·VWorld 에 닿는지 먼저 확인한다.
-      # 한국 정부 사이트는 해외 IP를 막는 경우가 있어서, 막혔다면 여기서
-      # "무엇이 어떻게 막혔는지"를 사람이 읽을 수 있는 말로 알려 준다.
-      - name: 연결 확인
+      # 참고용이다. 여기서 실패해도 멈추지 않는다 —
+      # 수집 스크립트가 스스로 재시도하므로, 이 순간 한 번 안 됐다고 포기할 이유가 없다.
+      - name: 연결 확인 (참고용, 실패해도 계속)
+        continue-on-error: true
         run: |
           python - <<'PY'
-          import socket, ssl, sys
-          import requests
-
-          def check(name, fn):
-              print(f"\n── {name}")
+          import socket, time
+          for label, host in [("EIASS", "www.eiass.go.kr"), ("VWorld", "api.vworld.kr")]:
+              t = time.time()
               try:
-                  fn()
-              except requests.exceptions.SSLError as e:
-                  print(f"   [실패] SSL 인증서 문제: {e}")
-                  return "ssl"
-              except requests.exceptions.ConnectTimeout:
-                  print("   [실패] 연결 시간 초과 — 요청이 조용히 버려졌습니다.")
-                  print("          해외 IP 차단일 가능성이 큽니다.")
-                  return "timeout"
-              except requests.exceptions.ConnectionError as e:
-                  print(f"   [실패] 연결 자체가 안 됩니다: {e}")
-                  return "conn"
+                  ip = socket.gethostbyname(host)
+                  s = socket.create_connection((ip, 443), timeout=10)
+                  s.close()
+                  print(f"  {label}({host}) 성공 {ip} ({time.time()-t:.2f}초)")
               except Exception as e:
-                  print(f"   [실패] {type(e).__name__}: {e}")
-                  return "other"
-              return None
+                  print(f"  {label}({host}) 실패 {type(e).__name__}: {e}")
+                  print("  -> 수집 단계에서 다시 시도합니다.")
+          PY
 
-          problems = []
-
-          def eiass():
-              ip = socket.gethostbyname("www.eiass.go.kr")
-              print(f"   DNS 조회 성공: www.eiass.go.kr -> {ip}")
-              r = requests.post(
-                  "https://www.eiass.go.kr/searchApi/search.do",
-                  data={"query": "", "collection": "draft",
-                        "urlString": "&alias=1&orgnCd=&sido=",
-                        "viewName": "eiass/user/partcptn/choan/choanSperssList_searchApi",
-                        "currentPage": 1},
-                  headers={"User-Agent": "Mozilla/5.0"}, timeout=20)
-              print(f"   HTTP {r.status_code}, 응답 {len(r.content):,}바이트")
-              if r.status_code == 403:
-                  print("   [실패] 403 — 서버가 이 접속을 거부했습니다(해외 IP 차단 가능성).")
-                  problems.append("eiass-403")
-              elif r.status_code != 200:
-                  print(f"   [실패] 예상치 못한 상태코드 {r.status_code}")
-                  problems.append("eiass-status")
-              elif "tbl01" not in r.text:
-                  print("   [경고] 응답은 왔는데 목록 표가 없습니다. 화면이 바뀌었을 수 있습니다.")
-                  print("   응답 앞부분:", r.text[:300].replace("\n", " "))
-                  problems.append("eiass-shape")
-              else:
-                  print("   [정상] 목록을 받아왔습니다.")
-
-          def vworld():
-              r = requests.get("https://api.vworld.kr/req/address",
-                               params={"service": "address", "request": "getcoord",
-                                       "version": "2.0", "crs": "epsg:4326",
-                                       "address": "서울특별시 중구 세종대로 110",
-                                       "type": "road", "key": "TEST"}, timeout=20)
-              print(f"   HTTP {r.status_code} — 응답이 오면 연결은 되는 것입니다.")
-
-          for name, fn in [("EIASS 목록 API", eiass), ("VWorld", vworld)]:
-              why = check(name, fn)
-              if why:
-                  problems.append(f"{name}:{why}")
-
-          if problems:
-              print("\n" + "=" * 60)
-              print("연결 확인 실패:", ", ".join(problems))
-              print("EIASS 쪽이 막혔다면 GitHub 에서 자동 수집은 할 수 없습니다.")
-              print("docs/SETUP.md 의 '6단계 — EIASS가 막혔다면' 을 보세요.")
-              print("=" * 60)
-              sys.exit(1)
-          print("\n연결 확인 통과.")
+      # 수집이 부실하게 끝났을 때 멀쩡한 자료를 덮어쓰지 않도록, 먼저 지금 건수를 세어 둔다.
+      - name: 수집 전 건수 기록
+        id: before
+        run: |
+          python - <<'PY'
+          import json, os
+          try:
+              with open("data/projects.json", encoding="utf-8") as f:
+                  n = len(json.load(f).get("projects", []))
+          except Exception:
+              n = 0
+          print(f"지금 저장된 사업 {n}건")
+          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
+              f.write(f"count={n}\n")
           PY
 
       - name: EIASS 수집
@@ -154,21 +120,36 @@ jobs:
           echo "실행: python tools/build_data.py $ARGS"
           python tools/build_data.py $ARGS
 
-      - name: 결과 확인
-        # 수집이 실패해 빈 파일이 커밋되는 것을 막는다.
+      # 수집이 반쪽만 되어도 파일은 만들어진다. 그 상태로 커밋하면
+      # 멀쩡하던 자료가 줄어든 채 사이트에 올라간다. 그것을 막는다.
+      - name: 결과 확인 (부실하면 커밋하지 않고 멈춤)
         run: |
           python - <<'PY'
           import json, sys
+          before = int("${{ steps.before.outputs.count }}" or 0)
           with open("data/projects.json", encoding="utf-8") as f:
-              data = json.load(f)
-          n = len(data.get("projects", []))
-          print(f"공람 중인 사업 {n}건")
+              n = len(json.load(f).get("projects", []))
+          print(f"수집 전 {before}건 -> 수집 후 {n}건")
+
           if n == 0:
               print("::error::수집 결과가 0건입니다. 커밋하지 않고 멈춥니다.")
               sys.exit(1)
+          # 공람이 끝나 빠지는 사업이 있으므로 조금 줄어드는 것은 정상이다.
+          # 다만 절반 아래로 떨어지면 수집이 반쪽만 된 것으로 본다.
+          if before >= 10 and n < before * 0.5:
+              print(f"::error::{before}건이던 것이 {n}건으로 급감했습니다. "
+                    f"수집이 제대로 안 된 것으로 보고 커밋하지 않습니다.")
+              sys.exit(1)
+          if before >= 10 and n < before * 0.8:
+              print(f"::warning::{before}건 -> {n}건으로 꽤 줄었습니다. 확인해 보세요.")
+          print("정상 범위입니다.")
           PY
 
       - name: 바뀐 게 있으면 커밋
+        # --limit 를 준 시험 실행은 일부만 수집하므로 절대 커밋하지 않는다.
+        # (예전에는 이 장치가 없어서, 시험 삼아 --limit 3 으로 돌리면
+        #  48건이던 자료가 6건으로 덮어써진 채 그대로 올라갈 수 있었다)
+        if: ${{ inputs.limit == '' }}
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -180,10 +161,15 @@ jobs:
             git push
           fi
 
+      - name: 시험 실행 안내
+        if: ${{ inputs.limit != '' }}
+        run: echo "::notice::--limit ${{ inputs.limit }} 로 돈 시험 실행이라 커밋하지 않았습니다."
+
   # 수집이 끝나면 바로 사이트를 다시 올린다.
   # (Actions 가 만든 커밋은 다른 워크플로를 자동으로 깨우지 않기 때문에 여기서 직접 부른다)
   deploy:
     needs: collect
+    if: ${{ inputs.limit == '' }}
     uses: ./.github/workflows/deploy.yml
     secrets: inherit
     permissions:

@@ -77,6 +77,50 @@ if not VERIFY_SSL:
     import urllib3
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
+# ── 통신 재시도 ──────────────────────────────────────────────────────
+# EIASS 는 가끔 연결이 안 된다. **차단이 아니라 불안정한 것이다.**
+# 2026-08-06 에 GitHub 서버(미국 Azure)에서 세 번 시험한 결과:
+#     1차 52.159.244.171  DNS 조회 실패 (10초)
+#     2차 9.234.149.180   DNS 는 됐는데 TCP 443 이 20초 무응답
+#     3차 20.161.78.74    전부 정상 (0.23초)
+# 같은 데이터센터(2·3차 모두 Boydton)인데 결과가 달랐다. 차단이라면
+# 세 번 다 같은 지점에서 막혔어야 한다. 실패 지점도 DNS·TCP 로 제각각이었다.
+# 참고로 한국에서는 0.08초, 미국 LA·독일·프랑스 등 해외 17곳에서도 정상이다.
+#
+# 그래서 한 번 실패했다고 그날 수집을 통째로 포기하지 않도록,
+# 모든 요청이 이 통로를 지나가면서 스스로 몇 번 다시 시도하게 한다.
+RETRY_TOTAL = int(os.environ.get("EIASS_RETRY", "4"))
+
+
+def _make_session():
+    """재시도가 붙은 공용 통신 통로를 만든다.
+
+    - DNS 조회 실패·연결 실패: 최대 RETRY_TOTAL 번 다시 시도
+    - 서버가 잠깐 5xx 로 답하는 경우도 다시 시도
+    - 시도 사이에 4초 → 8초 → 16초 씩 쉬어 준다 (상대 서버를 몰아붙이지 않게)
+    """
+    from requests.adapters import HTTPAdapter
+    from urllib3.util.retry import Retry
+
+    s = requests.Session()
+    retry = Retry(
+        total=RETRY_TOTAL,
+        connect=RETRY_TOTAL,        # DNS·TCP 연결이 안 될 때
+        read=2,                     # 응답을 받다가 끊겼을 때
+        status=2,
+        status_forcelist=(429, 500, 502, 503, 504),
+        allowed_methods=frozenset(["GET", "POST"]),
+        backoff_factor=2,           # 쉬는 시간: 0 → 4 → 8 → 16초
+        raise_on_status=False,
+    )
+    adapter = HTTPAdapter(max_retries=retry)
+    s.mount("https://", adapter)
+    s.mount("http://", adapter)
+    return s
+
+
+SESSION = _make_session()
+
 # 전략환경영향평가 / 환경영향평가 — 목록·상세 URL과 검색엔진 파라미터가 유형별로 다르다.
 CATEGORIES = {
     "strat": {
@@ -122,7 +166,7 @@ def fetch_list_page(category_key, page):
         "currentPage": page,
         "sort": "DRFOP_TMDT_START_DT/DESC,BIZ_SEQ/DESC",
     }
-    r = requests.post(f"{BASE}/searchApi/search.do", data=params,
+    r = SESSION.post(f"{BASE}/searchApi/search.do", data=params,
                        headers=HEADERS, verify=VERIFY_SSL, timeout=20)
     r.raise_for_status()
     return r.text
@@ -288,7 +332,7 @@ def fetch_review_count(alias, perss_gubn, exquery):
         "perssGubn": perss_gubn,
     }
     view_char = "Eia" if alias == 1 else "Per"
-    r = requests.post(f"{BASE}/searchApi/search.do", data={
+    r = SESSION.post(f"{BASE}/searchApi/search.do", data={
         "query": "",
         "collection": "business",
         "urlString": _url_string(search_params),
@@ -331,7 +375,7 @@ def fetch_detail_html(category_key, biz_cd, biz_seq, step_cd):
     data = {"BIZ_CD": biz_cd, "BIZ_SEQ": biz_seq}
     if cat["needs_step_cd"] and step_cd:
         data["CCIL_STEP1_CD_CK"] = step_cd
-    r = requests.post(f"{BASE}{cat['view_path']}", data=data,
+    r = SESSION.post(f"{BASE}{cat['view_path']}", data=data,
                        headers=HEADERS, verify=VERIFY_SSL, timeout=20)
     r.raise_for_status()
     return r.text
@@ -452,7 +496,7 @@ def find_summary_file(files):
 
 def download_file(file_seq, system_name="PERSS"):
     url = f"{BASE}/common/file/downloadFileByFileSeq.do"
-    r = requests.get(url, params={"FILE_SEQ": file_seq, "SYSTEM_NAME": system_name},
+    r = SESSION.get(url, params={"FILE_SEQ": file_seq, "SYSTEM_NAME": system_name},
                       headers=HEADERS, verify=VERIFY_SSL, timeout=60)
     r.raise_for_status()
     return r.content
@@ -550,7 +594,7 @@ def fetch_river_routes(names, lat, lon, key, domain, max_names=8):
     routes = []
     for name in names[:max_names]:
         try:
-            r = requests.get(VWORLD_DATA_URL, params={
+            r = SESSION.get(VWORLD_DATA_URL, params={
                 "service": "data", "request": "GetFeature", "data": RIVER_LAYER,
                 "key": key, "domain": domain, "format": "json",
                 "size": 20, "geometry": "true", "attrFilter": f"riv_nm:like:{name}",
@@ -626,7 +670,7 @@ def geocode_address(address, vworld_key):
     for candidate in build_address_candidates(address):
         for addr_type in ("road", "parcel"):
             try:
-                r = requests.get(url, params={
+                r = SESSION.get(url, params={
                     "service": "address",
                     "request": "getcoord",
                     "version": "2.0",
