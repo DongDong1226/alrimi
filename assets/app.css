@@ -813,10 +813,13 @@ select:disabled{opacity:.5;cursor:not-allowed}
   .row-btns{flex:1 1 100%;width:auto;min-width:0;margin-left:64px}
   .brief>div{flex-direction:column;gap:1px}
   .brief dt{width:auto}
-  /* 범례가 작은 지도의 3분의 1을 가려서 두 줄로 눕힌다 */
-  .gis-legend{left:8px;bottom:8px;flex-direction:row;flex-wrap:wrap;max-width:calc(100% - 60px);
-    gap:4px 10px;padding:7px 9px}
-  .gis-legend span{font-size:11px}
+  /* 범례가 작은 지도를 많이 가려서 두 줄로 눕히고 최대한 줄인다.
+     항목이 6개라 더 줄이지 않으면 지도의 4분의 1을 먹는다. */
+  .gis-legend{left:8px;bottom:8px;flex-direction:row;flex-wrap:wrap;max-width:calc(100% - 56px);
+    gap:3px 8px;padding:5px 7px;background:rgba(255,255,255,.88)}
+  .gis-legend span{font-size:10.5px;gap:5px}
+  .gis-legend .lg{width:9px;height:9px}
+  .gis-legend .lg--route{height:3px}
 }
 @media (prefers-reduced-motion:reduce){
   *{transition:none!important;animation:none!important;scroll-behavior:auto!important}

@@ -1039,6 +1039,7 @@ function renderScope(){
   });
 
   const where = esc(hoodLabel(currentHood, true));
+  $("#projKicker").textContent = homeScope === "all" ? "전국 사업" : "우리 동네 사업";
   $("#projHead").innerHTML =
     homeScope === "region" ? `<span class="em">${where}</span> 안에서 계획 중인 사업입니다.`
     : homeScope === "near" ? `우리 집 반경 ${esc(S.radiusKm)}km 안, <span class="em">계획 중인 사업</span>입니다.`
@@ -2045,11 +2046,24 @@ function renderGisMarkers(fit = true){
     gisMarkers.set(String(p.id), m);
   });
 
-  if(fit){
-    const pts = [[HOME.lat, HOME.lon], ...rows.map(p => [p.lat, p.lon])];
-    if(pts.length > 1) gisMap.fitBounds(pts, { padding:[50, 50] });
-    else gisMap.setView([HOME.lat, HOME.lon], 13);
+  if(fit) fitGisView(rows);
+}
+
+/* 지도를 어디에 맞출지.
+   '동네 안'을 보는 중에 경계가 있으면 **경계에 맞춘다.**
+   노선이 우리 동네를 스치는 사업은 대표 주소가 수십 km 떨어져 있을 수 있는데,
+   그것까지 다 담으면 정작 우리 동네가 화면 구석에 찌그러진다 (실제로 그랬다 —
+   인천 경서동을 보는데 파주 주소 마커까지 담느라 경서동이 왼쪽 아래 구석에 몰렸다). */
+function fitGisView(rows){
+  if(mapScope === "region" && boundLayer){
+    const b = boundLayer.getBounds();
+    b.extend([HOME.lat, HOME.lon]);
+    gisMap.fitBounds(b, { padding:[40, 40] });
+    return;
   }
+  const pts = [[HOME.lat, HOME.lon], ...rows.map(p => [p.lat, p.lon])];
+  if(pts.length > 1) gisMap.fitBounds(pts, { padding:[50, 50] });
+  else gisMap.setView([HOME.lat, HOME.lon], 13);
 }
 
 function gisItemHtml(p){
