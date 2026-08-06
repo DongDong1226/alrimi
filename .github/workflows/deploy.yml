@@ -44,7 +44,9 @@ jobs:
       - name: 올릴 파일만 모으기
         run: |
           mkdir -p _site
-          cp index.html _site/
+          # 화면 파일은 index.html(데스크톱)·m.html(휴대폰) 두 개다.
+          # 앞으로 늘어나도 빠지지 않게 *.html 을 통째로 가져간다.
+          cp *.html _site/
           cp -r assets _site/
           cp -r data _site/
           echo "--- 올라갈 파일 ---"
@@ -57,9 +59,10 @@ jobs:
       - name: 파일 주소에 판 번호 붙이기 (브라우저 캐시 비우기)
         run: |
           VER="${GITHUB_SHA::7}"
-          sed -i "s/?v=dev/?v=${VER}/g" _site/index.html
+          # 화면 파일 전부에 붙인다 (index.html 만 하면 휴대폰 화면이 옛 코드로 돈다)
+          sed -i "s/?v=dev/?v=${VER}/g" _site/*.html
           echo "판 번호: ${VER}"
-          grep -o 'assets/[a-z.]*\?v=[a-z0-9]*' _site/index.html | sort -u
+          grep -ho 'assets/[a-z.]*\?v=[a-z0-9]*' _site/*.html | sort -u
 
       - name: VWorld 키 심기
         env:

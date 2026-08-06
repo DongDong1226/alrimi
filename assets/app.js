@@ -52,7 +52,43 @@ let S = Object.assign({}, DEFAULTS, lsGet(LSKEY, {}));
    (안 그러면 방문자에게 지도가 안 보인다) */
 S.vworldKey = String(S.vworldKey || "").trim() || BUILD_VWORLD_KEY;
 
-const $  = s => document.querySelector(s);
+/* ============================================================
+   화면에서 칸 찾기
+
+   이 파일 하나가 **두 화면**을 움직인다 —
+     index.html  … 데스크톱·태블릿
+     m.html      … 휴대폰 전용
+   두 화면은 배치가 완전히 다르고, 한쪽에만 있는 칸이 있다
+   (예: 관리자 설정은 휴대폰 화면에 두지 않는다).
+
+   그런데 없는 칸을 만지면 자바스크립트가 **그 자리에서 통째로 멈춘다.**
+   화면 하나가 빈 채로 뜨는 것이다. 그래서 없는 칸을 찾으면
+   '아무 일도 하지 않는 빈 자리'를 대신 돌려준다.
+   ============================================================ */
+const NO_EL = {
+  textContent:"", innerHTML:"", value:"", placeholder:"", hidden:true,
+  disabled:false, checked:false, scrollTop:0, offsetWidth:0,
+  dataset:{}, style:{},
+  classList:{ add(){}, remove(){}, toggle(){}, contains(){ return false; } },
+  addEventListener(){}, removeEventListener(){},
+  focus(){}, click(){}, remove(){}, scrollIntoView(){}, insertAdjacentHTML(){},
+  setAttribute(){}, getAttribute(){ return null; }, appendChild(){},
+  closest(){ return null; },
+  querySelector(){ return NO_EL; }, querySelectorAll(){ return []; }
+};
+
+/* 없는 칸은 한 번만 알려 준다. 오타로 없는 것인지, 이 화면에 원래 없는 것인지
+   구분해야 할 때 개발자도구 콘솔에서 확인한다. */
+const missingEls = new Set();
+function $(s){
+  const el = document.querySelector(s);
+  if(el) return el;
+  if(!missingEls.has(s)){
+    missingEls.add(s);
+    console.debug("[알리미] 이 화면에는 없는 칸:", s);
+  }
+  return NO_EL;
+}
 const $$ = s => Array.from(document.querySelectorAll(s));
 
 /* 데이터에서 온 글자를 화면에 넣기 전에 HTML 특수문자를 막는다. */
@@ -1722,6 +1758,11 @@ function renderPager(sel, key, cut, total){
 
 /* 페이지 단추와 '한 페이지에 N개' 고르는 칸을 한 번만 연결해 둔다. */
 function bindPager(pagerSel, perSel, key, redraw, scrollTo){
+  // 화면마다 '한 페이지에 몇 개'의 기본값이 다르다 (휴대폰은 더 적게).
+  // 칸에 적힌 값을 그대로 따라간다 — 안 그러면 "5개"라고 써 놓고 6개가 나온다.
+  const perEl = $(perSel);
+  if(perEl && perEl.value !== undefined && perEl.value !== "") PAGER[key].per = Number(perEl.value);
+
   $(pagerSel).addEventListener("click", e => {
     const b = e.target.closest("[data-page]");
     if(!b || b.disabled) return;
@@ -1962,12 +2003,14 @@ $$("[data-kw]").forEach(b => b.addEventListener("click", () => { $("#q").value =
 function vworldTileUrl(){
   return `https://api.vworld.kr/req/wmts/1.0.0/${S.vworldKey}/Base/{z}/{y}/{x}.png`;
 }
-function markerIcon(type, on){
+/* dot = 작은 점 모양. 전국을 작은 미리보기 지도에 담을 때만 쓴다. */
+function markerIcon(type, on, dot){
+  const size = dot ? 8 : 15;
   return L.divIcon({
     className: "",
-    iconSize: [15, 15],
-    iconAnchor: [7, 7],
-    html: `<div class="mk mk--${type}${on ? " mk--on" : ""}"></div>`
+    iconSize: [size, size],
+    iconAnchor: [size / 2, size / 2],
+    html: `<div class="mk mk--${type}${on ? " mk--on" : ""}${dot ? " mk--dot" : ""}"></div>`
   });
 }
 
@@ -2006,7 +2049,9 @@ function gisProjects(){
 
 function ensureGisMap(){
   if(gisMap || typeof L === "undefined") return gisMap;
-  const box = $("#gisMap");
+  // Leaflet 은 id 로 요소를 직접 찾으므로, 없으면 여기서 멈춘다 (죽지 않게)
+  const box = document.getElementById("gisMap");
+  if(!box) return null;
   box.innerHTML = "";
   gisMap = L.map("gisMap", { zoomControl:true, attributionControl:true });
   L.tileLayer(vworldTileUrl(), { maxZoom:19, attribution:"ⓒ VWorld" }).addTo(gisMap);
@@ -2513,7 +2558,8 @@ $("#btn-map-addr").addEventListener("click", async () => {
 let miniMap = null, miniLayers = [];
 
 function renderMiniMap(){
-  const canvas = $("#miniMapCanvas");
+  // Leaflet 이 id 로 직접 찾으므로 진짜 요소인지 확인한다
+  const canvas = document.getElementById("miniMapCanvas");
   if(!canvas) return;
 
   if(!S.vworldKey){
@@ -2563,7 +2609,7 @@ function renderMiniMap(){
   const pts = [];
   shown.filter(p => p.lat != null).forEach(p => {
     miniLayers.push(L.marker([p.lat, p.lon],
-      { icon:markerIcon(p.type), keyboard:false }).addTo(miniMap));
+      { icon:markerIcon(p.type, false, nation), keyboard:false }).addTo(miniMap));
     pts.push([p.lat, p.lon]);
   });
 

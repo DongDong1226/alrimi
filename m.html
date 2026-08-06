@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- 밝은 화면 하나로만 만들었다고 알린다. 없으면 다크 모드에서 브라우저가 색을 뒤집는다. -->
+<meta name="color-scheme" content="light">
+<title>우리동네 알리미</title>
+<meta name="description" content="내가 사는 동네의 개발사업과 환경영향평가를 한 화면에서. 공람 마감과 설명회 일정을 놓치지 마세요.">
+<link rel="stylesheet" href="assets/tokens.css?v=dev">
+<link rel="stylesheet" href="assets/app.css?v=dev">
+<!-- 휴대폰 전용 배치. app.css 뒤에 와서 필요한 곳만 덮어쓴다. -->
+<link rel="stylesheet" href="assets/mobile.css?v=dev">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+
+<!--
+  ══════════════════════════════════════════════════════════════
+  휴대폰 전용 화면 (m.html)
+  ──────────────────────────────────────────────────────────────
+  데스크톱 화면은 index.html 이다. 이 파일은 그것을 줄인 것이 아니라
+  **처음부터 세로로 든 휴대폰 기준으로 다시 짠 배치**다.
+    · 아래쪽에 탭 막대 (엄지로 닿는 자리)
+    · 한 번에 한 가지만 — 목록이면 목록, 지도면 지도
+    · 모달은 아래에서 올라오는 전체 화면
+
+  ★ 두뇌는 assets/app.js 하나다. 이 파일에는 판단하는 코드를 두지 않는다.
+    사업을 고르는 규칙·기간 판정·AI 해석 잠금은 전부 app.js 에 있고,
+    여기서는 app.js 가 값을 넣을 **칸**만 제자리에 놓는다.
+    그래서 칸 이름(id)은 index.html 과 같아야 한다. 배치는 달라도 된다.
+
+  ★ 긴 안내문(이용안내·문의)은 assets/texts.js 한 곳에 있다.
+    법 조문 인용이라 두 화면에 복사해 두면 한쪽만 고쳐질 수 있다.
+  ══════════════════════════════════════════════════════════════
+-->
+<body class="m">
+<a class="skip" href="#main">본문 바로가기</a>
+
+<!-- ══════════════════ 화면 1 · 동네 설정 ══════════════════ -->
+<section class="screen on m-scr" id="scr-onboard">
+  <div class="m-onb">
+    <div class="m-onb-top">
+      <div class="brand-logo">
+        <svg class="leaf" viewBox="0 0 24 24" fill="#7fd3a3"><path d="M20 4C10 4 4 9 4 17c0 1 .2 2 .5 3 4-8 9-10 15-11-5 2-9 5-12 11 8 1 16-4 12.5-16z"/></svg>
+        <b>우리동네</b><span>알리미</span>
+      </div>
+      <h1>우리 동네에 들어오는<br>개발사업, 먼저 알려드립니다.</h1>
+      <p class="m-onb-sub">주민 의견을 낼 수 있는 기간과 설명회 일정을 함께 확인하세요.</p>
+    </div>
+
+    <!-- 내 위치를 맨 위에 둔다. 휴대폰에서는 이게 가장 빠른 길이다. -->
+    <button class="m-geo-big" type="button" data-geo>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 2v3.2M12 18.8V22M2 12h3.2M18.8 12H22"></path><circle cx="12" cy="12" r="8"></circle></svg>
+      <span>지금 내 위치로 보기</span>
+    </button>
+    <p class="geo-msg" id="geoMsg-onb" role="status"></p>
+
+    <p class="m-or"><span>또는 동네를 직접 고르기</span></p>
+
+    <!-- 세 칸을 다 고를 필요는 없다. 시·도만 골라도, 맨 위 '전국'을 골라도 된다. -->
+    <form class="m-setbar" id="setForm">
+      <label class="m-field">
+        <span class="m-field-lb">시 · 도</span>
+        <select id="f-sido"></select>
+      </label>
+      <label class="m-field">
+        <span class="m-field-lb">시 · 군 · 구</span>
+        <select id="f-sgg"></select>
+      </label>
+      <label class="m-field">
+        <span class="m-field-lb">읍 · 면 · 동</span>
+        <select id="f-dong"></select>
+      </label>
+      <button class="btn btn--primary btn--block m-go" type="submit">
+        내 동네 보기
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+      </button>
+    </form>
+
+    <div class="kw-row m-recent" id="recentRow">
+      <span class="lbl">최근</span>
+    </div>
+
+    <div class="nation m-nation" id="nationRow"></div>
+
+    <div class="m-onb-foot">
+      <a href="index.html?pc=1">넓은 화면(PC)으로 보기</a>
+    </div>
+  </div>
+</section>
+
+
+<!-- ══════════════════ 화면 2 · 우리 동네 홈 ══════════════════ -->
+<div class="screen m-scr" id="scr-home">
+  <p class="demo-banner" id="demoBanner" hidden></p>
+
+  <header class="m-top">
+    <div class="brand-logo">
+      <svg class="leaf" viewBox="0 0 24 24" fill="#1f8a5b"><path d="M20 4C10 4 4 9 4 17c0 1 .2 2 .5 3 4-8 9-10 15-11-5 2-9 5-12 11 8 1 16-4 12.5-16z"/></svg>
+      <b>우리동네</b><span>알리미</span>
+    </div>
+    <button class="m-hood-pill js-change" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg>
+      <span id="hood-pill-label">전국</span>
+    </button>
+  </header>
+
+  <main id="main" class="m-main">
+
+    <section class="m-lead">
+      <h1>지금 <span class="hl" id="h-hood">전국</span>에서<br>계획 중인 개발사업 <span class="hl" id="h-count">0</span>건</h1>
+      <form class="m-search" onsubmit="return false">
+        <svg class="lead-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
+        <input id="q" type="text" aria-label="사업 검색" placeholder="사업명·유형으로 찾기">
+        <button class="btn btn--primary" type="button" id="btn-search">검색</button>
+      </form>
+      <div class="kw-row m-kw">
+        <button class="kw-chip" type="button" data-kw="도시개발">도시개발</button>
+        <button class="kw-chip" type="button" data-kw="도로">도로</button>
+        <button class="kw-chip" type="button" data-kw="물류">물류단지</button>
+        <button class="kw-chip" type="button" data-kw="공원">공원</button>
+      </div>
+    </section>
+
+    <!-- 숫자 세 칸 — 좁으니 옆으로 밀어 본다 -->
+    <div class="m-stats">
+      <div class="m-stat feat">
+        <span class="lab" id="stat-open-lab">의견 낼 수 있는 사업</span>
+        <span class="num"><span data-count="0" id="stat-open">0</span><small>건</small></span>
+        <span class="delta hot" id="stat-open-note"></span>
+      </div>
+      <div class="m-stat">
+        <span class="lab">예정 설명회</span>
+        <span class="num"><span data-count="0" id="stat-events">0</span><small>회</small></span>
+        <span class="delta" id="stat-events-note"></span>
+      </div>
+      <div class="m-stat">
+        <span class="lab">전국 협의 진행 중</span>
+        <span class="num"><span data-count="0" id="stat-nego">0</span><small>건</small></span>
+        <span class="delta" id="stat-nego-note"></span>
+      </div>
+    </div>
+
+    <div class="m-tick" id="dashTick"></div>
+
+    <!-- 내 동네 카드 -->
+    <section class="m-hoodcard">
+      <div class="m-hoodcard-hd">
+        <div>
+          <p class="lb">내 동네</p>
+          <p class="nm" id="hood-card-name">전국</p>
+        </div>
+        <button class="chg js-change" type="button">변경</button>
+      </div>
+      <div class="m-hoodmap" id="miniMap" role="button" tabindex="0" aria-label="지도 크게 보기">
+        <div id="miniMapCanvas" class="hood-mini-map" aria-hidden="true"></div>
+        <span class="zoom">크게 보기</span>
+      </div>
+      <div class="hood-foot m-hoodfoot">
+        <div><p class="k"><label for="v-radius">반경</label></p>
+          <p class="v radius-pick"><select id="v-radius"></select></p></div>
+        <div><p class="k">가장 가까운 사업</p><p class="v" id="v-nearest">—</p></div>
+        <div><p class="k">가장 빠른 마감</p><p class="v" id="v-soonest">—</p></div>
+      </div>
+    </section>
+
+    <!-- 사업 목록 -->
+    <section class="m-sec" id="projects">
+      <div class="m-sec-hd">
+        <span class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg><span id="projKicker">우리 동네 사업</span></span>
+        <h2 class="h-l" id="projHead"></h2>
+      </div>
+
+      <div class="scope-seg m-scope" role="group" aria-label="보는 범위">
+        <button type="button" data-scope="region" id="scopeRegionBtn">우리 동네 안</button>
+        <button type="button" data-scope="near">반경 <b id="scope-radius">5</b>km</button>
+        <button type="button" data-scope="all" class="on">전국</button>
+      </div>
+
+      <div class="m-filter">
+        <button class="chip on" type="button" data-filter="all">전체 <span class="cnt">0</span></button>
+        <button class="chip" type="button" data-filter="strat">전략환경영향평가 <span class="cnt">0</span></button>
+        <button class="chip" type="button" data-filter="main">환경영향평가 <span class="cnt">0</span></button>
+      </div>
+      <div class="m-sortrow">
+        <button class="sort-btn" type="button" id="sortBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M6 12h12M10 18h4"></path></svg>
+          <span id="sortLabel">가까운 순</span>
+        </button>
+        <label class="perpage" for="projPerPage">
+          <span>한 번에</span>
+          <select id="projPerPage">
+            <option value="5" selected>5개</option>
+            <option value="10">10개</option>
+            <option value="20">20개</option>
+            <option value="0">전체</option>
+          </select>
+        </label>
+      </div>
+
+      <div class="proj-grid m-grid" id="projGrid"></div>
+      <nav class="pager" id="projPager" aria-label="사업 목록 페이지"></nav>
+    </section>
+
+    <!-- 설명회 -->
+    <section class="m-sec m-sec--alt" id="participate">
+      <div class="m-sec-hd">
+        <h3 class="h-s">주민 설명회 안내</h3>
+        <p class="m-note" id="openListNote"></p>
+      </div>
+      <p class="brief-guide">설명회 일시·장소는 사업자가 낸 <b>원문 그대로</b>입니다.
+        날짜를 분명히 알 수 있는 것만 지난 일정에 <b>지남</b>을 붙였습니다.</p>
+      <label class="perpage" for="openPerPage">
+        <span>한 번에</span>
+        <select id="openPerPage">
+          <option value="5" selected>5개</option>
+          <option value="10">10개</option>
+          <option value="0">전체</option>
+        </select>
+      </label>
+      <div id="openList"></div>
+      <nav class="pager" id="openPager" aria-label="설명회 목록 페이지"></nav>
+    </section>
+
+    <footer class="m-foot">
+      <p><strong>운영</strong> <span id="f-org"></span></p>
+      <p><strong>문의</strong> <span id="f-tel"></span> (평일 09:00–18:00)</p>
+      <p class="m-foot-links">
+        <button type="button" data-modal="m-guide">이용안내</button>
+        <button type="button" data-modal="m-contact">문의</button>
+        <a href="index.html?pc=1">넓은 화면(PC)</a>
+      </p>
+      <p class="m-copy">© 2026 기후에너지환경부. EIASS에 공개된 자료를 정리해 보여드립니다. 원문과 다르면 원문이 우선합니다.</p>
+    </footer>
+  </main>
+
+  <button class="totop m-totop" id="totop" type="button" aria-label="맨 위로">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M6 11l6-6 6 6"></path></svg>
+  </button>
+</div>
+
+
+<!-- ══════════════════ 화면 3 · 지도 ══════════════════
+     휴대폰에서는 지도가 화면을 채우고, 목록은 아래에서 올라오는 시트로 둔다. -->
+<div class="screen m-scr" id="scr-map">
+  <div class="gis-top m-gistop">
+    <button class="gis-back" type="button" id="btn-map-back" aria-label="돌아가기">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"></path></svg>
+    </button>
+    <div class="scope-seg scope-seg--map" role="group" aria-label="지도에 보이는 범위">
+      <button type="button" data-mapscope="region">동네</button>
+      <button type="button" data-mapscope="near"><b id="gis-radius">5</b>km</button>
+      <button type="button" data-mapscope="all" class="on">전국</button>
+    </div>
+    <button class="m-gis-addr-btn" type="button" id="btn-map-addrbar" aria-label="주소 바꾸기">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg>
+    </button>
+  </div>
+
+  <div class="gis-body m-gisbody">
+    <div class="gis-map-wrap m-gismap">
+      <div class="gis-map" id="gisMap"></div>
+      <div class="gis-legend m-legend" id="mLegend" hidden>
+        <span><i class="lg lg--home"></i>우리 집</span>
+        <span><i class="lg lg--strat"></i>전략환경영향평가</span>
+        <span><i class="lg lg--main"></i>환경영향평가</span>
+        <span><i class="lg lg--circle"></i>반경</span>
+        <span><i class="lg lg--bound"></i>동네 경계</span>
+        <span><i class="lg lg--route"></i>사업 노선</span>
+      </div>
+      <button class="m-legend-btn" type="button" id="btnLegend" aria-label="범례 보기">범례</button>
+    </div>
+
+    <!-- 아래에서 올라오는 시트. 손잡이를 눌러 크게/작게 -->
+    <aside class="gis-side m-sheet" aria-label="내 동네 사업">
+      <button class="m-sheet-grip" type="button" id="btnSheet" aria-label="목록 크게 보기"><i></i></button>
+
+      <div class="gis-addr m-addr" id="mAddr" hidden>
+        <div class="gis-addr-row">
+          <label class="skip" for="m-sido">시·도</label>
+          <span class="msel"><select id="m-sido"></select></span>
+          <label class="skip" for="m-sgg">시·군·구</label>
+          <span class="msel"><select id="m-sgg"></select></span>
+          <label class="skip" for="m-dong">읍·면·동</label>
+          <span class="msel"><select id="m-dong"></select></span>
+        </div>
+        <div class="m-addr-btns">
+          <button class="btn btn--primary btn--sm" type="button" id="btn-map-addr">이 주소로 보기</button>
+          <button class="btn btn--line btn--sm geo-btn" type="button" data-geo>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 2v3.2M12 18.8V22M2 12h3.2M18.8 12H22"></path><circle cx="12" cy="12" r="8"></circle></svg>
+            내 위치
+          </button>
+        </div>
+        <p class="geo-msg" id="geoMsg-map" role="status"></p>
+      </div>
+
+      <div class="gis-side-body m-sheet-body">
+        <p class="gis-armed" id="gisArmed" hidden>노선을 그릴 사업을 목록에서 고르세요.</p>
+        <div id="gisList"></div>
+        <div id="gisDetail" hidden></div>
+      </div>
+    </aside>
+  </div>
+</div>
+
+
+<!-- ══════════════════ 아래쪽 탭 막대 ══════════════════
+     엄지로 닿는 자리에 둔다. 화면 1(동네 설정)에서는 감춘다. -->
+<nav class="m-tabs" id="mTabs" aria-label="주요 메뉴" hidden>
+  <button type="button" data-tab="home" class="on">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V20H4z"></path></svg>
+    <span>홈</span>
+  </button>
+  <button type="button" data-tab="map">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"></path><path d="M9 4v14M15 6v14"></path></svg>
+    <span>지도</span>
+  </button>
+  <button type="button" data-tab="brief">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M4 11h16"></path></svg>
+    <span>설명회</span>
+  </button>
+  <button type="button" data-tab="hood">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg>
+    <span>내 동네</span>
+  </button>
+  <button type="button" data-tab="guide">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4M12 8.5v.01" stroke-linecap="round"></path></svg>
+    <span>안내</span>
+  </button>
+</nav>
+
+
+<!-- ══════════════════ 모달 (휴대폰에서는 아래에서 올라오는 전체 화면) ══════════════════ -->
+<div class="modal" id="m-guide" hidden role="dialog" aria-modal="true" aria-labelledby="m-guide-t">
+  <div class="modal-bd" data-close></div>
+  <div class="modal-box">
+    <div class="modal-hd">
+      <h3 id="m-guide-t">이용안내</h3>
+      <button class="modal-x" type="button" data-close aria-label="닫기">&times;</button>
+    </div>
+    <!-- 본문은 assets/texts.js 한 곳에 있다 (index.html 과 같은 글) -->
+    <div class="modal-bd-in" data-text="guide"></div>
+    <div class="modal-ft"><button class="btn btn--line btn--block" type="button" data-close>닫기</button></div>
+  </div>
+</div>
+
+<div class="modal" id="m-contact" hidden role="dialog" aria-modal="true" aria-labelledby="m-contact-t">
+  <div class="modal-bd" data-close></div>
+  <div class="modal-box">
+    <div class="modal-hd">
+      <h3 id="m-contact-t">문의</h3>
+      <button class="modal-x" type="button" data-close aria-label="닫기">&times;</button>
+    </div>
+    <div class="modal-bd-in" data-text="contact"></div>
+    <div class="modal-ft"><button class="btn btn--line btn--block" type="button" data-close>닫기</button></div>
+  </div>
+</div>
+
+<div class="modal" id="m-hood" hidden role="dialog" aria-modal="true" aria-labelledby="m-hood-t">
+  <div class="modal-bd" data-close></div>
+  <div class="modal-box">
+    <div class="modal-hd">
+      <h3 id="m-hood-t">내 동네</h3>
+      <button class="modal-x" type="button" data-close aria-label="닫기">&times;</button>
+    </div>
+    <div class="modal-bd-in">
+      <button class="m-geo-big" type="button" data-geo>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"></circle><path d="M12 2v3.2M12 18.8V22M2 12h3.2M18.8 12H22"></path><circle cx="12" cy="12" r="8"></circle></svg>
+        <span>지금 내 위치로 찾기</span>
+      </button>
+      <p class="geo-msg" id="geoMsg-hood" role="status"></p>
+      <p class="m-or"><span>또는 직접 고르기</span></p>
+      <p class="m-hint"><b>세 칸을 다 고르지 않아도 됩니다.</b> 시·도만 고르면 그 도 전체를,
+        맨 위의 <b>전국</b>을 고르면 전국을 봅니다.</p>
+      <div class="m-setbar">
+        <label class="m-field"><span class="m-field-lb">시 · 도</span><select id="h-sido"></select></label>
+        <label class="m-field"><span class="m-field-lb">시 · 군 · 구</span><select id="h-sgg"></select></label>
+        <label class="m-field"><span class="m-field-lb">읍 · 면 · 동</span><select id="h-dong"></select></label>
+      </div>
+      <p class="hood-pick-msg" id="hoodPickMsg"></p>
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn--primary btn--block" type="button" id="btn-hood-apply">이 동네로 보기</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="m-opinion" hidden role="dialog" aria-modal="true" aria-labelledby="m-opinion-t">
+  <div class="modal-bd" data-close></div>
+  <div class="modal-box">
+    <div class="modal-hd">
+      <h3 id="m-opinion-t">의견 제출하기</h3>
+      <button class="modal-x" type="button" data-close aria-label="닫기">&times;</button>
+    </div>
+    <div class="modal-bd-in" id="opinionBody"></div>
+    <div class="modal-ft">
+      <button class="btn btn--primary btn--block" type="button" id="btn-opinion-go">EIASS로 이동</button>
+      <button class="btn btn--line btn--block" type="button" data-close>닫기</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="m-detail" hidden role="dialog" aria-modal="true" aria-labelledby="m-detail-t">
+  <div class="modal-bd" data-close></div>
+  <div class="modal-box">
+    <div class="modal-hd">
+      <h3 id="m-detail-t">사업 상세</h3>
+      <button class="modal-x" type="button" data-close aria-label="닫기">&times;</button>
+    </div>
+    <div class="modal-bd-in" id="detailBody"></div>
+    <div class="modal-ft"><button class="btn btn--line btn--block" type="button" data-close>닫기</button></div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="assets/config.js?v=dev"></script>
+<script src="assets/texts.js?v=dev"></script>
+<script src="assets/app.js?v=dev"></script>
+<!-- 휴대폰 화면에만 있는 것(탭 막대·시트·범례 접기). app.js 뒤에 와야 한다. -->
+<script src="assets/mobile.js?v=dev"></script>
+</body>
+</html>

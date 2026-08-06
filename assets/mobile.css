@@ -1,0 +1,284 @@
+/* ============================================================
+   휴대폰 전용 배치 (m.html 에서만 읽는다)
+
+   ★ 색·글꼴·모서리·그림자는 새로 만들지 않는다.
+     tokens.css 에 있는 변수만 쓴다. 나중에 EIASS 본 시스템에 합칠 수 있어야 한다.
+     여기서 정하는 것은 **어디에 무엇을 놓느냐**뿐이다.
+
+   ★ 높이는 dvh 로 잡는다. 휴대폰 브라우저는 주소창·도구막대 높이까지
+     100vh 에 넣기 때문에, vh 로 잡으면 화면 아래가 도구막대 뒤로 잘린다.
+     dvh 를 모르는 브라우저를 위해 vh 를 먼저 쓴다.
+   ============================================================ */
+
+/* 아래쪽 탭 막대에 가리지 않도록 본문 끝에 자리를 비워 둔다.
+   env(safe-area-inset-bottom) 은 아이폰 홈 막대 자리. */
+:root{
+  --m-tabh: 58px;
+  --m-safe: env(safe-area-inset-bottom, 0px);
+}
+
+body.m{background:var(--bg-1)}
+body.m .wrap{width:calc(100% - 28px)}
+
+/* 화면 전환 — app.js 가 .on 을 붙인다 */
+.m-scr{display:none}
+.m-scr.on{display:block}
+#scr-map.m-scr.on{display:flex;flex-direction:column;
+  height:100vh;height:100dvh;overflow:hidden}
+
+/* ============================================================
+   화면 1 · 동네 설정
+   ============================================================ */
+.m-onb{min-height:100vh;min-height:100dvh;background:var(--navy-3);color:#fff;
+  padding:34px 20px calc(28px + var(--m-safe));display:flex;flex-direction:column;gap:18px}
+.m-onb-top{text-align:center}
+.m-onb .brand-logo{justify-content:center;margin-bottom:20px}
+.m-onb h1{font-size:var(--fs-h-l);font-weight:800;line-height:1.34;letter-spacing:-.03em;color:#fff}
+.m-onb-sub{margin-top:10px;font-size:var(--fs-body-s);color:#bcd0fb;line-height:1.6}
+
+/* 내 위치 — 휴대폰에서 가장 빠른 길이라 크고 위에 둔다 */
+.m-geo-big{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;
+  min-height:52px;border-radius:var(--r-pill);font-size:var(--fs-body-m);font-weight:800;
+  background:var(--eco);color:#fff;border:0;box-shadow:var(--sh-md)}
+.m-geo-big svg{width:19px;height:19px;flex:none}
+.m-geo-big[disabled]{opacity:.6}
+.m-onb .geo-msg{color:#bcd0fb;text-align:center;margin-top:-8px}
+
+/* "또는" 가로줄 */
+.m-or{display:flex;align-items:center;gap:12px;color:#8fa6d4;font-size:var(--fs-body-xs);font-weight:700}
+.m-or::before,.m-or::after{content:"";flex:1;height:1px;background:rgba(255,255,255,.18)}
+.modal .m-or{color:var(--ink-4)}
+.modal .m-or::before,.modal .m-or::after{background:var(--line)}
+
+/* 드롭다운 세 칸 — 한 줄에 하나씩, 손가락으로 누를 수 있게 */
+.m-setbar{display:flex;flex-direction:column;gap:10px}
+.m-field{display:block;background:#fff;border-radius:var(--r-md);padding:9px 14px 11px}
+.m-field-lb{display:block;font-size:12px;font-weight:700;color:var(--ink-3);margin-bottom:2px}
+.m-field select{width:100%;height:34px;border:0;background:transparent;outline:0;
+  /* 16px 미만이면 아이폰이 입력할 때 화면을 확대해 버린다 */
+  font-size:16px;font-weight:700;color:var(--ink);appearance:none;-webkit-appearance:none;
+  padding-right:22px}
+.m-field{position:relative}
+.m-field::after{content:"";position:absolute;right:18px;bottom:22px;width:8px;height:8px;
+  border-right:2px solid var(--ink-3);border-bottom:2px solid var(--ink-3);
+  transform:rotate(45deg);pointer-events:none}
+.m-field select:disabled{opacity:.45}
+.m-go{min-height:52px;font-size:var(--fs-body-m);gap:8px}
+.m-go svg{width:18px;height:18px}
+
+.m-recent{justify-content:center;flex-wrap:wrap;gap:7px}
+.m-recent .lbl{color:#8fa6d4}
+.m-nation{margin-top:auto;padding-top:20px;border-top:1px solid rgba(255,255,255,.16)}
+.m-onb-foot{text-align:center}
+.m-onb-foot a{font-size:var(--fs-body-xs);color:#8fa6d4;text-decoration:underline}
+
+/* ============================================================
+   화면 2 · 홈
+   ============================================================ */
+.m-top{position:sticky;top:0;z-index:60;display:flex;align-items:center;
+  justify-content:space-between;gap:10px;padding:9px 14px;background:#fff;
+  border-bottom:1px solid var(--line)}
+.m-top .brand-logo{font-size:15px;min-width:0}
+.m-hood-pill{display:inline-flex;align-items:center;gap:5px;flex:0 1 auto;min-width:0;
+  border:1px solid var(--line-2);border-radius:var(--r-pill);padding:7px 12px;background:var(--bg-1);
+  font-size:var(--fs-body-xs);font-weight:700;color:var(--navy)}
+.m-hood-pill svg{width:14px;height:14px;flex:none;color:var(--primary)}
+.m-hood-pill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.m-main{padding-bottom:calc(var(--m-tabh) + var(--m-safe) + 12px)}
+
+.m-lead{background:var(--navy-3);color:#fff;padding:22px 16px 20px}
+.m-lead h1{font-size:var(--fs-h-m);font-weight:800;line-height:1.35;letter-spacing:-.03em;color:#fff}
+.m-lead h1 .hl{color:#9fc0ff}
+.m-search{display:flex;align-items:center;gap:8px;background:#fff;border-radius:var(--r-pill);
+  padding:6px 6px 6px 14px;margin-top:16px}
+.m-search .lead-ico{width:18px;height:18px;color:var(--ink-4);flex:none}
+.m-search input{flex:1;min-width:0;border:0;outline:0;font-size:16px;background:transparent}
+.m-search .btn{flex:none;min-height:40px;border-radius:var(--r-pill);padding:0 16px}
+.m-kw{margin-top:12px;gap:7px;overflow-x:auto;flex-wrap:nowrap;
+  scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.m-kw::-webkit-scrollbar{display:none}
+.m-kw .kw-chip{flex:none;white-space:nowrap;min-height:38px}
+
+/* 숫자 세 칸 — 옆으로 밀어 본다 */
+.m-stats{display:flex;gap:10px;padding:14px;overflow-x:auto;scrollbar-width:none}
+.m-stats::-webkit-scrollbar{display:none}
+.m-stat{flex:0 0 62%;background:#fff;border:1px solid var(--line);border-radius:var(--r-md);
+  padding:14px 16px;display:flex;flex-direction:column;gap:3px;box-shadow:var(--sh-sm)}
+.m-stat.feat{border-color:var(--primary);background:var(--primary-tint)}
+.m-stat .lab{font-size:var(--fs-body-xs);font-weight:700;color:var(--ink-3)}
+.m-stat .num{font-size:var(--fs-h-l);font-weight:800;color:var(--navy);letter-spacing:-.03em}
+.m-stat .num small{font-size:14px;font-weight:700;color:var(--ink-3);margin-left:2px}
+.m-stat .delta{font-size:11.5px;font-weight:600;color:var(--ink-3);line-height:1.5}
+.m-stat .delta.hot{color:var(--danger)}
+
+.m-tick{padding:0 14px}
+.m-tick .tick{border:0;border-left:3px solid var(--danger);background:#fff;border-radius:var(--r-sm);
+  padding:11px 13px;margin-bottom:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+
+/* 내 동네 카드 */
+.m-hoodcard{margin:6px 14px 0;background:#fff;border:1px solid var(--line);
+  border-radius:var(--r-md);overflow:hidden;box-shadow:var(--sh-sm)}
+.m-hoodcard-hd{display:flex;align-items:flex-start;justify-content:space-between;
+  gap:10px;padding:14px 16px 10px}
+.m-hoodcard-hd .lb{font-size:var(--fs-body-xs);font-weight:700;color:var(--primary)}
+.m-hoodcard-hd .nm{font-size:var(--fs-h-xs);font-weight:800;color:var(--navy);margin-top:2px}
+.m-hoodcard-hd .chg{font-size:var(--fs-body-xs);font-weight:700;color:var(--ink-3);
+  border:1px solid var(--line-2);border-radius:var(--r-xs);padding:8px 12px;background:#fff}
+.m-hoodmap{position:relative;padding:0 12px;cursor:pointer}
+.m-hoodmap .hood-mini-map{height:170px}
+.m-hoodmap .zoom{position:absolute;right:20px;bottom:9px;background:rgba(255,255,255,.94);
+  border:1px solid var(--line-2);border-radius:var(--r-xs);padding:5px 10px;
+  font-size:11.5px;font-weight:700;color:var(--navy)}
+.m-hoodfoot{margin-top:11px}
+.m-hoodfoot div{padding:11px 10px;text-align:center}
+.m-hoodfoot .v{font-size:15px}
+
+/* 목록 구역 */
+.m-sec{padding:22px 14px 8px}
+.m-sec--alt{background:var(--bg-2);border-top:1px solid var(--line);margin-top:18px}
+.m-sec-hd{margin-bottom:14px}
+.m-sec-hd h2,.m-sec-hd h3{margin-top:7px}
+.m-note{font-size:var(--fs-body-xs);color:var(--ink-3);font-weight:600;margin-top:5px}
+
+/* 범위 단추 — 셋이 가로로 꽉 차게 */
+.m-scope{display:flex;width:100%;margin-bottom:12px}
+.m-scope button{flex:1 1 0;padding:10px 4px;text-align:center;min-height:42px;
+  font-size:var(--fs-body-xs)}
+
+.m-filter{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;scrollbar-width:none}
+.m-filter::-webkit-scrollbar{display:none}
+.m-filter .chip{flex:none;white-space:nowrap;min-height:40px}
+.m-sortrow{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0 14px}
+
+/* 사업 카드 — 한 줄에 하나 */
+.m-grid{display:flex;flex-direction:column;gap:12px}
+body.m .proj{min-width:0}
+body.m .proj .foot{flex-wrap:wrap;gap:7px}
+body.m .proj .foot .btn{flex:1 1 auto;min-height:42px}
+body.m .proj-empty{padding:28px 18px}
+
+body.m .row-item{flex-wrap:wrap}
+body.m .row-btns{flex:1 1 100%;width:auto;min-width:0;margin-left:0;margin-top:10px;display:flex;gap:7px}
+body.m .row-btns .btn{flex:1 1 auto;min-height:42px}
+body.m .brief>div{flex-direction:column;gap:1px}
+body.m .brief dt{width:auto}
+
+body.m .pager{justify-content:center;flex-wrap:wrap;gap:8px}
+body.m .pager-btns{margin-left:0}
+body.m .pg{min-width:40px;min-height:40px}
+
+.m-foot{padding:24px 16px calc(24px + var(--m-safe));background:var(--navy-3);color:#c9d7f2;
+  font-size:var(--fs-body-xs);line-height:1.8}
+.m-foot strong{color:#fff;margin-right:6px}
+.m-foot-links{display:flex;gap:14px;margin:12px 0;flex-wrap:wrap}
+.m-foot-links button,.m-foot-links a{color:#fff;font-weight:700;background:none;border:0;
+  padding:6px 0;text-decoration:underline;font-size:var(--fs-body-xs)}
+.m-copy{color:#8fa6d4;line-height:1.7}
+.m-totop{bottom:calc(var(--m-tabh) + var(--m-safe) + 14px)}
+
+/* ============================================================
+   화면 3 · 지도
+   지도가 화면을 채우고, 목록은 아래에서 올라오는 시트로 둔다.
+   ============================================================ */
+.m-gistop{flex:none;height:52px;padding:0 8px;gap:8px;display:flex;align-items:center}
+.m-gistop .gis-back{padding:9px 11px;flex:none}
+.m-gistop .gis-back svg{width:18px;height:18px}
+.m-gistop .scope-seg--map{flex:1 1 auto;min-width:0;flex-wrap:nowrap;padding:2px}
+.m-gistop .scope-seg--map button{flex:1 1 0;padding:7px 4px;text-align:center;
+  min-height:34px;font-size:var(--fs-body-xs)}
+.m-gis-addr-btn{flex:none;width:38px;height:38px;display:inline-flex;align-items:center;
+  justify-content:center;border-radius:var(--r-xs);background:rgba(255,255,255,.12);
+  border:1px solid rgba(255,255,255,.22);color:#fff}
+.m-gis-addr-btn svg{width:18px;height:18px}
+
+.m-gisbody{flex:1;min-height:0;position:relative;display:block}
+.m-gismap{position:absolute;inset:0;height:auto;width:auto}
+
+/* 시트 — 세 단계 (app.js 가 아니라 mobile.js 가 클래스를 갈아 끼운다) */
+.m-sheet{position:absolute;left:0;right:0;bottom:0;z-index:600;width:auto;
+  background:#fff;border-top:1px solid var(--line);border-right:0;
+  border-radius:var(--r-lg) var(--r-lg) 0 0;box-shadow:0 -6px 24px rgba(16,28,54,.18);
+  display:flex;flex-direction:column;min-height:0;
+  transition:height .2s var(--ease)}
+#scr-map.sheet-peek .m-sheet{height:34%}
+#scr-map.sheet-half .m-sheet{height:56%}
+#scr-map.sheet-full .m-sheet{height:calc(100% - 8px)}
+.m-sheet-grip{flex:none;width:100%;padding:9px 0 7px;background:none;border:0;
+  display:flex;justify-content:center}
+.m-sheet-grip i{display:block;width:42px;height:5px;border-radius:3px;background:var(--line-strong)}
+.m-sheet-body{flex:1;min-height:0;overflow-y:auto;
+  padding-bottom:calc(var(--m-safe) + 8px)}
+.m-addr{flex:none;padding:8px 12px 12px;background:var(--bg-2)}
+.m-addr .gis-addr-row{gap:6px}
+.m-addr-btns{display:flex;gap:7px;margin-top:8px}
+.m-addr-btns .btn{flex:1 1 auto;min-height:42px}
+
+/* 지도 화면에서는 아래 탭 막대를 감춘다 — 시트와 겹친다 */
+#scr-map.on ~ .m-tabs{display:none}
+
+/* 범례 — 기본은 접어 두고 단추로 편다 */
+.m-legend{left:10px;bottom:auto;top:10px;flex-direction:row;flex-wrap:wrap;
+  max-width:calc(100% - 20px);gap:4px 10px;padding:8px 10px}
+.m-legend span{font-size:11px;gap:6px}
+.m-legend-btn{position:absolute;left:10px;top:10px;z-index:500;
+  background:rgba(255,255,255,.94);border:1px solid var(--line-2);border-radius:var(--r-xs);
+  padding:7px 11px;font-size:11.5px;font-weight:700;color:var(--ink-2);box-shadow:var(--sh-sm)}
+.m-legend-btn.on{background:var(--primary);color:#fff;border-color:var(--primary);
+  top:auto;bottom:10px;left:10px}
+body.m .leaflet-control-zoom{margin-top:52px!important}
+
+/* 상세를 볼 때는 주소칸을 감춘다 (app.js 가 on-detail 을 붙인다) */
+#scr-map.on-detail .m-addr{display:none}
+body.m .gis-to-map{display:none}
+body.m #gisDetail{padding:16px 16px 22px}
+
+/* ============================================================
+   아래쪽 탭 막대
+   ============================================================ */
+.m-tabs{position:fixed;left:0;right:0;bottom:0;z-index:900;display:flex;
+  background:rgba(255,255,255,.97);border-top:1px solid var(--line);
+  padding-bottom:var(--m-safe);
+  backdrop-filter:saturate(150%) blur(8px)}
+.m-tabs button{flex:1 1 0;display:flex;flex-direction:column;align-items:center;gap:3px;
+  padding:8px 2px 7px;min-height:var(--m-tabh);background:none;border:0;
+  font-size:11px;font-weight:700;color:var(--ink-4)}
+.m-tabs button svg{width:21px;height:21px}
+.m-tabs button.on{color:var(--primary)}
+
+/* ============================================================
+   모달 — 아래에서 올라오는 전체 화면
+   ============================================================ */
+body.m .modal{align-items:flex-end}
+body.m .modal-box{width:100%;max-width:none;max-height:92dvh;
+  border-radius:var(--r-lg) var(--r-lg) 0 0}
+body.m .modal-hd{position:sticky;top:0;background:#fff;z-index:2}
+body.m .modal-ft{flex-direction:column;gap:8px;
+  padding-bottom:calc(16px + var(--m-safe))}
+body.m .modal-ft .btn{width:100%}
+.m-hint{font-size:var(--fs-body-s);color:var(--ink-3);line-height:1.7;margin:14px 0 12px}
+.modal .m-setbar .m-field{background:var(--bg-1);border:1px solid var(--line)}
+
+/* PC 에서 휴대폰 화면을 열었을 때의 안내 띠 */
+.m-widehint{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);z-index:2000;
+  background:var(--navy-3);color:#fff;border-radius:var(--r-pill);padding:11px 20px;
+  font-size:var(--fs-body-s);font-weight:600;box-shadow:var(--sh-lg)}
+.m-widehint a{color:#9fc0ff;text-decoration:underline;margin-left:6px}
+
+/* 가로로 든 휴대폰 — 세로 자리가 없다.
+   같은 비율로 두면 목록이 88px 밖에 안 되므로 시트 단계를 크게 잡는다. */
+@media (max-height:560px){
+  #scr-map.sheet-peek .m-sheet{height:46%}
+  #scr-map.sheet-half .m-sheet{height:72%}
+  .m-onb{padding-top:20px;gap:12px}
+  .m-onb h1{font-size:var(--fs-h-m)}
+  .m-onb-sub{display:none}
+  .m-lead{padding:16px 16px 14px}
+}
+
+/* 아주 좁은 화면 (320px 안팎) */
+@media (max-width:340px){
+  .m-stat{flex-basis:72%}
+  .m-scope button{padding:10px 2px}
+  .m-tabs button{font-size:10px}
+}

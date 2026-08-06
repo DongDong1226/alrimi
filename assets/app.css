@@ -1,5 +1,9 @@
 /* ---------- RESET ---------- */
 *,*::before,*::after{box-sizing:border-box}
+/* 밝은 화면 하나로만 만든 사이트라고 선언한다.
+   (index.html 의 <meta name="color-scheme"> 와 같은 뜻. 둘 다 두는 것이 안전하다)
+   빠지면 휴대폰 다크 모드에서 브라우저가 색을 뒤집어 대비가 깨진다. */
+:root{color-scheme:light}
 html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
 body{margin:0;font-family:var(--font);color:var(--ink-2);background:var(--bg);
   font-size:var(--fs-body-m);line-height:1.6;letter-spacing:-.01em;word-break:keep-all;
@@ -563,6 +567,10 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .mk--main{background:var(--warn);border-radius:3px;transform:rotate(45deg)}
 .mk--on{transform:scale(1.5)}
 .mk--main.mk--on{transform:rotate(45deg) scale(1.5)}
+/* 전국을 작은 미리보기 지도에 담을 때 — 44개가 겹쳐 뭉치면 아무 정보가 안 된다.
+   테두리를 얇게 하고 크기를 절반으로 줄여 '어디에 많은지'만 보이게 한다. */
+.mk--dot{width:8px;height:8px;border-width:1.5px;box-shadow:0 1px 3px rgba(16,28,54,.45)}
+.mk--main.mk--dot{border-radius:2px}
 
 .gis-detail-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
 #gisDetail .ttl{font-size:var(--fs-h-xs);font-weight:800;color:var(--ink);line-height:1.4;margin:10px 0 14px}
