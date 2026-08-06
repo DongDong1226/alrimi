@@ -91,7 +91,7 @@ tools/build_data.py            EIASS 수집 → projects.json 생성
 tools/build_regions.py         VWorld → regions.json 생성
 tools/run_daily.bat            손으로 급히 수집할 때 (반드시 CRLF). 평소 수집은 collect.yml 이 한다
 .github/workflows/deploy.yml   푸시하면 사이트 배포. 이때만 VWorld 키를 심는다
-.github/workflows/collect.yml  매일 09시·13시(한국) 자동 수집 → 커밋 → 배포
+.github/workflows/collect.yml  매일 07시·13시(한국) 자동 수집 → 커밋 → 배포
 .gitattributes                 *.bat 를 CRLF 로 고정
 requirements.txt               파이썬 패키지 목록
 .env                           API 키 (git 제외). .env.example 참고
@@ -365,8 +365,8 @@ EIASS에 없는 정보는 화면에 만들어 넣지 않는다.
 ## 아직 안 된 것 / 다음에 할 것
 
 - **자동화 (2026-08-06 전환)**: 수집·배포 **둘 다 GitHub Actions**가 한다.
-  `collect.yml`이 매일 한국시간 **09시·13시**에 돌아 수집→커밋→푸시하고, 이어서 `deploy.yml`이 배포한다.
-  (13시 것은 09시 실행이 접속 불안정으로 실패했을 때를 위한 두 번째 기회다. 09시에 성공했으면
+  `collect.yml`이 매일 한국시간 **07시·13시**에 돌아 수집→커밋→푸시하고, 이어서 `deploy.yml`이 배포한다.
+  (13시 것은 07시 실행이 접속 불안정으로 실패했을 때를 위한 두 번째 기회다. 07시에 성공했으면
   이미 받아 둔 사업은 건너뛰므로 비용도 시간도 거의 안 든다.)
   - `tools/run_daily.bat`은 **그대로 둔다.** 급할 때 손으로 돌리는 용도. 작업 스케줄러 등록은 이제 불필요.
   - 수집이 반쪽만 되면 커밋하지 않는다 — `collect.yml`이 수집 전후 건수를 비교해
