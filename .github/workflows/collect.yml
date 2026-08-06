@@ -80,16 +80,20 @@ jobs:
         run: |
           python - <<'PY'
           import socket, time
+          out = []
           for label, host in [("EIASS", "www.eiass.go.kr"), ("VWorld", "api.vworld.kr")]:
               t = time.time()
               try:
                   ip = socket.gethostbyname(host)
                   s = socket.create_connection((ip, 443), timeout=10)
                   s.close()
-                  print(f"  {label}({host}) 성공 {ip} ({time.time()-t:.2f}초)")
+                  line = f"{label} 성공 {ip} ({time.time()-t:.2f}초)"
               except Exception as e:
-                  print(f"  {label}({host}) 실패 {type(e).__name__}: {e}")
-                  print("  -> 수집 단계에서 다시 시도합니다.")
+                  line = f"{label} 실패 {type(e).__name__} ({time.time()-t:.1f}초)"
+              print("  " + line)
+              out.append(line)
+          # 로그 본문은 저장소 주인만 볼 수 있어서, 도와주는 사람이 읽을 수 있게 주석으로도 남긴다.
+          print("::notice::[연결확인] " + " || ".join(out))
           PY
 
       # 수집이 부실하게 끝났을 때 멀쩡한 자료를 덮어쓰지 않도록, 먼저 지금 건수를 세어 둔다.
@@ -115,11 +119,32 @@ jobs:
           # VWorld 데이터 API 는 발급 때 등록한 서비스 URL 을 같이 보내야 한다.
           VWORLD_DOMAIN: ${{ vars.VWORLD_DOMAIN }}
         run: |
+          set -o pipefail
           ARGS=""
           if [ "${{ inputs.full }}" = "true" ]; then ARGS="$ARGS --full"; fi
           if [ -n "${{ inputs.limit }}" ]; then ARGS="$ARGS --limit ${{ inputs.limit }}"; fi
           echo "실행: python tools/build_data.py $ARGS"
-          python tools/build_data.py $ARGS
+
+          # EIASS 접속이 간헐적으로 끊긴다. 스크립트 안에서도 4번 재시도하지만,
+          # 그걸 다 쓰고 죽는 경우가 있어서 여기서 통째로 한 번 더 시도한다.
+          # (1분 쉬었다 다시 하면 그 사이에 접속이 돌아오는 경우가 있다)
+          for TRY in 1 2; do
+            echo "===== ${TRY}번째 시도 ====="
+            if python tools/build_data.py $ARGS 2>&1 | tee /tmp/collect.log; then
+              echo "수집 성공 (${TRY}번째 시도)"
+              exit 0
+            fi
+            echo "${TRY}번째 시도 실패"
+            if [ "$TRY" = "1" ]; then
+              echo "1분 쉬었다가 다시 시도합니다..."
+              sleep 60
+            fi
+          done
+
+          # 두 번 다 실패. 로그 끝부분을 주석으로 남겨 원인을 밖에서도 볼 수 있게 한다.
+          TAIL=$(tail -n 25 /tmp/collect.log | tr '\n' '|' | tail -c 2000)
+          echo "::error::[수집 실패] 두 번 시도했으나 모두 실패 || ${TAIL}"
+          exit 1
 
       # 수집이 반쪽만 되어도 파일은 만들어진다. 그 상태로 커밋하면
       # 멀쩡하던 자료가 줄어든 채 사이트에 올라간다. 그것을 막는다.
