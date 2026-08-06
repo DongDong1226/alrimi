@@ -18,13 +18,21 @@ const DEFAULTS = {
   dataPath: "data/projects.json",
   regionPath: "data/regions.json",
   routePath: "data/routes.json",
-  radiusKm: 3,
+  radiusKm: 5,
   showDemoBanner: true,
   org: "기후에너지환경부 국립환경과학원",
   person: "김동윤",
   tel: "032-560-xxxx",
-  defHood: { sido:"경기도", sgg:"하남시", dong:"미사동" }
+  // 처음 들어온 사람은 자기 동네를 아직 안 정했다. 전국을 먼저 보여주고 좁혀 가게 한다.
+  // ("전국"/"전체"는 아래 ALL_SIDO/ANY 와 같은 값이다. 여기서는 아직 선언 전이라 글자로 적는다)
+  defHood: { sido:"전국", sgg:"전체", dong:"전체" }
 };
+
+/* 반경 고르는 칸에 넣을 값 (km) */
+const RADIUS_STEPS = [1, 2, 3, 5, 10, 20];
+
+/* 동네를 안 정했을 때(전국) 지도가 바라볼 자리 — 남한이 한눈에 들어오는 지점 */
+const KOREA_CENTER = [36.3, 127.8];
 
 const LSKEY = "wdn.settings";
 const LSRECENT = "wdn.recent";
@@ -207,6 +215,14 @@ function routePointsOf(p){
    하천 노선은 4.1km 앞을 지난다. 주소만 보면 "우리 동네 사업"에서 빠진다.
    그래서 노선까지의 최단 거리도 따로 재고, 둘 중 가까운 쪽을 기준으로 삼는다. */
 function recomputeDistances(){
+  // **전국을 보는 중에는 '우리 집'이 없다.**
+  // 동네를 안 정했으면 기준 좌표는 설정 기본값(하남 근처)일 뿐인데,
+  // 그걸로 거리를 재면 "우리 집에서 19.7km" 같은 **거짓말**이 화면에 뜬다.
+  // 거리를 아예 비워 두면 반경 판정·정렬·표시가 전부 조용히 빠진다.
+  if(isNation(currentHood)){
+    PROJECTS.forEach(p => { p.dist = null; p.routeDist = null; p.nearDist = null; });
+    return;
+  }
   PROJECTS.forEach(p => {
     p.dist = (p.lat != null && p.lon != null)
       ? haversineKm(HOME.lat, HOME.lon, p.lat, p.lon) : null;
@@ -630,8 +646,66 @@ async function loadHoodBoundary(){
       geom: hit.geometry,
       bbox: geomBbox(hit.geometry)
     };
+    // 기준점을 경계 한가운데로 옮긴다 (아래 설명 참고).
+    // 단 **내 위치로 잡은 자리는 절대 옮기지 않는다** — 그건 진짜 내가 서 있는 곳이다.
+    if(!HOME.gps){
+      const c = boundaryCenter(HOOD_BOUNDARY);
+      if(c){ HOME.lat = c[0]; HOME.lon = c[1]; HOME.exact = true; }
+    }
+    recomputeDistances();
   }
   afterBoundary();
+}
+
+/* ---------- 동네의 '한가운데' ----------
+   VWorld 지오코더는 "인천광역시 서해구 경서동" 같은 이름을 넣으면
+   **그 동의 대표 지번 한 곳**을 돌려준다. 동사무소도 아니고 도형의 중심도 아니라서,
+   경계를 그려 놓고 보면 기준점이 한쪽에 치우쳐 있다 (실제로 그랬다).
+   경계를 받았으면 도형에서 직접 중심을 구해 그쪽으로 옮긴다.
+
+   면적으로 가중한 무게중심을 쓰되, 초승달처럼 굽은 동네는 무게중심이
+   경계 **밖**으로 나갈 수 있다. 그때는 격자를 훑어 안쪽 점 중 무게중심에
+   가장 가까운 곳을 고른다. */
+function ringCentroid(ring){
+  let a = 0, cx = 0, cy = 0;
+  for(let i = 0, j = ring.length - 1; i < ring.length; j = i++){
+    const f = ring[j][0] * ring[i][1] - ring[i][0] * ring[j][1];
+    a += f;
+    cx += (ring[j][0] + ring[i][0]) * f;
+    cy += (ring[j][1] + ring[i][1]) * f;
+  }
+  if(!a) return null;
+  return { lon: cx / (3 * a), lat: cy / (3 * a), area: Math.abs(a / 2) };
+}
+
+function boundaryCenter(b){
+  const g = b.geom;
+  const polys = g.type === "Polygon" ? [g.coordinates]
+    : (g.type === "MultiPolygon" ? g.coordinates : []);
+  if(!polys.length) return null;
+
+  // 섬이 딸린 동네는 가장 넓은 덩어리를 본체로 삼는다
+  let best = null;
+  polys.forEach(poly => {
+    const c = poly[0] && ringCentroid(poly[0]);
+    if(c && (!best || c.area > best.area)) best = c;
+  });
+  if(!best) return null;
+  if(ptInBoundary(best.lat, best.lon)) return [best.lat, best.lon];
+
+  // 무게중심이 경계 밖 — 안쪽에서 가장 가까운 자리를 찾는다
+  const [minX, minY, maxX, maxY] = b.bbox;
+  let hit = null, bestD = Infinity;
+  for(let i = 1; i < 20; i++){
+    for(let j = 1; j < 20; j++){
+      const lon = minX + (maxX - minX) * i / 20;
+      const lat = minY + (maxY - minY) * j / 20;
+      if(!ptInBoundary(lat, lon)) continue;
+      const d = (lon - best.lon) ** 2 + (lat - best.lat) ** 2;
+      if(d < bestD){ bestD = d; hit = [lat, lon]; }
+    }
+  }
+  return hit;
 }
 
 /* 경계가 들어오거나 사라지면 지도에 다시 그리고, 목록도 다시 가린다
@@ -825,7 +899,7 @@ function renderNation(){
 function applySettings(){
   renderNation();
   applyDemoBanner();
-  $("#v-radius").innerHTML = `${esc(S.radiusKm)}<small>km 이내</small>`;
+  fillRadiusPick();
   $("#scope-radius").textContent = S.radiusKm;
   $("#gis-radius").textContent = S.radiusKm;
   $("#c-org").textContent = S.org;
@@ -836,6 +910,25 @@ function applySettings(){
   renderScope();
   if(REGIONS) renderRecent();
 }
+
+/* 반경 고르는 칸. 관리자 설정과 같은 값(S.radiusKm)을 쓰고, 바꾸면 바로 저장한다.
+   설정에 없는 값(관리자가 7km 로 넣었다든지)이 들어와도 목록에 끼워 넣어 보여준다. */
+function fillRadiusPick(){
+  const sel = $("#v-radius");
+  if(!sel) return;
+  const steps = RADIUS_STEPS.indexOf(+S.radiusKm) >= 0
+    ? RADIUS_STEPS : RADIUS_STEPS.concat([+S.radiusKm]).sort((a, b) => a - b);
+  sel.innerHTML = steps.map(v =>
+    `<option value="${v}"${v === +S.radiusKm ? " selected" : ""}>${v}km 이내</option>`).join("");
+}
+
+$("#v-radius").addEventListener("change", e => {
+  S.radiusKm = +e.target.value || DEFAULTS.radiusKm;
+  lsSet(LSKEY, S);
+  applySettings();          // 반경 글자가 들어가는 곳이 여러 군데다
+  recomputeDistances();
+  if(dataReady) refreshAll();
+});
 
 /* 최근 설정 동네 */
 function renderRecent(){
@@ -2025,13 +2118,17 @@ function renderGisMarkers(fit = true){
   if(gisHomeMarker){ gisMap.removeLayer(gisHomeMarker); gisHomeMarker = null; }
   if(gisCircle){ gisMap.removeLayer(gisCircle); gisCircle = null; }
 
-  gisHomeMarker = L.marker([HOME.lat, HOME.lon], { icon:markerIcon("home"), zIndexOffset:1000 })
-    .addTo(gisMap).bindTooltip(HOME.label || "우리 집");
-  nameMarker(gisHomeMarker, `우리 집 · ${HOME.label || "기준 위치"}`);
-  gisCircle = L.circle([HOME.lat, HOME.lon], {
-    radius: S.radiusKm * 1000, color:"#1c47d4", weight:1.4,
-    dashArray:"5 5", fillColor:"#1c47d4", fillOpacity:.05
-  }).addTo(gisMap);
+  // 동네를 안 정했으면(전국) '우리 집'도 반경 원도 그리지 않는다.
+  // 설정 기본 좌표를 우리 집인 양 찍으면 엉뚱한 동네에 깃발이 꽂힌다.
+  if(!isNation(currentHood)){
+    gisHomeMarker = L.marker([HOME.lat, HOME.lon], { icon:markerIcon("home"), zIndexOffset:1000 })
+      .addTo(gisMap).bindTooltip(HOME.label || "우리 집");
+    nameMarker(gisHomeMarker, `우리 집 · ${HOME.label || "기준 위치"}`);
+    gisCircle = L.circle([HOME.lat, HOME.lon], {
+      radius: S.radiusKm * 1000, color:"#1c47d4", weight:1.4,
+      dashArray:"5 5", fillColor:"#1c47d4", fillOpacity:.05
+    }).addTo(gisMap);
+  }
 
   drawBoundary();
   drawRoutes();
@@ -2057,13 +2154,16 @@ function renderGisMarkers(fit = true){
 function fitGisView(rows){
   if(mapScope === "region" && boundLayer){
     const b = boundLayer.getBounds();
-    b.extend([HOME.lat, HOME.lon]);
+    if(!isNation(currentHood)) b.extend([HOME.lat, HOME.lon]);
     gisMap.fitBounds(b, { padding:[40, 40] });
     return;
   }
-  const pts = [[HOME.lat, HOME.lon], ...rows.map(p => [p.lat, p.lon])];
+  // 동네를 안 정했으면 기준점이 없다. 사업들만 보고 맞춘다.
+  const pts = rows.map(p => [p.lat, p.lon]);
+  if(!isNation(currentHood)) pts.unshift([HOME.lat, HOME.lon]);
   if(pts.length > 1) gisMap.fitBounds(pts, { padding:[50, 50] });
-  else gisMap.setView([HOME.lat, HOME.lon], 13);
+  else if(pts.length === 1) gisMap.setView(pts[0], 13);
+  else gisMap.setView(KOREA_CENTER, 7);
 }
 
 function gisItemHtml(p){
@@ -2443,27 +2543,37 @@ function renderMiniMap(){
 
   // 미리보기 지도라 마커를 키보드로 고를 수 없게 한다.
   // (이 지도 전체가 '크게 보기' 단추라서, 안에 또 단추가 있으면 헷갈린다)
-  miniLayers.push(L.marker([HOME.lat, HOME.lon],
-    { icon:markerIcon("home"), keyboard:false }).addTo(miniMap));
-  miniLayers.push(L.circle([HOME.lat, HOME.lon], {
-    radius: S.radiusKm * 1000, color:"#1c47d4", weight:1.4,
-    dashArray:"5 5", fillColor:"#1c47d4", fillOpacity:.06
-  }).addTo(miniMap));
+  const nation = isNation(currentHood);
+  if(!nation){
+    miniLayers.push(L.marker([HOME.lat, HOME.lon],
+      { icon:markerIcon("home"), keyboard:false }).addTo(miniMap));
+    miniLayers.push(L.circle([HOME.lat, HOME.lon], {
+      radius: S.radiusKm * 1000, color:"#1c47d4", weight:1.4,
+      dashArray:"5 5", fillColor:"#1c47d4", fillOpacity:.06
+    }).addTo(miniMap));
+  }
 
   // 동네 경계는 다른 표시보다 아래에 깔린다.
   drawBoundary();
 
-  // 전국을 보는 중이라도 미리보기 지도에는 가까운 사업만 찍는다
-  // (작은 지도에 전국 마커를 다 찍으면 아무것도 안 보인다).
-  const shown = homeScope === "all" ? nearbyProjects() : scopedProjects();
+  // 동네를 안 정했으면 전국 사업을 다 찍고, 정했으면 그 범위의 사업만 찍는다.
+  // (동네를 정했는데 전국을 보는 중이면, 작은 지도에는 가까운 것만 — 다 찍으면 안 보인다)
+  const shown = nation ? PROJECTS
+    : (homeScope === "all" ? nearbyProjects() : scopedProjects());
+  const pts = [];
   shown.filter(p => p.lat != null).forEach(p => {
     miniLayers.push(L.marker([p.lat, p.lon],
       { icon:markerIcon(p.type), keyboard:false }).addTo(miniMap));
+    pts.push([p.lat, p.lon]);
   });
 
-  // 우리 동네가 보이는 정도의 축척 — 경계가 있으면 경계에, 없으면 반경 원에 맞춘다.
+  // 축척 — ① 동네를 안 정했으면 사업들이 다 들어오게(= 전국)
+  //        ② 경계가 있으면 경계에  ③ 없으면 반경 원에 맞춘다.
   // (지도 없이 계산되는 toBounds 를 써서 초기화 순서에 상관없이 안전하게)
-  if(miniBoundLayer){
+  if(nation){
+    if(pts.length > 1) miniMap.fitBounds(pts, { padding:[10, 10] });
+    else miniMap.setView(KOREA_CENTER, 6);
+  }else if(miniBoundLayer){
     miniMap.fitBounds(miniBoundLayer.getBounds(), { padding:[6, 6] });
   }else{
     miniMap.fitBounds(L.latLng(HOME.lat, HOME.lon).toBounds(S.radiusKm * 2000), { padding:[6, 6] });

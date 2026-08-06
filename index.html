@@ -154,7 +154,9 @@
           </div>
           <!-- 값은 모두 수집된 데이터에서 계산한다. 없는 값은 만들어 넣지 않는다. -->
           <div class="hood-foot">
-            <div><p class="k">반경</p><p class="v" id="v-radius">3<small>km 이내</small></p></div>
+            <!-- 반경은 사람마다 다르다(시골은 10km도 '우리 동네'). 여기서 바로 바꾼다. -->
+            <div><p class="k"><label for="v-radius">반경</label></p>
+              <p class="v radius-pick"><select id="v-radius"></select></p></div>
             <div><p class="k">가장 가까운 사업</p><p class="v" id="v-nearest">—</p></div>
             <div><p class="k">가장 빠른 마감</p><p class="v" id="v-soonest">—</p></div>
           </div>
@@ -429,7 +431,8 @@
   <div class="gis-top">
     <button class="gis-back" type="button" id="btn-map-back">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"></path></svg>
-      우리 동네로 돌아가기
+      <!-- 좁은 화면에서는 앞부분만 감춘다. 위쪽 띠가 두 줄이 되면 지도가 그만큼 줄어든다. -->
+      <span class="gis-back-long">우리 동네로 </span>돌아가기
     </button>
     <span class="gis-ttl">지도로 보는 개발사업</span>
     <div class="gis-top-right">

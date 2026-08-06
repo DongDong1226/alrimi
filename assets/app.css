@@ -3,7 +3,10 @@
 html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
 body{margin:0;font-family:var(--font);color:var(--ink-2);background:var(--bg);
   font-size:var(--fs-body-m);line-height:1.6;letter-spacing:-.01em;word-break:keep-all;
-  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  /* keep-all 은 한글을 낱말 단위로 지켜 주지만, 띄어쓰기가 없는 긴 사업명이나
+     주소가 오면 줄을 못 바꿔 상자 밖으로 삐져나간다. 그때만 강제로 끊는다. */
+  overflow-wrap:anywhere}
 h1,h2,h3,h4,h5,p{margin:0}
 ul,ol{margin:0;padding:0;list-style:none}
 a{color:inherit;text-decoration:none}
@@ -241,6 +244,18 @@ button{cursor:pointer}
 .hood-foot .k{font-size:var(--fs-body-xs);color:var(--ink-3);font-weight:600}
 .hood-foot .v{font-size:var(--fs-h-xs);font-weight:800;color:var(--navy);margin-top:2px}
 .hood-foot .v small{font-size:12px;font-weight:600;color:var(--ink-3)}
+/* 반경 고르는 칸 — 옆 두 칸(숫자)과 같은 크기·색으로 보이게 하고,
+   고를 수 있다는 것만 작은 화살표로 알린다 */
+.radius-pick{position:relative;display:inline-block}
+.radius-pick select{appearance:none;-webkit-appearance:none;border:0;background:transparent;
+  font-size:inherit;font-weight:inherit;color:inherit;font-family:inherit;
+  padding:0 17px 0 0;margin:0;cursor:pointer;outline:0;min-height:28px}
+.radius-pick::after{content:"";position:absolute;right:3px;top:50%;width:6px;height:6px;
+  margin-top:-5px;border-right:1.8px solid var(--ink-3);border-bottom:1.8px solid var(--ink-3);
+  transform:rotate(45deg);pointer-events:none}
+.radius-pick select:focus-visible{outline:3px solid color-mix(in srgb,var(--primary) 55%,#fff);
+  outline-offset:2px;border-radius:4px}
+.hood-foot .k label{cursor:pointer}
 
 .dash-wrap{margin-top:-76px;position:relative;z-index:5}
 .dash{background:#fff;border-radius:var(--r-lg);box-shadow:var(--sh-xl);border:1px solid var(--line);overflow:hidden}
@@ -461,7 +476,10 @@ button{cursor:pointer}
 /* ============================================================
    화면 4 — 지도 (전체화면 지리정보 화면)
    ============================================================ */
-#scr-map.on{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+/* 휴대폰 브라우저는 주소창·아래 도구막대 높이까지 100vh 에 넣는다.
+   그래서 100vh 로 잡으면 화면 아래쪽(사업 목록)이 도구막대 뒤로 잘려 안 보인다.
+   dvh 는 실제로 보이는 높이라 이 문제가 없다. 모르는 브라우저를 위해 vh 를 먼저 둔다. */
+#scr-map.on{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden}
 .gis-top{flex:none;height:56px;background:var(--navy-3);color:#fff;display:flex;align-items:center;
   gap:18px;padding:0 18px}
 .gis-back{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,.1);
@@ -629,15 +647,19 @@ select:disabled{opacity:.5;cursor:not-allowed}
 @media (max-width:860px){
   .gis-body{flex-direction:column}
   .gis-side{width:auto;flex:1;min-height:0;border-right:0;border-bottom:1px solid var(--line)}
-  .gis-map-wrap{flex:none;height:46vh;order:-1}
+  .gis-map-wrap{flex:none;height:46vh;height:46dvh;order:-1}
   .gis-ttl{display:none}
   .gis-draw{width:auto;left:12px;right:12px}
-  /* 좁은 화면에서는 범위 단추 세 개가 한 줄에 안 들어간다.
-     위쪽 띠를 두 줄로 늘려 단추를 아래 줄에 가로로 꽉 채운다. */
-  .gis-top{height:auto;min-height:52px;padding:8px 12px;gap:10px;flex-wrap:wrap}
-  .gis-top-right{width:100%;margin-left:0;gap:8px}
-  .scope-seg--map{width:100%;flex-wrap:nowrap}
-  .scope-seg--map button{flex:1 1 0;padding:8px 4px;text-align:center}
+  /* 위쪽 띠는 **반드시 한 줄**로 유지한다.
+     두 줄이 되면 그만큼 지도와 사업 목록이 줄어드는데, 실측(375×812)에서
+     목록 높이가 37px 까지 내려가 사실상 안 보였다.
+     자리를 만들려고 돌아가기 단추의 "우리 동네로 "를 감추고 단추를 좁힌다. */
+  .gis-top{height:auto;min-height:52px;padding:8px 10px;gap:8px;flex-wrap:nowrap}
+  .gis-top-right{margin-left:auto;gap:8px;min-width:0}
+  .gis-back-long{display:none}
+  .gis-back{padding:8px 11px;flex:none}
+  .scope-seg--map{flex-wrap:nowrap;padding:2px}
+  .scope-seg--map button{flex:none;padding:8px 9px;font-size:var(--fs-body-xs);min-height:36px}
 }
 
 /* ============================================================
@@ -790,7 +812,13 @@ select:disabled{opacity:.5;cursor:not-allowed}
 
   /* 지도 화면 — 좁은 화면에서는 '지도' 아니면 '사업 내용' 하나만 보여준다.
      처음 들어오면 지도가 화면을 채우고, 목록은 그 아래로 이어진다. */
-  .gis-map-wrap{height:62vh}
+  /* 지도가 62dvh 였는데, 주소칸에 '내 위치'가 붙으면서 아래 목록이 안 보이게 됐다.
+     지도를 조금 줄이고, 왼쪽 패널은 주소칸까지 **통째로 스크롤**되게 한다
+     (주소칸은 위에 붙여 두어 언제든 주소를 바꿀 수 있게). */
+  .gis-map-wrap{height:52vh;height:52dvh}
+  .gis-side{overflow-y:auto}
+  .gis-side-body{flex:none;overflow:visible}
+  .gis-addr{position:sticky;top:0;z-index:2;padding:11px 12px}
   /* 사업을 고르면(on-detail) 지도와 주소칸을 감추고 사업 내용만 남긴다.
      넓은 화면에는 이 규칙이 없으므로 지금까지와 똑같이 좌우로 나뉜다. */
   #scr-map.on-detail .gis-map-wrap,
@@ -821,6 +849,59 @@ select:disabled{opacity:.5;cursor:not-allowed}
   .gis-legend .lg{width:9px;height:9px}
   .gis-legend .lg--route{height:3px}
 }
+/* ============================================================
+   화면이 '낮을' 때 — 가로로 든 휴대폰
+   ------------------------------------------------------------
+   위의 규칙은 전부 **폭**만 보고 만든 것이라, 폭은 넓은데 높이가 낮은 화면에서
+   무너진다. 실측(812×375): 지도 화면 위쪽 띠 99px + 지도 173px 를 쓰고 나면
+   왼쪽 패널에 104px 만 남는데 주소칸 하나가 117px 이라 **사업 목록 높이가 0** 이었다.
+   — 목록이 아예 안 보였다.
+
+   낮은 화면에서는 위아래로 나누지 않고 **좌우로 되돌린다.** 가로로 든 화면은
+   폭이 남으니 그게 맞다. 데스크톱 창을 낮게 줄인 경우까지 건드리지 않도록
+   폭도 1024px 이하로 묶는다.
+   ============================================================ */
+@media (max-height:560px) and (max-width:1024px){
+  /* 위쪽 띠 — 두 줄로 늘리면 지도가 남지 않는다. 한 줄로 되돌리고 납작하게 */
+  .gis-top{height:auto;min-height:42px;padding:4px 10px;gap:8px;flex-wrap:nowrap}
+  .gis-top-right{width:auto;margin-left:auto}
+  .gis-back{padding:6px 10px}
+  .gis-ttl{display:none}
+  .scope-seg--map{width:auto;flex-wrap:nowrap;padding:2px}
+  .scope-seg--map button{flex:none;padding:6px 10px;min-height:30px;font-size:var(--fs-body-xs)}
+
+  /* 본문 — 좌우로 */
+  .gis-body{flex-direction:row}
+  .gis-side{width:min(52%,380px);flex:none;order:0;
+    border-right:1px solid var(--line);border-bottom:0;
+    overflow-y:auto}          /* 주소칸과 목록이 함께 스크롤된다 */
+  .gis-map-wrap{flex:1;min-width:0;height:auto;order:0}
+  .gis-side-body{flex:none;overflow:visible}
+  /* 주소칸이 패널을 다 먹지 않게 납작하게, 스크롤해도 위에 붙어 있게 */
+  .gis-addr{position:sticky;top:0;z-index:2;padding:8px 10px}
+  .gis-addr-lb{display:none}
+  .gis-addr .geo-msg{margin-top:4px}
+
+  /* 좌우로 나뉘어 있으므로 사업을 골라도 지도를 감추지 않는다
+     (감추는 규칙은 max-width:560px 에 있어 여기서 되돌려 준다) */
+  #scr-map.on-detail .gis-map-wrap,
+  #scr-map.on-detail .gis-addr{display:block}
+  #scr-map.on-detail .gis-side{flex:none;border-bottom:0}
+  .gis-to-map{display:none}
+  #gisDetail{padding:14px 14px}
+
+  /* 범례는 세로로 세우면 지도 높이를 다 먹는다 (실측 155px / 지도 173px) */
+  .gis-legend{left:8px;bottom:8px;flex-direction:row;flex-wrap:wrap;
+    max-width:calc(100% - 52px);gap:3px 8px;padding:5px 7px;background:rgba(255,255,255,.9)}
+  .gis-legend span{font-size:10.5px;gap:5px}
+  .gis-legend .lg{width:9px;height:9px}
+  .gis-legend .lg--route{height:3px}
+
+  /* 첫 화면 — 낮은 화면에서 히어로 여백이 화면을 다 먹는다 */
+  .onb{padding-top:26px;padding-bottom:26px}
+  .onb .en{display:none}
+}
+
 @media (prefers-reduced-motion:reduce){
   *{transition:none!important;animation:none!important;scroll-behavior:auto!important}
   .reveal{opacity:1;transform:none}
