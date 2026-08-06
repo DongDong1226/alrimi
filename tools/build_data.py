@@ -888,7 +888,19 @@ def build(args):
     for category_key, cat in CATEGORIES.items():
         label = cat["label"]
         log(f"[{label}] 공람 중인 사업 목록 수집 시작")
-        open_items = fetch_open_items(category_key, today, args.max_pages, args.delay)
+        # 목록을 받다가 접속이 끊기면 SESSION 이 4번까지 다시 시도한다.
+        # 그래도 안 되면 여기서 멈춘다. **반쪽짜리 결과를 저장하면 안 되기 때문이다.**
+        # (예: 전략 43건은 받고 환경 16건을 못 받으면 48건이 43건으로 줄어든 채 저장된다.
+        #  10% 남짓 줄어든 것이라 collect.yml 의 '절반 이하면 중단' 검사도 통과해 버린다)
+        # 아무것도 저장하지 않고 끝내면 어제 자료가 그대로 남아 화면은 정상 동작한다.
+        try:
+            open_items = fetch_open_items(category_key, today, args.max_pages, args.delay)
+        except Exception as e:
+            log(f"[{label}] 목록을 받지 못했습니다 — {type(e).__name__}: {str(e)[:200]}")
+            log("[중단] EIASS 접속이 끊겼습니다. 반쪽짜리 자료를 저장하지 않으려고 멈춥니다.")
+            log("       오늘 자료는 안 바뀌지만 화면은 어제 자료로 정상 동작합니다.")
+            log("       (자동 수집은 한국시간 13시에 한 번 더 시도합니다)")
+            raise SystemExit(1)
         if args.limit:
             open_items = open_items[: args.limit]
         log(f"[{label}] 공람 중 {len(open_items)}건 확인")
