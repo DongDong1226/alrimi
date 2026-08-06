@@ -1,24 +1,24 @@
-# EIASS 가 GitHub 서버를 막는지 확인하는 시험용 워크플로.
+# GitHub 서버(Azure)에서 어디까지 닿는지 한 번에 확인한다.
 #
-# ── 지금까지 밝혀진 것 (2026-08-05) ─────────────────────────────
-#   2026-08-01 에 collect.yml 이 한 번 실패한 것을 근거로 "EIASS 가 해외 IP 를
-#   막는다" 고 결론 냈지만, 다시 확인해 보니 사실이 아니었다.
-#     - 전 세계 20개 노드 중 17곳에서 EIASS 정상 응답 (미국 LA 0.49초)
-#     - 실제 실패 원인은 DNS 였다:
-#         gaierror:[Errno -2] Name or service not known (10초)
-#         러너 IP = 52.159.244.171 (Azure, 미국 San Jose)
-#       즉 EIASS 는 우리 요청을 받아본 적조차 없다. 주소를 못 찾아서 못 갔다.
-#     - eiass.go.kr 의 권한 DNS 가 간헐적으로 SERVFAIL 을 낸다.
-#       (Google DNS 로 물었을 때 어떤 때는 되고 어떤 때는 안 된다)
+# ── 지금까지 밝혀진 것 (2026-08-05 ~ 08-06) ────────────────────
+#   "EIASS 가 해외 IP 를 막는다" 는 사실이 아니었다.
+#     - 전 세계 20개 노드 중 17곳 정상 (미국 LA 0.49초, 댈러스 1.09초,
+#       독일·프랑스·네덜란드·러시아·인도·베트남 전부 HTTP 200)
+#   그런데 GitHub 러너에서는 두 번 다 실패했고, 두 IP 모두 Azure 였다.
+#     1차: 52.159.244.171 (San Jose) — DNS 실패 (간헐적 SERVFAIL)
+#     2차: 9.234.149.180  (Boydton)  — DNS 성공, TCP443 20초 침묵
+#   TCP 가 조용히 시간만 흐르는 것은 방화벽이 패킷을 버릴 때의 모양이다.
 #
-# ── 이 파일이 확인하려는 것 ────────────────────────────────────
-#   "가" 시험 : 손 안 대고 그냥 접속  → 예전처럼 DNS 에서 죽는지
-#   "나" 시험 : 주소를 미리 찾아 심어 두고 접속 → 그러면 되는지
-#   "나" 가 되면 EIASS 차단이 아니라 DNS 문제이고, GitHub 자동 수집이 가능하다.
+# ── 이 파일이 답하려는 질문 ────────────────────────────────────
+#   Azure 에서 (가) EIASS 만 막히나  (나) 한국 사이트 전체가 막히나
+#   - 구글만 되고 한국이 전부 안 되면  -> Azure~한국 경로 문제
+#   - 한국 사이트는 되는데 EIASS 만 안 되면 -> EIASS 가 Azure 를 막는 것
+#   - VWorld 가 되는지도 같이 본다 (수집에 반드시 필요하다)
 #
-# ── 이 파일이 하지 않는 것 (안전장치) ──────────────────────────
+# ── 안전장치 ───────────────────────────────────────────────────
 #   저장소를 내려받지 않는다 / data 를 읽지도 쓰지도 않는다 /
 #   커밋·푸시하지 않는다 / Anthropic API 를 부르지 않는다 (비용 0원)
+#   각 대상마다 8초만 기다리므로 1분 안에 끝난다.
 #
 # 쓰는 법: Actions 탭 → 이 워크플로 선택 → Run workflow
 
@@ -44,145 +44,95 @@ jobs:
       - name: requests 설치
         run: pip install requests
 
-      - name: 이 서버가 어디에 있는지 확인
+      - name: 어디까지 닿는지 한 번에 확인
         run: |
           python - <<'PY'
-          import requests
-          try:
-              d = requests.get("https://ipinfo.io/json", timeout=15).json()
-              print(f"공인 IP : {d.get('ip')}")
-              print(f"나라/도시: {d.get('country')} / {d.get('city')}")
-              print(f"통신사   : {d.get('org')}")
-              print(f"::notice::[러너위치] IP={d.get('ip')} "
-                    f"{d.get('country')}/{d.get('city')} {d.get('org')}")
-          except Exception as e:
-              print(f"::notice::[러너위치] 확인 실패 {e}")
-          PY
-
-      # 시험 내용을 파일로 만들어 두고 두 번 돌린다 (DNS 우회 전 / 후).
-      - name: 시험 스크립트 준비
-        run: |
-          cat > /tmp/eiass_check.py <<'PY'
-          import socket, sys, time
+          import socket, ssl, sys, time
           import requests
 
-          LABEL = sys.argv[1] if len(sys.argv) > 1 else "?"
-          HOST = "www.eiass.go.kr"
-          F = []
+          OUT = []
 
           def note(s):
-              print("  " + s)
-              F.append(s)
+              print(s)
+              OUT.append(s)
 
-          print("=" * 60)
-          print(f"[{LABEL}] EIASS 연결 시험")
-          print("=" * 60)
-
-          # 1) 주소를 찾을 수 있나
-          t = time.time()
+          # 0) 이 러너가 어디인지
           try:
-              ip = socket.gethostbyname(HOST)
-              note(f"1.DNS 성공 {ip} ({time.time()-t:.1f}s)")
-              dns_ok = True
+              d = requests.get("https://ipinfo.io/json", timeout=10).json()
+              note(f"러너 IP={d.get('ip')} {d.get('country')}/{d.get('city')} {d.get('org')}")
           except Exception as e:
-              note(f"1.DNS 실패 {type(e).__name__}:{e} ({time.time()-t:.1f}s)")
-              dns_ok = False
+              note(f"러너 위치 확인 실패 {e}")
 
-          # 2) 443 번 문이 열리나 (여기서 20초 침묵이면 진짜 IP 차단)
-          tcp_ok = False
-          if dns_ok:
-              t = time.time()
-              try:
-                  s = socket.create_connection((HOST, 443), timeout=20)
-                  s.close()
-                  note(f"2.TCP443 성공 ({time.time()-t:.1f}s) IP차단아님")
-                  tcp_ok = True
-              except socket.timeout:
-                  note(f"2.TCP443 시간초과 ({time.time()-t:.1f}s) IP차단의심")
-              except Exception as e:
-                  note(f"2.TCP443 실패 {type(e).__name__}:{e} ({time.time()-t:.1f}s)")
-
-          # 3) 첫 화면을 그냥 받아 보기
-          get_ok = False
-          if tcp_ok:
-              t = time.time()
-              try:
-                  r = requests.get(f"https://{HOST}/",
-                                   headers={"User-Agent": "Mozilla/5.0"}, timeout=20)
-                  note(f"3.GET/ HTTP{r.status_code} {len(r.content)}B ({time.time()-t:.1f}s)")
-                  get_ok = r.status_code == 200
-              except Exception as e:
-                  note(f"3.GET/ 실패 {type(e).__name__}:{str(e)[:150]} ({time.time()-t:.1f}s)")
-
-          # 4) 수집이 실제로 쓰는 목록 API
-          api_ok = False
-          if get_ok:
-              t = time.time()
-              try:
-                  r = requests.post(
-                      f"https://{HOST}/searchApi/search.do",
-                      data={"query": "", "collection": "draft",
-                            "urlString": "&alias=1&orgnCd=&sido=",
-                            "viewName": "eiass/user/partcptn/choan/choanSperssList_searchApi",
-                            "currentPage": 1},
-                      headers={"User-Agent": "Mozilla/5.0"}, timeout=20)
-                  took = time.time() - t
-                  if r.status_code != 200:
-                      note(f"4.POST HTTP{r.status_code} ({took:.1f}s) {r.text[:120]}")
-                  elif "tbl01" not in r.text:
-                      note(f"4.POST 200이나 목록표없음 ({took:.1f}s) {r.text[:150]}")
-                  else:
-                      note(f"4.POST 성공 HTTP200 {len(r.content)}B ({took:.1f}s) 목록정상")
-                      api_ok = True
-              except Exception as e:
-                  note(f"4.POST 실패 {type(e).__name__}:{str(e)[:150]} ({time.time()-t:.1f}s)")
-
-          level = "notice" if api_ok else "error"
-          print(f"::{level}::[{LABEL}] " + " || ".join(F)[:2500])
           print()
-          print("결과:", "성공 — EIASS 자료를 받았습니다." if api_ok else "실패")
-          sys.exit(0 if api_ok else 1)
+          print("=" * 66)
+          print("대상별 TCP 443 연결 시험 (각 8초까지만 기다린다)")
+          print("=" * 66)
+
+          # (이름, 호스트, 왜 보는가)
+          TARGETS = [
+              ("EIASS",        "www.eiass.go.kr", "수집 대상"),
+              ("VWorld",       "api.vworld.kr",   "지도·좌표. 수집에 필요"),
+              ("환경부",        "www.me.go.kr",    "다른 정부 사이트"),
+              ("공공데이터포털",  "www.data.go.kr",  "다른 정부 사이트"),
+              ("네이버",        "www.naver.com",   "일반 한국 사이트"),
+              ("구글",          "www.google.com",  "대조군(러너 인터넷 정상 확인)"),
+          ]
+
+          results = {}
+          for label, host, why in TARGETS:
+              line = f"{label}({host})"
+              # DNS
+              t = time.time()
+              try:
+                  ip = socket.gethostbyname(host)
+                  dns = f"DNS={ip} {time.time()-t:.1f}s"
+              except Exception as e:
+                  note(f"  {line:<34} DNS실패 {type(e).__name__} — {why}")
+                  results[label] = "DNS실패"
+                  continue
+              # TCP
+              t = time.time()
+              try:
+                  s = socket.create_connection((ip, 443), timeout=8)
+                  s.close()
+                  took = time.time() - t
+                  note(f"  {line:<34} 성공 ({took:.2f}s) {dns} — {why}")
+                  results[label] = "성공"
+              except socket.timeout:
+                  note(f"  {line:<34} 시간초과({time.time()-t:.1f}s) 침묵=차단신호 {dns} — {why}")
+                  results[label] = "시간초과"
+              except Exception as e:
+                  note(f"  {line:<34} 실패 {type(e).__name__} {dns} — {why}")
+                  results[label] = f"실패({type(e).__name__})"
+
+          # 판정
+          print()
+          print("=" * 66)
+          print("판정")
+          print("=" * 66)
+          kr_others = [results.get(k) for k in ("환경부", "공공데이터포털", "네이버")]
+          kr_ok = sum(1 for v in kr_others if v == "성공")
+          eiass_ok = results.get("EIASS") == "성공"
+          vworld_ok = results.get("VWorld") == "성공"
+          google_ok = results.get("구글") == "성공"
+
+          if not google_ok:
+              verdict = "러너의 인터넷 자체가 이상하다. 시험을 다시 해야 한다."
+          elif eiass_ok:
+              verdict = "EIASS 에 닿았다. 막히지 않았다."
+          elif kr_ok == 0:
+              verdict = ("한국 사이트가 전부 안 된다 -> EIASS 가 콕 집어 막는 것이 아니라 "
+                         "Azure~한국 경로 문제다.")
+          else:
+              verdict = (f"한국 사이트는 {kr_ok}/3 되는데 EIASS 만 안 된다 "
+                         f"-> EIASS 가 Azure 대역을 막는 것이 맞다.")
+
+          note("판정: " + verdict)
+          note(f"VWorld(수집에 필요): {'된다' if vworld_ok else '안 된다'}")
+          print()
+          print(verdict)
+
+          print("::notice::[결과] " + " || ".join(OUT)[:2800])
+          # 이 워크플로는 '조사'가 목적이므로 실패로 끝내지 않는다.
+          sys.exit(0)
           PY
-          echo "준비 완료"
-
-      # 예전과 똑같은 조건. 여기서 DNS 로 죽는 것이 정상적인 재현이다.
-      - name: "가 시험 — 손 안 대고 그냥 접속"
-        id: plain
-        continue-on-error: true
-        run: python /tmp/eiass_check.py "가-우회없음"
-
-      # 주소를 HTTPS 로 직접 물어봐서(DoH) /etc/hosts 에 심는다.
-      # 이러면 불안정한 일반 DNS 를 아예 타지 않는다.
-      - name: DNS 우회 — 주소를 미리 찾아 심기
-        run: |
-          echo "Cloudflare 에 HTTPS 로 주소를 물어봅니다 (일반 DNS 를 안 씁니다)"
-          for i in 1 2 3; do
-            IP=$(curl -s --max-time 15 -H 'accept: application/dns-json' \
-              'https://cloudflare-dns.com/dns-query?name=www.eiass.go.kr&type=A' \
-              | python -c "import sys,json;d=json.load(sys.stdin);a=[x['data'] for x in d.get('Answer',[]) if x.get('type')==1];print(a[0] if a else '')")
-            if [ -n "$IP" ]; then break; fi
-            echo "  $i 번째 시도 실패, 다시 시도합니다"
-            sleep 2
-          done
-          if [ -z "$IP" ]; then
-            echo "::error::[DNS우회] 주소를 못 찾았습니다"
-            exit 1
-          fi
-          echo "찾은 주소: $IP"
-          echo "$IP www.eiass.go.kr" | sudo tee -a /etc/hosts
-          echo "::notice::[DNS우회] www.eiass.go.kr -> $IP 를 hosts 에 심었습니다"
-
-      - name: "나 시험 — DNS 우회 후 접속"
-        run: python /tmp/eiass_check.py "나-우회함"
-
-      - name: 결론
-        if: always()
-        run: |
-          echo "=================================================="
-          echo "가 시험(우회 없음) : ${{ steps.plain.outcome }}"
-          echo "나 시험(우회 함)   : 위 단계 결과 참고"
-          echo "=================================================="
-          echo "가=실패, 나=성공 이면 -> EIASS 차단이 아니라 DNS 문제입니다."
-          echo "                       GitHub 자동 수집이 가능합니다."
-          echo "둘 다 성공이면       -> 애초에 막힌 적이 없었습니다."
-          echo "둘 다 실패면         -> 그때 비로소 차단을 의심합니다."
