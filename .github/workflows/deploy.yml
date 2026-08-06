@@ -21,10 +21,16 @@ permissions:
   pages: write
   id-token: write
 
-# 배포가 겹치면 나중 것만 살린다.
+# 배포는 한 번에 하나만 돈다. 기다리는 것이 여러 개면 마지막 것만 남는다.
+#
+# ★ cancel-in-progress 를 true 로 두면 안 된다 (2026-08-06에 실제로 당했다).
+#   커밋을 몇 분 간격으로 두 번 하면, 먼저 돌던 배포가 **올리는 도중에 잘린다.**
+#   그러면 GitHub Pages 쪽이 물려서 다음 배포가 10분을 기다리다
+#   "Timeout reached, aborting!" 으로 죽는다. 사이트는 옛 판 그대로 남는다.
+#   GitHub 공식 Pages 워크플로도 false 를 쓴다 — 올리는 중인 것은 끝까지 두어야 한다.
 concurrency:
   group: pages
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   deploy:
