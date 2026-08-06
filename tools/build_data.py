@@ -738,12 +738,20 @@ def analyze_environment(name, address, raw_text, anthropic_key):
     )
     try:
         msg = client.messages.create(
-            model="claude-haiku-4-5-20251001",
-            # 항목 8개를 한글로 채우면 응답이 길다. 2000 으로 두면 긴 사업에서
-            # JSON 이 중간에 잘려 통째로 버려진다(36건 중 5건이 그랬다). 넉넉히 준다.
-            max_tokens=6000,
+            # 2026-08-06: 하이쿠 -> 소넷. 요약문을 항목에 맞춰 옮길 때
+            # "원문에 없으면 null" 같은 지시를 더 잘 지키는지 보려고 바꿨다.
+            # 값이 비싸지지만(입력 3배·출력 3배) 하루 신규 1~3건이라 월 몇 천 원 수준이다.
+            model="claude-sonnet-5",
+            # ★ 소넷은 하이쿠와 달리 '생각하기'가 기본으로 켜져 있고,
+            #   max_tokens 는 생각한 양 + 답변을 **합쳐서** 제한한다.
+            #   그래서 하이쿠 때 쓰던 6000 을 그대로 두면 생각하다가 자리를 다 쓰고
+            #   JSON 이 중간에 잘린다(예전에 2000 으로 뒀다가 36건 중 5건이 그랬다).
+            #   생각할 자리 + 항목 8개를 한글로 채울 자리를 함께 넉넉히 준다.
+            max_tokens=16000,
             messages=[{"role": "user", "content": prompt}],
         )
+        # 응답에는 '생각한 내용' 덩어리와 '답변' 덩어리가 섞여 온다.
+        # 답변(text)만 골라내야 JSON 이 깨지지 않는다. (이 줄이 그 역할을 한다)
         text = "".join(b.text for b in msg.content if b.type == "text").strip()
 
         # 답이 길이 제한에 걸려 잘렸으면 JSON 이 깨진다. 왜 실패했는지 남긴다.
