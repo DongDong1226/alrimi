@@ -2053,8 +2053,11 @@ function ensureGisMap(){
   const box = document.getElementById("gisMap");
   if(!box) return null;
   box.innerHTML = "";
-  gisMap = L.map("gisMap", { zoomControl:true, attributionControl:true });
-  L.tileLayer(vworldTileUrl(), { maxZoom:19, attribution:"ⓒ VWorld" }).addTo(gisMap);
+  // VWorld 배경지도(WMTS)는 줌 6~19만 지원한다. 그보다 낮으면 타일 대신
+  // 오류 응답이 와서 지도가 빈 채로 보인다. minZoom 을 걸어 fitBounds 가
+  // 절대 그 아래로 내려가지 않게 막는다 (2026-08-06 전국 미니지도에서 겪음).
+  gisMap = L.map("gisMap", { zoomControl:true, attributionControl:true, minZoom:6 });
+  L.tileLayer(vworldTileUrl(), { minZoom:6, maxZoom:19, attribution:"ⓒ VWorld" }).addTo(gisMap);
   gisMap.setView([HOME.lat, HOME.lon], 12);
   return gisMap;
 }
@@ -2575,11 +2578,14 @@ function renderMiniMap(){
 
   if(!miniMap){
     canvas.innerHTML = "";
+    // minZoom:6 — VWorld 배경지도가 그 아래 줌은 오류를 돌려준다 (위 ensureGisMap 참고).
+    // 작은 미리보기 지도는 전국 42건을 억지로 다 담으려다 줌 5까지 내려가서
+    // 실제로 겪었다 — 마커는 제 위치에 잘 찍히는데 바탕지도만 빈 채로 보였다.
     miniMap = L.map("miniMapCanvas", {
       zoomControl:false, dragging:false, scrollWheelZoom:false, doubleClickZoom:false,
-      boxZoom:false, keyboard:false, attributionControl:false, tap:false
+      boxZoom:false, keyboard:false, attributionControl:false, tap:false, minZoom:6
     });
-    L.tileLayer(vworldTileUrl(), { maxZoom:19 }).addTo(miniMap);
+    L.tileLayer(vworldTileUrl(), { minZoom:6, maxZoom:19 }).addTo(miniMap);
     miniMap.setView([HOME.lat, HOME.lon], 13);   // 레이어를 올리기 전에 기준 시점을 먼저 정한다
   }
   miniMap.invalidateSize();
