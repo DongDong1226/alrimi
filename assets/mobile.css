@@ -283,7 +283,12 @@ body.m #gisDetail{padding:16px 16px 22px}
 /* ============================================================
    모달 — 아래에서 올라오는 전체 화면
    ============================================================ */
-body.m .modal{align-items:flex-end}
+/* ★ padding:0 을 반드시 같이 지워야 한다.
+   app.css 의 .modal 은 가운데 정렬을 전제로 사방에 24px 여백을 준다.
+   align-items 만 flex-end 로 바꾸면 그 여백이 남아서, **바닥에서 24px 떠 있고
+   좌우로도 24px 들어간 상자**가 된다. 아래 모서리는 각져 있으므로(위만 둥글다)
+   화면이 잘린 것처럼 보인다 — 2026-08-07에 실제로 그렇게 보였다. */
+body.m .modal{align-items:flex-end;padding:0}
 body.m .modal-box{width:100%;max-width:none;max-height:92dvh;
   border-radius:var(--r-lg) var(--r-lg) 0 0}
 body.m .modal-hd{position:sticky;top:0;background:#fff;z-index:2}
