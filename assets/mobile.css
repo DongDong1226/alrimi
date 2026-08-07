@@ -212,6 +212,9 @@ body.m .pg{min-width:40px;min-height:40px}
   border-radius:var(--r-lg) var(--r-lg) 0 0;box-shadow:0 -6px 24px rgba(16,28,54,.18);
   display:flex;flex-direction:column;min-height:0;
   transition:height .2s var(--ease)}
+/* closed — 지도 화면에 처음 들어오면 이 상태다. 목록을 통째로 접어 지도만 보여준다.
+   grip 도 이 안에 있어서 함께 사라진다 — 다시 열려면 .m-list-badge 를 눌러야 한다. */
+#scr-map.sheet-closed .m-sheet{height:0;box-shadow:none;border-top:0;overflow:hidden}
 #scr-map.sheet-peek .m-sheet{height:34%}
 #scr-map.sheet-half .m-sheet{height:56%}
 #scr-map.sheet-full .m-sheet{height:calc(100% - 8px)}
@@ -238,6 +241,15 @@ body.m .pg{min-width:40px;min-height:40px}
 .m-legend-btn.on{background:var(--primary);color:#fff;border-color:var(--primary);
   top:auto;bottom:10px;left:10px}
 body.m .leaflet-control-zoom{margin-top:52px!important}
+
+/* 목록 보기 배지 — 시트가 닫혀 있을 때(지도만 보일 때)만 뜬다.
+   가운데 아래에 떠 있는 알약 모양. 누르면 시트가 열린다. */
+.m-list-badge{position:absolute;left:50%;bottom:calc(16px + var(--m-safe));
+  transform:translateX(-50%);z-index:650;display:inline-flex;align-items:center;gap:8px;
+  background:var(--navy-3);color:#fff;border:0;border-radius:var(--r-pill);
+  padding:12px 22px;font-size:var(--fs-body-s);font-weight:700;min-height:44px;
+  box-shadow:0 10px 30px rgba(16,28,54,.35)}
+.m-list-badge svg{width:18px;height:18px;flex:none}
 
 /* 상세를 볼 때는 주소칸을 감춘다 (app.js 가 on-detail 을 붙인다) */
 #scr-map.on-detail .m-addr{display:none}

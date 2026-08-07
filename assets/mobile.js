@@ -54,18 +54,21 @@
   syncTabs();
 
   /* ---------- 지도 화면: 아래에서 올라오는 시트 ----------
-     지도를 크게 보고 싶을 때와 목록을 훑고 싶을 때가 다르다.
-     손잡이를 눌러 세 단계로 바꾼다. */
-  const STEPS = ["peek", "half", "full"];
+     지도 화면에 처음 들어오면 **지도만** 보여준다(closed). 목록은
+     아래 가운데의 "목록 보기" 배지를 눌러야 올라온다. 한 번 열리면
+     손잡이로 peek/half/full 세 단계를 오간다. */
+  const STEPS = ["closed", "peek", "half", "full"];
   const sheet = q(".m-sheet");
   const scrMap = q("#scr-map");
-  let step = 1;   // 처음에는 반쯤
+  const badge = q("#btnListBadge");
+  let step = 0;   // 처음에는 지도만
 
   function applySheet(){
     STEPS.forEach((s, i) => scrMap.classList.toggle("sheet-" + s, i === step));
     const grip = q("#btnSheet");
     grip.setAttribute("aria-label",
-      step === 2 ? "목록 작게 보기" : "목록 크게 보기");
+      step === STEPS.length - 1 ? "목록 작게 보기" : "목록 크게 보기");
+    badge.hidden = step !== 0;   // 목록이 접혀 있을 때만 배지를 보여준다
     // 지도 크기가 바뀌었으니 Leaflet 에 알려 준다
     setTimeout(() => { if(typeof gisMap !== "undefined" && gisMap) gisMap.invalidateSize(); }, 220);
   }
@@ -73,12 +76,31 @@
     step = (step + 1) % STEPS.length;
     applySheet();
   });
+  badge.addEventListener("click", () => {
+    step = 1;   // peek 부터 — 지도가 안 보일 만큼 확 덮지는 않는다
+    applySheet();
+  });
   applySheet();
+
+  /* 지도 화면에 새로 들어올 때마다(다른 화면에서 넘어올 때마다) 지도만 먼저 보여준다.
+     단, 특정 사업을 짚고 들어온 경우(on-detail)는 아래에서 바로 끝까지 올린다. */
+  let mapWasOn = false;
+  new MutationObserver(() => {
+    const isOn = scrMap.classList.contains("on");
+    if(isOn && !mapWasOn && !scrMap.classList.contains("on-detail") && step !== 0){
+      step = 0;
+      applySheet();
+    }
+    mapWasOn = isOn;
+  }).observe(scrMap, { attributes:true, attributeFilter:["class"] });
 
   /* 사업을 고르면(상세) 시트를 끝까지 올린다 — 읽을 것이 많다.
      app.js 가 #scr-map 에 on-detail 을 붙이는 것을 지켜본다. */
   new MutationObserver(() => {
-    if(scrMap.classList.contains("on-detail") && step !== 2){ step = 2; applySheet(); }
+    if(scrMap.classList.contains("on-detail") && step !== STEPS.length - 1){
+      step = STEPS.length - 1;
+      applySheet();
+    }
   }).observe(scrMap, { attributes:true, attributeFilter:["class"] });
 
   /* ---------- 주소 바꾸기 칸 접기 ----------
