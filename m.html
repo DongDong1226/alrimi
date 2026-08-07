@@ -122,8 +122,8 @@
       </div>
     </section>
 
-    <!-- 숫자 세 칸 — 좁으니 옆으로 밀어 본다 -->
-    <div class="m-stats">
+    <!-- 숫자 세 칸 — 좁으니 옆으로 밀어 본다. 아래 점 3개로 몇 번째인지 알려준다. -->
+    <div class="m-stats" id="mStats">
       <div class="m-stat feat">
         <span class="lab" id="stat-open-lab">의견 낼 수 있는 사업</span>
         <span class="num"><span data-count="0" id="stat-open">0</span><small>건</small></span>
@@ -139,6 +139,9 @@
         <span class="num"><span data-count="0" id="stat-nego">0</span><small>건</small></span>
         <span class="delta" id="stat-nego-note"></span>
       </div>
+    </div>
+    <div class="m-stats-dots" id="mStatsDots" aria-hidden="true">
+      <span class="on"></span><span></span><span></span>
     </div>
 
     <div class="m-tick" id="dashTick"></div>
@@ -363,9 +366,9 @@
       </button>
       <p class="geo-msg" id="geoMsg-hood" role="status"></p>
       <p class="m-or"><span>또는 직접 고르기</span></p>
-      <p class="m-hint"><b>세 칸을 다 고르지 않아도 됩니다.</b> 시·도만 고르면 그 도 전체를,
-        맨 위의 <b>전국</b>을 고르면 전국을 봅니다.</p>
-      <div class="m-setbar">
+      <!-- 세 칸을 다 고르지 않아도 되는 건 여기서도 그대로 동작한다(시·도만 골라도,
+           맨 위 전국을 골라도 된다) — 자주 여닫는 빠른 수정 창이라 설명 문구는 뺐다. -->
+      <div class="m-setbar m-setbar--row">
         <label class="m-field"><span class="m-field-lb">시 · 도</span><select id="h-sido"></select></label>
         <label class="m-field"><span class="m-field-lb">시 · 군 · 구</span><select id="h-sgg"></select></label>
         <label class="m-field"><span class="m-field-lb">읍 · 면 · 동</span><select id="h-dong"></select></label>

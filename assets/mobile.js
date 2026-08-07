@@ -119,6 +119,29 @@
     q("#btnLegend").classList.toggle("on", !lg.hidden);
   });
 
+  /* ---------- 숫자 카드 3개 — 지금 몇 번째를 보고 있는지 점으로 ----------
+     드래그해서 옆으로 보는 건 좋지만 카드가 넓어 "3개가 있다"는 게 잘 안 보인다.
+     스크롤 위치를 카드 폭으로 나눠 가장 가까운 카드에 점을 켠다.
+     (수치·문구는 건드리지 않는다 — 오직 스크롤 위치만 본다) */
+  const mStats = q("#mStats");
+  const dots = qa("#mStatsDots span");
+  if(mStats && dots.length){
+    let ticking = false;
+    const updateDots = () => {
+      ticking = false;
+      const card = mStats.querySelector(".m-stat");
+      if(!card) return;
+      const step = card.getBoundingClientRect().width + 10;   // 카드 폭 + gap(10px)
+      const idx = Math.min(dots.length - 1, Math.round(mStats.scrollLeft / step));
+      dots.forEach((d, i) => d.classList.toggle("on", i === idx));
+    };
+    mStats.addEventListener("scroll", () => {
+      if(ticking) return;
+      ticking = true;
+      requestAnimationFrame(updateDots);
+    }, { passive:true });
+  }
+
   /* ---------- 넓은 화면으로 열렸을 때 ----------
      휴대폰 화면을 PC 에서 열면 지나치게 큼직하다. 안내만 하고 강제로 보내지는 않는다
      (일부러 이 주소를 연 사람도 있다). */
