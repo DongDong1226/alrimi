@@ -98,7 +98,11 @@ body.m .wrap{width:calc(100% - 28px)}
 .m-kw{margin-top:12px;gap:7px;overflow-x:auto;flex-wrap:nowrap;
   scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .m-kw::-webkit-scrollbar{display:none}
-.m-kw .kw-chip{flex:none;white-space:nowrap;min-height:38px}
+.m-kw .kw-chip{flex:none;white-space:nowrap;min-height:38px;
+  /* app.css 의 기본 테두리(흰색 18%)는 데스크톱 히어로의 격자무늬 배경 위에서나 겨우
+     보이는 밝기라, m.html 의 납작한 남색 배경에서는 거의 안 보인다. 값을 올린다
+     (새 색이 아니라 같은 흰색의 불투명도만 올린 것 — 다른 곳의 rgba(255,255,255,.2~.22) 와 같은 결). */
+  border-color:rgba(255,255,255,.42);background:rgba(255,255,255,.14)}
 
 /* 숫자 세 칸 — 옆으로 밀어 본다 */
 .m-stats{display:flex;gap:10px;padding:14px;overflow-x:auto;scrollbar-width:none}
@@ -158,11 +162,18 @@ body.m .proj .foot{flex-wrap:wrap;gap:7px}
 body.m .proj .foot .btn{flex:1 1 auto;min-height:42px}
 body.m .proj-empty{padding:28px 18px}
 
-body.m .row-item{flex-wrap:wrap}
-body.m .row-btns{flex:1 1 100%;width:auto;min-width:0;margin-left:0;margin-top:10px;display:flex;gap:7px}
-body.m .row-btns .btn{flex:1 1 auto;min-height:42px}
-body.m .brief>div{flex-direction:column;gap:1px}
-body.m .brief dt{width:auto}
+/* 주민 설명회 카드 — 항목마다 dt/dd 를 줄바꿈해서 세로로 너무 길었다.
+   한 줄로 되돌리고(원래 app.css 는 가로였다), 여백·글자를 줄여 카드를 압축한다. */
+body.m .row-item{flex-wrap:wrap;padding:13px 4px;gap:10px}
+body.m .row-body .t{font-size:14.5px;line-height:1.4}
+body.m .brief{gap:4px;margin-top:5px}
+body.m .brief>div{flex-direction:row;gap:6px}
+body.m .brief dt{width:62px;font-size:11.5px}
+body.m .brief dd{font-size:12px;line-height:1.45}
+body.m .row-btns{flex:1 1 100%;width:auto;min-width:0;margin-left:0;margin-top:8px;display:flex;gap:6px}
+/* min-height 는 건드리지 않는다 — app.css 의 @media(max-width:560px) 가 이미
+   .btn--sm 을 40px 로 고정해 둔다(손가락으로 누르는 최소 크기 규칙). 그 아래로 내리지 않는다. */
+body.m .row-btns .btn{flex:1 1 auto;padding:0 10px}
 
 body.m .pager{justify-content:center;flex-wrap:wrap;gap:8px}
 body.m .pager-btns{margin-left:0}

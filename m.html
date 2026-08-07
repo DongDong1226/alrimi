@@ -187,15 +187,9 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M6 12h12M10 18h4"></path></svg>
           <span id="sortLabel">가까운 순</span>
         </button>
-        <label class="perpage" for="projPerPage">
-          <span>한 번에</span>
-          <select id="projPerPage">
-            <option value="5" selected>5개</option>
-            <option value="10">10개</option>
-            <option value="20">20개</option>
-            <option value="0">전체</option>
-          </select>
-        </label>
+        <!-- 휴대폰에서는 한 번에 3개만 보여주고 아래 페이지 번호로 넘긴다.
+             고르는 UI는 없앴지만 값은 app.js 가 이 칸에서 그대로 읽는다. -->
+        <select id="projPerPage" hidden><option value="3" selected>3개</option></select>
       </div>
 
       <div class="proj-grid m-grid" id="projGrid"></div>
@@ -210,14 +204,8 @@
       </div>
       <p class="brief-guide">설명회 일시·장소는 사업자가 낸 <b>원문 그대로</b>입니다.
         날짜를 분명히 알 수 있는 것만 지난 일정에 <b>지남</b>을 붙였습니다.</p>
-      <label class="perpage" for="openPerPage">
-        <span>한 번에</span>
-        <select id="openPerPage">
-          <option value="5" selected>5개</option>
-          <option value="10">10개</option>
-          <option value="0">전체</option>
-        </select>
-      </label>
+      <!-- 사업 목록과 같은 이유로 3개 고정, 고르는 UI는 없앤다. -->
+      <select id="openPerPage" hidden><option value="3" selected>3개</option></select>
       <div id="openList"></div>
       <nav class="pager" id="openPager" aria-label="설명회 목록 페이지"></nav>
     </section>
