@@ -87,10 +87,18 @@ button{cursor:pointer}
 
 /* ---------- HERO ---------- */
 .hero{position:relative;color:#fff;overflow:hidden;isolation:isolate}
+/* 배경 사진 — 바탕색은 토큰 --p90(#0c1e59)과 같은 값이라 변수를 쓴다.
+   사진을 못 받아도 이 색이 깔려서 흰 글씨가 읽힌다. */
 .hero-bg{position:absolute;inset:0;z-index:-2;
-  background:#0c1e59 url("https://images.unsplash.com/photo-1466611653911-95081537e5b7?auto=format&fit=crop&w=1920&q=72") center/cover no-repeat}
+  background:var(--p90) url("https://images.unsplash.com/photo-1763688506555-c73c1b944080?auto=format&fit=crop&w=1920&q=72") center/cover no-repeat}
+/* ★ 이 덮개는 장식이 아니라 **글자를 읽히게 하는 장치**다.
+   지금 사진은 밝은 초록·물빛이라 흰 글씨가 묻힌다. 실측(가장 밝은 구역 rgb(207,221,200)):
+     예전 오른쪽 끝 rgba(90,140,190,.36) → 대비비 1.92 (기준 미달)
+     지금  오른쪽 끝 rgba(12,30,89,.56)  → 대비비 4.89 (본문 기준 4.5 통과)
+   덮개 '색'이 밝으면 불투명도를 70%까지 올려도 2.64밖에 안 된다 — 어두운 색이어야 한다.
+   **배경 사진을 바꾸면 이 값을 다시 재 볼 것.** */
 .hero-bg::after{content:"";position:absolute;inset:0;
-  background:linear-gradient(105deg,rgba(20,45,95,.74) 0%,rgba(30,70,130,.6) 42%,rgba(90,140,190,.36) 100%)}
+  background:linear-gradient(105deg,rgba(20,45,95,.80) 0%,rgba(20,45,95,.68) 42%,rgba(12,30,89,.56) 100%)}
 .hero-grid{position:absolute;inset:0;z-index:-1;opacity:.5;
   background-image:linear-gradient(rgba(255,255,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.05) 1px,transparent 1px);
   background-size:64px 64px;mask:linear-gradient(105deg,transparent 30%,#000 100%)}
