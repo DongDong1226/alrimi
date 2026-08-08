@@ -37,6 +37,10 @@ const KOREA_CENTER = [36.3, 127.8];
 
 const LSKEY = "wdn.settings";
 const LSRECENT = "wdn.recent";
+/* 주민이 별표로 담아 둔 사업 번호 목록.
+   계정이 없는 서비스라 **이 브라우저에만** 남는다 — 폰에서 담은 것이 PC에 나오지 않는다.
+   고칠 수 있는 문제가 아니라(회원가입·서버가 필요하다) 화면에서 그 사실을 알려 준다. */
+const LSSAVED = "wdn.saved";
 
 function lsGet(k, fb){
   try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : fb; }
@@ -45,6 +49,21 @@ function lsGet(k, fb){
 function lsSet(k, v){
   try{ localStorage.setItem(k, JSON.stringify(v)); return true; }
   catch(e){ return false; }
+}
+
+/* ---------- 담아 둔 사업 ----------
+   저장하는 것은 사업 번호뿐이다. 사업 내용은 매번 data/projects.json 에서 다시 읽는다
+   (내용까지 저장해 두면 기간이 연장돼도 옛 날짜를 계속 보여주게 된다). */
+let SAVED_IDS = lsGet(LSSAVED, []).map(String);
+
+function isSaved(id){ return SAVED_IDS.includes(String(id)); }
+
+function toggleSaved(id){
+  const key = String(id);
+  SAVED_IDS = isSaved(key) ? SAVED_IDS.filter(x => x !== key) : SAVED_IDS.concat(key);
+  lsSet(LSSAVED, SAVED_IDS);
+  syncSavedUi();
+  return isSaved(key);
 }
 
 let S = Object.assign({}, DEFAULTS, lsGet(LSKEY, {}));
@@ -276,6 +295,18 @@ function recomputeDistances(){
   });
 }
 
+/* 사업 하나를 번호로 찾는다.
+   기한이 지난 사업(CLOSED_PROJECTS)까지 뒤지는 이유는 **담아 둔 사업** 때문이다 —
+   담아 뒀는데 마감됐다고 상세를 못 열면 담은 사람 입장에서는 고장난 것으로 보인다.
+   기간 규칙은 그대로다: 마감된 사업은 의견 제출 단추가 안 나오고(dday 가 null),
+   환경영향분석은 eiaSection() 이 공람 기간(viewOpen)으로 잠근다. */
+function findProject(id){
+  const key = String(id);
+  return PROJECTS.find(x => String(x.id) === key)
+    || CLOSED_PROJECTS.find(x => String(x.id) === key)
+    || null;
+}
+
 /* 화면에 쓸 거리 문구. 노선 쪽이 더 가까우면 그렇다고 밝힌다. */
 function distText(p){
   if(p.nearDist == null) return null;
@@ -338,6 +369,7 @@ function refreshAll(){
   renderMiniMap();
   renderGisList();
   renderGisMarkers();
+  syncSavedUi();      // 별표 상태와 머리쪽 숫자는 자료를 읽은 뒤에 맞춘다
 }
 
 /* EIASS 원문 상세페이지는 GET 링크가 아니라 POST 로만 열려서,
@@ -1242,6 +1274,8 @@ $$("[data-scope]").forEach(b =>
 $$("[data-nav]").forEach(el => el.addEventListener("click", e => {
   const kind = el.dataset.nav;
   if(kind === "map"){ openMapScreen(); return; }
+  // '내가 담은 사업'은 본문 이동이 아니라 **화면 전환**이다 (지도로 보기와 같은 방식).
+  if(kind === "saved"){ show("#scr-saved"); renderSaved(); return; }
   if(kind === "near" || kind === "all"){
     e.preventDefault();
     // '우리 동네 사업' 메뉴는 지금 고른 동네에 맞는 범위로 보여준다.
@@ -1852,33 +1886,55 @@ function render(){
     return;
   }
 
-  grid.innerHTML = cut.rows.map(p => `
-    <article class="proj" data-id="${esc(p.id)}">
+  grid.innerHTML = cut.rows.map(p => projCardHtml(p)).join("");
+}
+
+/* 사업 카드 한 장.
+   홈 목록과 '내가 담은 사업' 화면이 **같은 함수**를 쓴다.
+   복사해 두면 한쪽만 고쳐져 두 화면이 서로 다른 것을 보여주게 된다.
+
+   opts.closed = true  … 기한이 지난 사업 (담아 둔 것만 이렇게 들어온다)
+                          흐리게 그리고, 거리·범위 밖 표시처럼 '지금 기준'인 것은 빼고,
+                          지도 단추도 빼 준다 (지도에는 진행 중인 사업만 찍히기 때문). */
+function projCardHtml(p, opts = {}){
+  const closed = !!opts.closed;
+  const saved = isSaved(p.id);
+  const dist = closed ? null : distText(p);
+  return `
+    <article class="proj${closed ? " proj--closed" : ""}" data-id="${esc(p.id)}">
+      <button class="star${saved ? " on" : ""}" type="button" data-save="${esc(p.id)}"
+        aria-pressed="${saved}" aria-label="${saved ? "담은 사업에서 빼기" : "담은 사업에 넣기"}"
+        title="${saved ? "담은 사업에서 빼기" : "담은 사업에 넣기"}">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="m12 3.6 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.7l5.8-.8z"></path></svg>
+      </button>
       <div class="badges">
         <span class="badge ${p.badge} badge--dot">${esc(p.typeLabel)}</span>
         ${locTagHtml(p)}
         ${p.dday !== null
           ? `<span class="badge ${p.dday <= 3 ? "badge--live" : "badge--dday"}">D-${p.dday}</span>`
           : `<span class="badge badge--line">${esc(p.stage)}</span>`}
-        ${p.viewClosed ? `<span class="badge badge--line">공람 종료 · 의견 접수 중</span>` : ``}${outsideBadge(p, homeScope)}
+        ${p.viewClosed && !closed ? `<span class="badge badge--line">공람 종료 · 의견 접수 중</span>` : ``}${closed ? "" : outsideBadge(p, homeScope)}
       </div>
       <p class="ttl">${esc(p.name)}</p>
       <p class="desc">공람기간 ${esc(p.period)}${p.opinionEnd ? `<br><b class="op-end">의견 마감 ${esc(p.opinionEnd)}</b>` : ""}</p>
       <div class="rows">
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg><span>${esc(p.where)}${distText(p) ? " · 우리 집에서 " + esc(distText(p)) : ""}</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg><span>${esc(p.where)}${dist ? " · 우리 집에서 " + esc(dist) : ""}</span></div>
         <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"></path><path d="M15 3v4h4"></path></svg><span>${esc(p.org)} · ${esc(p.stage)}</span></div>
       </div>
       <div class="foot">
         ${p.dday !== null ? `<button class="btn btn--primary btn--sm btn--pill" type="button" data-opinion="${esc(p.id)}">의견 제출</button>` : ``}
         <button class="btn btn--line btn--sm btn--pill" type="button" data-detail="${esc(p.id)}">자세히 보기</button>
-        ${p.lat != null ? `<button class="btn btn--ghost btn--sm btn--pill" type="button" data-onmap="${esc(p.id)}">지도에서 보기</button>` : ``}
+        ${!closed && p.lat != null ? `<button class="btn btn--ghost btn--sm btn--pill" type="button" data-onmap="${esc(p.id)}">지도에서 보기</button>` : ``}
       </div>
-    </article>`).join("");
+    </article>`;
 }
 
 /* 카드/목록/상세 어디서든 같은 버튼이 같게 동작하도록 한 곳에서 처리한다. */
 function bindProjectActions(rootSel, opts = {}){
   $(rootSel).addEventListener("click", e => {
+    // 별표(담기)는 어느 화면에서 눌러도 같게 동작한다.
+    const sv = e.target.closest("[data-save]");
+    if(sv){ toggleSaved(sv.dataset.save); return; }
     const o = e.target.closest("[data-opinion]");
     if(o){
       if(opts.closeModal) closeModal($(opts.closeModal));
@@ -1895,7 +1951,7 @@ function bindProjectActions(rootSel, opts = {}){
     }
     const s = e.target.closest("[data-eiass]");
     if(s){
-      const p = PROJECTS.find(x => String(x.id) === String(s.dataset.eiass));
+      const p = findProject(s.dataset.eiass);
       if(p) openEiassSource(p);
     }
   });
@@ -1989,7 +2045,8 @@ bindPager("#openPager", "#openPerPage", "open", renderOpenList, "#participate");
 
 /* 사업 상세 모달 */
 function openDetail(id){
-  const p = PROJECTS.find(x => String(x.id) === String(id));
+  // 담아 둔 사업은 기한이 지났을 수 있으므로 CLOSED_PROJECTS 까지 찾는다.
+  const p = findProject(id);
   if(!p) return;
   $("#m-detail-t").textContent = p.name;
   $("#detailBody").innerHTML = `
@@ -2003,12 +2060,122 @@ function openDetail(id){
     ${tabsHtml([participationSection(p), segmentsSection(p), eiaSection(p)])}
     <p style="margin-top:18px;display:flex;gap:8px;flex-wrap:wrap">
       ${p.dday !== null ? `<button class="btn btn--primary btn--sm" type="button" data-opinion="${esc(p.id)}">의견 제출</button>` : ""}
-      ${p.lat != null ? `<button class="btn btn--line btn--sm" type="button" data-onmap="${esc(p.id)}">지도에서 보기</button>` : ""}
+      <button class="btn btn--line btn--sm" type="button" data-save="${esc(p.id)}">
+        <span class="save-t">${isSaved(p.id) ? "담은 사업에서 빼기" : "이 사업 담아 두기"}</span>
+      </button>
+      ${p.open && p.lat != null ? `<button class="btn btn--line btn--sm" type="button" data-onmap="${esc(p.id)}">지도에서 보기</button>` : ""}
       ${p.sourceBizCd ? `<button class="btn btn--line btn--sm" type="button" data-eiass="${esc(p.id)}">EIASS 원문 페이지 열기 ↗</button>` : ""}
     </p>`;
   openModal("m-detail");
 }
 bindProjectActions("#detailBody", { closeModal:"#m-detail" });
+
+/* ============================================================
+   내가 담은 사업 (화면 5)
+
+   주민이 별표로 담아 둔 사업만 모아 본다.
+   저장되는 것은 사업 번호뿐이고, 내용은 매번 data/projects.json 에서 다시 읽는다.
+
+   ★ 기한이 지난 사업도 지우지 않는다.
+     일부러 담아 둔 것이 어느 날 말없이 사라지면 담은 사람은 고장으로 여긴다.
+     대신 아래쪽에 흐리게 따로 모으고 '기한이 지난 사업'이라고 밝힌다.
+     환경영향분석은 여기서도 예외가 없다 — eiaSection() 이 공람 기간으로 잠근다.
+   ============================================================ */
+
+/* 담은 목록을 진행 중 / 기한 지남 / 자료 없음 세 갈래로 나눈다. */
+function savedBuckets(){
+  const open = [], closed = [];
+  let missing = 0;
+  SAVED_IDS.forEach(id => {
+    const p = findProject(id);
+    if(!p) { missing++; return; }          // EIASS 목록에서 아예 내려간 사업
+    (p.open ? open : closed).push(p);
+  });
+  // 진행 중은 마감이 급한 것부터. 지켜보려고 담은 목록이라 이게 가장 쓸모 있다.
+  open.sort((a, b) => (a.dday ?? 9999) - (b.dday ?? 9999));
+  // 지난 것은 최근에 끝난 것부터
+  closed.sort((a, b) => String(b.opinionEnd || "").localeCompare(String(a.opinionEnd || "")));
+  return { open, closed, missing };
+}
+
+function renderSaved(){
+  const { open, closed, missing } = savedBuckets();
+  const grid = $("#savedGrid");
+
+  $("#savedHead").textContent = SAVED_IDS.length
+    ? `담아 둔 사업 ${open.length + closed.length}건`
+    : "아직 담아 둔 사업이 없습니다";
+
+  // 이 목록이 기기에 묶여 있다는 것은 반드시 알려야 한다.
+  // 모르면 폰에서 담고 PC에서 열었을 때 "사라졌다"고 생각한다.
+  $("#savedNote").innerHTML = SAVED_IDS.length
+    ? `사업 카드의 <b>별표</b>를 눌러 담은 목록입니다.
+       <b>이 목록은 지금 쓰고 있는 기기(브라우저)에만 저장됩니다</b> — 다른 기기에서는 보이지 않고,
+       브라우저 기록을 지우면 함께 지워집니다.${missing ? `<br>자료가 더 이상 제공되지 않는 사업 ${missing}건은 표시하지 않았습니다.` : ""}`
+    : "";
+
+  grid.innerHTML = open.length
+    ? open.map(p => projCardHtml(p)).join("")
+    : `<div class="proj-empty">
+         <p>${closed.length ? "의견을 낼 수 있는 담은 사업이 없습니다." : "아직 담아 둔 사업이 없습니다."}</p>
+         <p style="margin-top:6px;font-size:var(--fs-body-s)">
+           사업 카드 오른쪽 위의 <b>별표(☆)</b>를 누르면 여기에 모입니다.
+           마감일을 놓치지 않고 지켜보고 싶은 사업을 담아 두세요.</p>
+         <div class="proj-empty-btns">
+           <button class="btn btn--primary btn--sm btn--pill" type="button" id="btnSavedGoHome">사업 목록 보러 가기</button>
+         </div>
+       </div>`;
+  const go = $("#btnSavedGoHome");
+  if(go) go.addEventListener("click", () => {
+    show("#scr-home");
+    $("#projects").scrollIntoView({ behavior:"smooth", block:"start" });
+  });
+
+  $("#savedClosedWrap").hidden = !closed.length;
+  $("#savedClosedGrid").innerHTML = closed.map(p => projCardHtml(p, { closed:true })).join("");
+}
+bindProjectActions("#savedGrid");
+bindProjectActions("#savedClosedGrid");
+
+/* 담기 상태가 바뀌면 화면 곳곳의 별표와 머리쪽 숫자를 함께 맞춘다.
+   목록을 통째로 다시 그리지 않는 이유는 보고 있던 자리를 잃지 않기 위해서다. */
+function syncSavedUi(){
+  $$("[data-save]").forEach(b => {
+    const on = isSaved(b.dataset.save);
+    b.classList.toggle("on", on);
+    b.setAttribute("aria-pressed", String(on));
+    const label = on ? "담은 사업에서 빼기" : "담은 사업에 넣기";
+    b.setAttribute("aria-label", label);
+    b.setAttribute("title", label);
+    const t = b.querySelector(".save-t");
+    if(t) t.textContent = on ? "담은 사업에서 빼기" : "이 사업 담아 두기";
+  });
+
+  // 담은 개수는 헤더 메뉴와 목록 줄 두 곳에 같이 나온다 (헤더는 좁은 창에서 숨기 때문)
+  const cnt = $("#savedCount");
+  cnt.textContent = SAVED_IDS.length;
+  cnt.hidden = !SAVED_IDS.length;
+  $("#savedCount2").textContent = SAVED_IDS.length;
+
+  // 담은 사업 화면을 보고 있는 중이면 목록도 다시 그린다 (별표를 빼면 그 자리에서 빠져야 한다)
+  if($("#scr-saved").classList.contains("on")) renderSaved();
+}
+
+$("#btn-saved-back").addEventListener("click", () => show("#scr-home"));
+
+$("#btn-saved-clear-closed").addEventListener("click", () => {
+  const { closed } = savedBuckets();
+  if(!closed.length) return;
+  if(!confirm(`기한이 지난 사업 ${closed.length}건을 담은 목록에서 비울까요?`)) return;
+  // 자료에서 사라진 번호도 이참에 함께 정리한다
+  SAVED_IDS = SAVED_IDS.filter(id => {
+    const p = findProject(id);
+    return p && p.open;
+  });
+  lsSet(LSSAVED, SAVED_IDS);
+  syncSavedUi();
+  renderSaved();
+});
 
 $$("[data-filter]").forEach(c => c.addEventListener("click", () => {
   $$("[data-filter]").forEach(x => x.classList.remove("on"));
@@ -2397,6 +2564,11 @@ function renderGisDetail(){
     ${p.dday !== null ? `
       <button class="btn btn--primary btn--sm btn--block" type="button"
               data-opinion="${esc(p.id)}" style="margin-top:16px">의견 제출하기</button>` : ""}
+    <!-- 지도를 보다 발견한 사업도 그 자리에서 담을 수 있게 한다 -->
+    <button class="btn btn--line btn--sm btn--block" type="button"
+            data-save="${esc(p.id)}" style="margin-top:8px">
+      <span class="save-t">${isSaved(p.id) ? "담은 사업에서 빼기" : "이 사업 담아 두기"}</span>
+    </button>
     ${tabsHtml([participationSection(p), segmentsSection(p), eiaSection(p)])}
     ${p.sourceBizCd ? `
       <button class="eiass-link" type="button" data-eiass="${esc(p.id)}">

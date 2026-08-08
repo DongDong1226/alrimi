@@ -918,6 +918,65 @@ select:disabled{opacity:.5;cursor:not-allowed}
   .onb .en{display:none}
 }
 
+/* ============================================================
+   내가 담은 사업 (화면 5) + 카드의 별표
+
+   색·모서리는 tokens.css 변수만 쓴다. 새 값을 만들지 않는다.
+   ============================================================ */
+
+/* ---------- 헤더 메뉴의 담은 개수 ---------- */
+.gnb-cnt{display:inline-flex;align-items:center;justify-content:center;
+  min-width:19px;height:19px;margin-left:6px;padding:0 5px;
+  background:var(--primary);color:#fff;border-radius:var(--r-pill);
+  font-size:var(--fs-body-xs);font-weight:700;line-height:1}
+
+/* 목록 줄의 '담은 사업' 입구 — 정렬 단추와 같은 모양을 쓰되 별표 색만 다르다 */
+.sort-btn--saved{margin-left:0}
+.sort-btn--saved svg{color:var(--warn)}
+.sort-btn--saved .cnt{margin-left:2px}
+
+/* ---------- 카드의 별표 ----------
+   카드 오른쪽 위 모서리에 얹는다. 담기 전에는 테두리만 있는 빈 별,
+   담고 나면 채워진 별이다. 색깔만으로 구분하지 않도록 모양도 함께 바뀐다. */
+.proj{position:relative}
+.proj .badges{padding-right:36px}       /* 뱃지가 별표 밑으로 들어가지 않게 */
+.star{position:absolute;top:12px;right:12px;width:34px;height:34px;
+  display:inline-flex;align-items:center;justify-content:center;
+  background:none;border:0;border-radius:var(--r-pill);
+  color:var(--ink-4);fill:none;cursor:pointer;transition:.16s var(--ease)}
+.star svg{width:21px;height:21px}
+.star:hover{background:var(--primary-tint);color:var(--primary)}
+.star.on{color:var(--warn);fill:var(--warn)}
+.star.on:hover{background:var(--bg-1)}
+.star:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+
+/* 상세 모달의 담기 단추도 담긴 상태를 색으로 알려 준다 */
+.btn.star-on,.btn[data-save].on{border-color:var(--warn);color:var(--warn)}
+
+/* ---------- 화면 5 ---------- */
+#scr-saved.on{display:flex;flex-direction:column;height:100vh;height:100dvh;overflow:hidden}
+.saved-body{flex:1;min-height:0;overflow-y:auto;background:var(--bg-1);
+  padding:34px 0 64px}
+.saved-note{margin-top:10px;max-width:760px;
+  font-size:var(--fs-body-s);line-height:1.65;color:var(--ink-3)}
+.saved-note b{color:var(--ink-2)}
+
+/* 기한이 지난 사업 묶음 — 진행 중인 것과 섞이지 않게 선으로 끊는다 */
+.saved-div{display:flex;align-items:center;justify-content:space-between;gap:16px;
+  flex-wrap:wrap;margin-top:44px;padding-top:24px;border-top:1px solid var(--line-2)}
+.saved-div-t{font-size:var(--fs-h-s);font-weight:700;color:var(--ink-2)}
+.saved-div-h{margin:6px 0 18px;font-size:var(--fs-body-s);color:var(--ink-3)}
+
+/* 마감된 카드는 흐리게. 지우지 않고 남기되 진행 중인 것과 확실히 구분한다 */
+.proj--closed{background:var(--bg-2);border-style:dashed}
+.proj--closed .ttl,.proj--closed .desc,.proj--closed .rows{opacity:.62}
+.proj--closed:hover{transform:none;box-shadow:none;border-color:var(--line-2)}
+
+@media (max-width:820px){
+  .saved-body{padding:22px 0 48px}
+  .saved-div{margin-top:32px}
+}
+
 @media (prefers-reduced-motion:reduce){
   *{transition:none!important;animation:none!important;scroll-behavior:auto!important}
   .reveal{opacity:1;transform:none}
