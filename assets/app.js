@@ -18,6 +18,7 @@ const DEFAULTS = {
   dataPath: "data/projects.json",
   regionPath: "data/regions.json",
   routePath: "data/routes.json",
+  sidoPath: "data/sido.json",      // 시·도 경계 (미리 단순화해 둔 것)
   radiusKm: 5,
   showDemoBanner: true,
   org: "기후에너지환경부 국립환경과학원",
@@ -653,13 +654,58 @@ async function fetchBoundary(layer, like){
   return (fc && fc.features) || [];
 }
 
+/* 시·도 경계는 `data/sido.json` 에서 읽는다.
+   VWorld 원본은 시·도 하나가 1~3MB(경기도 79,576점)라 화면에서 매번 받을 수 없다.
+   `tools/build_boundaries.py` 가 미리 200m 로 단순화해 둔 것을 쓴다 (전체 367KB).
+
+   **처음 필요할 때 한 번만 받는다.** 시·도를 안 고르는 사람은 아예 받지 않는다.
+   못 받아도 경계만 안 그려질 뿐 화면은 그대로 동작한다. */
+let SIDO_GEOMS = null;      // null = 아직 안 받음, {} = 받으려다 실패
+let sidoLoading = null;
+
+async function sidoBoundary(sido){
+  if(!SIDO_GEOMS){
+    if(!sidoLoading){
+      sidoLoading = fetch(S.sidoPath, { cache:"force-cache" })
+        .then(r => r.ok ? r.json() : null)
+        .then(j => { SIDO_GEOMS = (j && j.sido) || {}; })
+        .catch(() => { SIDO_GEOMS = {}; });
+    }
+    await sidoLoading;
+  }
+  // regions.json 과 이름이 다르게 적힌 경우까지 본다 (전남광주통합특별시 / 전라남도 등)
+  for(const n of sidoNames(sido)){
+    if(SIDO_GEOMS[n]) return SIDO_GEOMS[n];
+  }
+  return null;
+}
+
 async function loadHoodBoundary(){
   const seq = ++boundarySeq;
   const prev = HOOD_BOUNDARY;
   HOOD_BOUNDARY = null;
 
   const dong = hoodDong(currentHood), sgg = hoodSgg(currentHood);
-  if(!S.vworldKey || isNation(currentHood) || (!dong && !sgg)){
+  if(isNation(currentHood)){
+    if(prev) afterBoundary();
+    return;
+  }
+
+  // 시·도만 골랐으면 미리 만들어 둔 파일에서 꺼낸다 (VWorld 를 부르지 않는다).
+  // 원본은 너무 커서(경기도 3.2MB) 화면에서 매번 받을 수 없다 — tools/build_boundaries.py 참고.
+  if(!dong && !sgg){
+    const geom = await sidoBoundary(currentHood.sido);
+    if(seq !== boundarySeq) return;
+    if(geom){
+      HOOD_BOUNDARY = {
+        name: currentHood.sido, level:"sido", geom, bbox: geomBbox(geom)
+      };
+    }
+    afterBoundary();
+    return;
+  }
+
+  if(!S.vworldKey){
     if(prev) afterBoundary();
     return;
   }
@@ -2142,14 +2188,17 @@ const BOUND_STYLE = {
 };
 let boundLayer = null, miniBoundLayer = null;
 
-/* 반경 원을 그릴 것인가.
-   **경계가 있으면 그리지 않는다.** 경계선이 "여기까지가 우리 동네"를 정확히 보여주는데
-   그 위에 큰 점선 원까지 겹치면, 원이 화면을 덮어 정작 동네가 작은 얼룩처럼 보인다
-   (인천 주안동에서 실제로 그랬다 — 5km 원이 화면을 채우고 동네는 손톱만 했다).
-   범위가 반경인지는 목록 머리글("○○ 반경 5km · N건")이 이미 알려 준다.
-   경계를 못 받았을 때(시·도만 골랐거나 키 없음)는 원이 유일한 단서라 그대로 그린다. */
-function showRadiusCircle(){
-  return !isNation(currentHood) && !HOOD_BOUNDARY;
+/* 반경 원을 그릴 것인가 — **지금 고른 범위가 '반경'일 때만 그린다.**
+
+   원은 "지금 무엇으로 거르고 있는지"를 보여주는 표시다. 그래서 범위에 따라간다:
+     반경(near)  → 그린다. 5km 가 어디까지인지 눈으로 봐야 한다
+     동네 안·전국 → 안 그린다. 그때는 원이 거르는 기준이 아닌데, 큰 점선 원이
+                    화면을 덮어 정작 동네 경계가 작은 얼룩처럼 보인다(주안동에서 겪음)
+
+   ※ 한때 '경계가 있으면 무조건 숨김'으로 만들었다가 되돌렸다 —
+     반경을 직접 골라도 원이 안 나와서 5km 가 얼마인지 알 수 없었다. */
+function showRadiusCircle(scope){
+  return !isNation(currentHood) && scope === "near";
 }
 
 function drawBoundary(){
@@ -2182,7 +2231,7 @@ function renderGisMarkers(fit = true){
     gisHomeMarker = L.marker([HOME.lat, HOME.lon], { icon:markerIcon("home"), zIndexOffset:1000 })
       .addTo(gisMap).bindTooltip(HOME.label || "우리 집");
     nameMarker(gisHomeMarker, `우리 집 · ${HOME.label || "기준 위치"}`);
-    if(showRadiusCircle()){
+    if(showRadiusCircle(mapScope)){
       gisCircle = L.circle([HOME.lat, HOME.lon], {
         radius: S.radiusKm * 1000, color:"#1c47d4", weight:1.4,
         dashArray:"5 5", fillColor:"#1c47d4", fillOpacity:.05
@@ -2626,8 +2675,8 @@ function renderMiniMap(){
   if(!nation){
     miniLayers.push(L.marker([HOME.lat, HOME.lon],
       { icon:markerIcon("home"), keyboard:false }).addTo(miniMap));
-    // 경계가 있으면 반경 원은 그리지 않는다 (showRadiusCircle 설명 참고)
-    if(showRadiusCircle()){
+    // 홈 화면 미니 지도는 홈 화면의 범위를 따라간다 (showRadiusCircle 설명 참고)
+    if(showRadiusCircle(homeScope)){
       miniLayers.push(L.circle([HOME.lat, HOME.lon], {
         radius: S.radiusKm * 1000, color:"#1c47d4", weight:1.4,
         dashArray:"5 5", fillColor:"#1c47d4", fillOpacity:.06

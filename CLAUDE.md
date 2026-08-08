@@ -90,9 +90,11 @@ assets/texts.js                이용안내·문의 본문. 두 화면이 함께
 assets/config.js               배포 때 VWorld 키가 채워지는 자리 (빈 채로 커밋)
 data/projects.json             수집 결과 (git 포함 — 배포 사이트가 이 파일을 읽는다)
 data/regions.json              전국 행정구역 목록 (git 포함 — 자주 안 바뀜)
+data/sido.json                 시·도 경계 도형, 미리 단순화 (git 포함, 367KB — 자주 안 바뀜)
 data/routes.json               관리자가 직접 그린 노선 (git 포함, 없어도 정상)
 tools/build_data.py            EIASS 수집 → projects.json 생성
 tools/build_regions.py         VWorld → regions.json 생성
+tools/build_boundaries.py      VWorld → sido.json 생성 (행정구역 개편 때만 다시 돌린다)
 tools/run_daily.bat            손으로 급히 수집할 때 (반드시 CRLF). 평소 수집은 collect.yml 이 한다
 .github/workflows/deploy.yml   푸시하면 사이트 배포. 이때만 VWorld 키를 심는다
 .github/workflows/collect.yml  매일 07시·13시(한국) 자동 수집 → 커밋 → 배포
@@ -282,6 +284,7 @@ python tools/build_data.py            # 전체 (이미 받아 둔 사업은 재�
 python tools/build_data.py --limit 5  # 유형별 5건만 (테스트)
 python tools/build_data.py --full     # 캐시 무시하고 전부 다시 받기
 python tools/build_regions.py         # 행정구역 목록 (한 번만)
+python tools/build_boundaries.py      # 시·도 경계 도형 (한 번만)
 ```
 
 옵션: `--skip-geocode`, `--skip-summary`, `--skip-route`, `--max-pages`, `--delay`, `--full`
@@ -525,15 +528,21 @@ Leaflet이 `fitBounds`로 그 아래를 계산해도 6에서 멈춰 준다.
 (`HOOD_BOUNDARY`, `drawBoundary()`). 반경 원보다 "우리 동네"에 훨씬 잘 맞는다.
 미니 지도는 경계가 있으면 반경 원 대신 **경계에 맞춰** 축척을 잡는다.
 
-**★ 경계가 있으면 반경 원은 그리지 않는다** (`showRadiusCircle()`).
-경계선이 "여기까지가 우리 동네"를 정확히 보여주는데 그 위에 큰 점선 원까지 겹치면,
-원이 화면을 덮어 정작 동네가 작은 얼룩처럼 보인다(인천 주안동에서 실제로 그랬다).
-지금 범위가 반경인지는 목록 머리글("○○ 반경 5km · N건")이 이미 알려 준다.
-경계를 못 받았을 때는 원이 유일한 단서라 그대로 그린다.
+**★ 반경 원은 `범위 = 반경`일 때만 그린다** (`showRadiusCircle(scope)`).
+원은 "지금 무엇으로 거르는지"를 보여주는 표시라 범위를 따라간다 —
+`near`면 그리고, `region`·`all`이면 안 그린다.
+`region`에서 원을 그리면 큰 점선 원이 화면을 덮어 정작 동네 경계가 얼룩처럼 보인다(주안동에서 겪음).
 
-- 시·도만 골랐거나 전국이면 경계를 받지 않는다.
-  **시·도를 안 받는 이유는 크기다** — 실측 경기도 3.2MB / 좌표 79,576점, 인천 1.4MB.
-  (200m로 단순화하면 103KB까지 줄어든다. 하려면 `data/`에 미리 만들어 두는 방식이어야 한다)
+> 한때 **'경계가 있으면 무조건 숨김'**으로 만들었다가 되돌렸다 —
+> 반경을 직접 골라도 원이 안 나와서 5km가 얼마인지 알 수 없었다. 기준은 **범위**지 경계가 아니다.
+
+- **읍·면·동 / 시·군·구**는 VWorld를 그때그때 부른다 (9KB / 84KB로 작다)
+- **시·도는 `data/sido.json`에서 읽는다.** VWorld 원본이 너무 커서다 —
+  실측 경기도 3.2MB·좌표 79,576점, 전남광주 272,761점.
+  `tools/build_boundaries.py`가 미리 200m로 단순화해 둔다 (**전체 16개 367KB**, 원본의 2.2%).
+  화면은 시·도를 처음 고를 때 한 번만 받고, 안 고르면 아예 안 받는다.
+  **VWorld 키가 없어도 나온다** (파일에서 읽으므로). 단 지도 타일은 여전히 키가 필요하다.
+- 전국이면 경계를 받지 않는다
 - 경계를 못 받아도(키 없음·거부·시간초과) 화면은 그대로 동작한다. **경계는 덤이다**
 - 늦게 도착한 옛 응답이 새 것을 덮지 않게 `boundarySeq`로 순번을 확인한다
 - 점이 경계 안인지는 교차 횟수 세기(`ptInBoundary`)로 본다. 구멍(호수 등)도 처리하고,
