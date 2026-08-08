@@ -288,7 +288,12 @@ body.m #gisDetail{padding:16px 16px 22px}
    align-items 만 flex-end 로 바꾸면 그 여백이 남아서, **바닥에서 24px 떠 있고
    좌우로도 24px 들어간 상자**가 된다. 아래 모서리는 각져 있으므로(위만 둥글다)
    화면이 잘린 것처럼 보인다 — 2026-08-07에 실제로 그렇게 보였다. */
-body.m .modal{align-items:flex-end;padding:0}
+/* ★ z-index 도 올려야 한다.
+   app.css 의 .modal 은 400 인데, 휴대폰 화면에는 그보다 위에 그려지는 것이 둘 있다 —
+   아래쪽 탭 막대(.m-tabs, 900)와 지도 목록 시트(.m-sheet, 600).
+   그대로 두면 모달 맨 아래의 **주 버튼("이 동네로 보기")이 탭 막대에 가려 잘린다.**
+   2026-08-07 에 실제로 그렇게 보였다. */
+body.m .modal{align-items:flex-end;padding:0;z-index:1000}
 body.m .modal-box{width:100%;max-width:none;max-height:92dvh;
   border-radius:var(--r-lg) var(--r-lg) 0 0}
 body.m .modal-hd{position:sticky;top:0;background:#fff;z-index:2}

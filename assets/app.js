@@ -2142,6 +2142,16 @@ const BOUND_STYLE = {
 };
 let boundLayer = null, miniBoundLayer = null;
 
+/* 반경 원을 그릴 것인가.
+   **경계가 있으면 그리지 않는다.** 경계선이 "여기까지가 우리 동네"를 정확히 보여주는데
+   그 위에 큰 점선 원까지 겹치면, 원이 화면을 덮어 정작 동네가 작은 얼룩처럼 보인다
+   (인천 주안동에서 실제로 그랬다 — 5km 원이 화면을 채우고 동네는 손톱만 했다).
+   범위가 반경인지는 목록 머리글("○○ 반경 5km · N건")이 이미 알려 준다.
+   경계를 못 받았을 때(시·도만 골랐거나 키 없음)는 원이 유일한 단서라 그대로 그린다. */
+function showRadiusCircle(){
+  return !isNation(currentHood) && !HOOD_BOUNDARY;
+}
+
 function drawBoundary(){
   if(gisMap){
     if(boundLayer){ gisMap.removeLayer(boundLayer); boundLayer = null; }
@@ -2172,10 +2182,12 @@ function renderGisMarkers(fit = true){
     gisHomeMarker = L.marker([HOME.lat, HOME.lon], { icon:markerIcon("home"), zIndexOffset:1000 })
       .addTo(gisMap).bindTooltip(HOME.label || "우리 집");
     nameMarker(gisHomeMarker, `우리 집 · ${HOME.label || "기준 위치"}`);
-    gisCircle = L.circle([HOME.lat, HOME.lon], {
-      radius: S.radiusKm * 1000, color:"#1c47d4", weight:1.4,
-      dashArray:"5 5", fillColor:"#1c47d4", fillOpacity:.05
-    }).addTo(gisMap);
+    if(showRadiusCircle()){
+      gisCircle = L.circle([HOME.lat, HOME.lon], {
+        radius: S.radiusKm * 1000, color:"#1c47d4", weight:1.4,
+        dashArray:"5 5", fillColor:"#1c47d4", fillOpacity:.05
+      }).addTo(gisMap);
+    }
   }
 
   drawBoundary();
@@ -2195,20 +2207,35 @@ function renderGisMarkers(fit = true){
 }
 
 /* 지도를 어디에 맞출지.
-   '동네 안'을 보는 중에 경계가 있으면 **경계에 맞춘다.**
-   노선이 우리 동네를 스치는 사업은 대표 주소가 수십 km 떨어져 있을 수 있는데,
-   그것까지 다 담으면 정작 우리 동네가 화면 구석에 찌그러진다 (실제로 그랬다 —
-   인천 경서동을 보는데 파주 주소 마커까지 담느라 경서동이 왼쪽 아래 구석에 몰렸다). */
+
+   ★ **사업 마커까지 다 담으려 하면 안 된다.**
+     노선이 우리 동네를 스치는 사업은 대표 주소가 수십 km 떨어져 있을 수 있다.
+     그 마커까지 담으면 축척이 확 벌어져서 **우리 집이 화면 구석으로 밀린다.**
+     (실제로 두 번 겪었다 — 인천 경서동에서 파주 주소 마커 때문에 동네가 구석에 몰렸고,
+      검단구 원당동에서도 우리 집이 왼쪽 아래에 치우쳐 찍혔다.)
+
+   그래서 **지금 보고 있는 범위 그 자체**에 맞춘다:
+     동네 안 → 경계에            반경 → 우리 집 ± 반경        전국 → 사업 전체 */
 function fitGisView(rows){
-  if(mapScope === "region" && boundLayer){
+  const nation = isNation(currentHood);
+  const home = [HOME.lat, HOME.lon];
+
+  if(!nation && mapScope === "region" && boundLayer){
     const b = boundLayer.getBounds();
-    if(!isNation(currentHood)) b.extend([HOME.lat, HOME.lon]);
+    b.extend(home);
     gisMap.fitBounds(b, { padding:[40, 40] });
     return;
   }
-  // 동네를 안 정했으면 기준점이 없다. 사업들만 보고 맞춘다.
+  if(!nation && mapScope === "near"){
+    // 우리 집이 한가운데 오도록 반경만큼만 잡는다. 경계가 있으면 그것까지 담는다.
+    const b = L.latLng(HOME.lat, HOME.lon).toBounds(S.radiusKm * 2000);
+    if(boundLayer) b.extend(boundLayer.getBounds());
+    gisMap.fitBounds(b, { padding:[30, 30] });
+    return;
+  }
+  // 전국을 보는 중 — 사업들이 다 들어오게. 동네를 정했으면 우리 집도 함께.
   const pts = rows.map(p => [p.lat, p.lon]);
-  if(!isNation(currentHood)) pts.unshift([HOME.lat, HOME.lon]);
+  if(!nation) pts.unshift(home);
   if(pts.length > 1) gisMap.fitBounds(pts, { padding:[50, 50] });
   else if(pts.length === 1) gisMap.setView(pts[0], 13);
   else gisMap.setView(KOREA_CENTER, 7);
@@ -2599,10 +2626,13 @@ function renderMiniMap(){
   if(!nation){
     miniLayers.push(L.marker([HOME.lat, HOME.lon],
       { icon:markerIcon("home"), keyboard:false }).addTo(miniMap));
-    miniLayers.push(L.circle([HOME.lat, HOME.lon], {
-      radius: S.radiusKm * 1000, color:"#1c47d4", weight:1.4,
-      dashArray:"5 5", fillColor:"#1c47d4", fillOpacity:.06
-    }).addTo(miniMap));
+    // 경계가 있으면 반경 원은 그리지 않는다 (showRadiusCircle 설명 참고)
+    if(showRadiusCircle()){
+      miniLayers.push(L.circle([HOME.lat, HOME.lon], {
+        radius: S.radiusKm * 1000, color:"#1c47d4", weight:1.4,
+        dashArray:"5 5", fillColor:"#1c47d4", fillOpacity:.06
+      }).addTo(miniMap));
+    }
   }
 
   // 동네 경계는 다른 표시보다 아래에 깔린다.
