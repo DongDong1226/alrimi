@@ -940,14 +940,19 @@ select:disabled{opacity:.5;cursor:not-allowed}
    담고 나면 채워진 별이다. 색깔만으로 구분하지 않도록 모양도 함께 바뀐다. */
 .proj{position:relative}
 .proj .badges{padding-right:36px}       /* 뱃지가 별표 밑으로 들어가지 않게 */
+/* ★ 별표에 바탕·테두리를 둘러 단추처럼 보이게 했다가 **되돌렸다** (2026-08-08).
+     동그라미가 별을 가둬서 카드가 무거워 보였다 — 카드가 6장 깔리면 동그라미도 6개다.
+     대신 평소에는 별 모양만 두고, **마우스를 올릴 때만** 바탕이 뜨게 한다.
+     깔끔함과 '눌러진다'는 신호를 둘 다 가져가려는 것이다.
+     선 색은 --ink-4 보다 한 단계 진한 --ink-3 을 쓴다 (옅으면 안 보인다). */
 .star{position:absolute;top:12px;right:12px;width:34px;height:34px;
   display:inline-flex;align-items:center;justify-content:center;
   background:none;border:0;border-radius:var(--r-pill);
-  color:var(--ink-4);fill:none;cursor:pointer;transition:.16s var(--ease)}
-.star svg{width:21px;height:21px}
-.star:hover{background:var(--primary-tint);color:var(--primary)}
+  color:var(--ink-3);fill:none;cursor:pointer;transition:.16s var(--ease)}
+.star svg{width:20px;height:20px}
+.star:hover{background:var(--primary-soft);color:var(--primary)}
 .star.on{color:var(--warn);fill:var(--warn)}
-.star.on:hover{background:var(--bg-1)}
+.star.on:hover{background:var(--bg-1);color:var(--warn)}
 .star:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
 
 /* 상세 모달의 담기 단추도 담긴 상태를 색으로 알려 준다 */
@@ -971,6 +976,11 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .proj--closed{background:var(--bg-2);border-style:dashed}
 .proj--closed .ttl,.proj--closed .desc,.proj--closed .rows{opacity:.62}
 .proj--closed:hover{transform:none;box-shadow:none;border-color:var(--line-2)}
+/* 카드를 흐리게 해 놓고 별표만 원래 밝기로 두면 **별표가 제일 먼저 눈에 띈다.**
+   지난 사업에서 가장 중요한 것은 '끝났다'는 사실이지 별표가 아니다.
+   단 빼는 것은 되어야 하므로 지우지 않고 낮추기만 한다 (올리면 다시 또렷해진다). */
+.proj--closed .star{opacity:.55}
+.proj--closed .star:hover,.proj--closed .star:focus-visible{opacity:1}
 
 @media (max-width:820px){
   .saved-body{padding:22px 0 48px}

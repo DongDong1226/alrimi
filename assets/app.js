@@ -1905,7 +1905,7 @@ function projCardHtml(p, opts = {}){
       <button class="star${saved ? " on" : ""}" type="button" data-save="${esc(p.id)}"
         aria-pressed="${saved}" aria-label="${saved ? "담은 사업에서 빼기" : "담은 사업에 넣기"}"
         title="${saved ? "담은 사업에서 빼기" : "담은 사업에 넣기"}">
-        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="m12 3.6 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.7l5.8-.8z"></path></svg>
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 3.6 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.7l5.8-.8z"></path></svg>
       </button>
       <div class="badges">
         <span class="badge ${p.badge} badge--dot">${esc(p.typeLabel)}</span>
@@ -2114,11 +2114,13 @@ function renderSaved(){
        브라우저 기록을 지우면 함께 지워집니다.${missing ? `<br>자료가 더 이상 제공되지 않는 사업 ${missing}건은 표시하지 않았습니다.` : ""}`
     : "";
 
+  // 큰 제목이 이미 "아직 담아 둔 사업이 없습니다"라고 말하고 있으므로
+  // 여기서 같은 문장을 되풀이하지 않는다. 상자는 **어떻게 담는지**만 알려 준다.
   grid.innerHTML = open.length
     ? open.map(p => projCardHtml(p)).join("")
     : `<div class="proj-empty">
-         <p>${closed.length ? "의견을 낼 수 있는 담은 사업이 없습니다." : "아직 담아 둔 사업이 없습니다."}</p>
-         <p style="margin-top:6px;font-size:var(--fs-body-s)">
+         ${closed.length ? `<p>의견을 낼 수 있는 사업은 없고, 기한이 지난 사업만 담겨 있습니다.</p>` : ""}
+         <p${closed.length ? ` style="margin-top:6px;font-size:var(--fs-body-s)"` : ""}>
            사업 카드 오른쪽 위의 <b>별표(☆)</b>를 누르면 여기에 모입니다.
            마감일을 놓치지 않고 지켜보고 싶은 사업을 담아 두세요.</p>
          <div class="proj-empty-btns">
