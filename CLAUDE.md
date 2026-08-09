@@ -11,9 +11,16 @@
 - 배포: https://dongdong1226.github.io/alrimi/ — 푸시하면 자동으로 다시 올라간다.
 
 > **작업을 시작하기 전에 `docs/HANDOFF.md`를 읽는다.**
-> 이 문서(CLAUDE.md)는 *바뀌지 않는 규칙과 구조*를 담고,
-> `docs/HANDOFF.md`는 *지금 어디까지 왔고 다음에 뭘 할지*를 담는다.
-> 작업이 한 단계 끝나면 HANDOFF.md를 갱신한다.
+>
+> | 문서 | 무엇이 있나 | 언제 읽나 |
+> |---|---|---|
+> | `CLAUDE.md` (이 문서) | 바뀌지 않는 **규칙과 구조** | 자동으로 들어온다 |
+> | `docs/HANDOFF.md` | **지금 어디까지 왔고 다음에 뭘 할지** | **작업 시작할 때 항상** |
+> | `docs/HISTORY.md` | **왜 그렇게 결정했나 · 날짜별 작업 기록** | 결정을 뒤집으려 할 때만 |
+>
+> 작업이 한 단계 끝나면 `HANDOFF.md`를 갱신한다.
+> **지나간 기록은 `HISTORY.md`로 옮긴다** — HANDOFF.md가 길어지면 한 번에 안 읽혀서
+> 정작 다음에 할 일을 놓친다 (2026-08-09에 840줄까지 자라 실제로 잘렸다).
 
 ---
 
@@ -101,6 +108,8 @@ tools/run_daily.bat            손으로 급히 수집할 때 (반드시 CRLF). 
 .gitattributes                 *.bat 를 CRLF 로 고정
 requirements.txt               파이썬 패키지 목록
 .env                           API 키 (git 제외). .env.example 참고
+docs/HANDOFF.md                지금 상태와 다음에 할 일 (작업 시작 전에 읽는다)
+docs/HISTORY.md                왜 그렇게 결정했나 + 날짜별 기록 (필요할 때만)
 docs/SETUP.md                  배포 설정 설명서 (처음 한 번 따라 하는 것)
 docs/reference/                최초 화면 시안과 EIASS 원본 CSS
 ```
