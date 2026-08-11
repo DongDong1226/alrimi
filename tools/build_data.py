@@ -121,6 +121,96 @@ def _make_session():
 
 SESSION = _make_session()
 
+
+# ── EIASS 중계 (선택) ────────────────────────────────────────────────
+# GitHub 러너에서는 EIASS 접속이 6번 중 1번만 됐다. 서울에서는 13번 중 13번 됐다.
+# 그래서 **EIASS 로 가는 요청만** 서울에 둔 중계(Supabase Edge Function)에 대신 시킨다.
+# 중계 함수 원본은 tools/relay/index.ts 에 있다.
+#
+# ★ EIASS_RELAY_URL 이 없으면 아무 일도 일어나지 않는다 — 지금까지처럼 직접 간다.
+#   한국 PC(run_daily.bat)는 직접 가는 게 빠르고 확실하므로 그대로 두면 된다.
+#   VWorld·Anthropic 은 중계를 타지 않는다 (주소가 EIASS 일 때만 갈아끼우므로).
+RELAY_URL = (os.environ.get("EIASS_RELAY_URL") or "").strip()
+RELAY_KEY = (os.environ.get("EIASS_RELAY_KEY") or "").strip()
+# 중계는 '부르는 사람과 가까운 곳'에서 도는 게 기본이라, 서울을 명시하지 않으면
+# GitHub(미국)이 부를 때 미국에서 돌아 버려서 아무 의미가 없다.
+RELAY_REGION = os.environ.get("EIASS_RELAY_REGION", "ap-northeast-2").strip()
+
+
+class _RelayAdapter:
+    """EIASS 요청을 서울 중계에 대신 시키는 통로.
+
+    requests 는 주소 앞부분으로 통로를 나눠 쓸 수 있어서, 이것을 EIASS 주소에만
+    붙이면 **부르는 코드는 한 줄도 바꾸지 않아도 된다.**
+    돌려주는 것도 진짜 requests 응답 객체라 .text / .content / .raise_for_status()
+    가 그대로 동작한다.
+    """
+
+    def __init__(self, relay_url, relay_key):
+        self.relay_url = relay_url
+        self.relay_key = relay_key
+        # 중계까지 가는 길에도 재시도를 붙인다 (Supabase 가 잠깐 느릴 수 있다)
+        self.session = _make_session()
+
+    # requests 가 통로에 요구하는 것들
+    def send(self, request, stream=False, timeout=None, verify=True, cert=None, proxies=None):
+        body = request.body
+        if isinstance(body, str):
+            body = body.encode("utf-8")
+
+        headers = {
+            "x-relay-key": self.relay_key,
+            "x-relay-url": request.url,
+            "x-relay-method": request.method,
+            "x-relay-ua": request.headers.get("User-Agent", ""),
+            "x-region": RELAY_REGION,          # ★ 이게 없으면 미국에서 돈다
+        }
+        if body:
+            headers["Content-Type"] = request.headers.get(
+                "Content-Type", "application/x-www-form-urlencoded")
+        cookie = request.headers.get("Cookie")
+        if cookie:
+            headers["x-relay-cookie"] = cookie
+
+        r = self.session.post(self.relay_url, data=body, headers=headers,
+                              timeout=timeout or 120)
+
+        # 중계 자체가 거절한 경우(키·주소·EIASS 실패)는 원인을 그대로 알려 준다.
+        # 헤더에는 짧은 아스키 코드만 오고 **한글 까닭은 본문에** 있다
+        # (HTTP 헤더에는 한글을 넣을 수 없다 — 중계 쪽에 같은 설명이 있다).
+        if "x-upstream-status" not in r.headers:
+            code = r.headers.get("x-relay-error", "")
+            why = (r.text or "").strip()[:300] or code or "(까닭 없음)"
+            raise requests.exceptions.RequestException(
+                f"[중계 실패 {r.status_code}{'/' + code if code else ''}] {why}")
+
+        resp = requests.Response()
+        resp.status_code = int(r.headers["x-upstream-status"])
+        resp._content = r.content
+        resp.url = request.url
+        resp.request = request
+        resp.reason = ""
+        ctype = r.headers.get("x-upstream-content-type", "")
+        resp.headers = requests.structures.CaseInsensitiveDict()
+        if ctype:
+            resp.headers["Content-Type"] = ctype
+        packed = r.headers.get("x-upstream-cookies")
+        if packed:
+            try:
+                import base64
+                for c in json.loads(base64.b64decode(packed).decode("utf-8")):
+                    resp.headers["Set-Cookie"] = c      # 마지막 것만 남지만 지금은 쿠키를 안 쓴다
+            except Exception:
+                pass
+        return resp
+
+    def close(self):
+        self.session.close()
+
+
+
+# 실제로 통로를 갈아끼우는 것은 log() 가 만들어진 뒤에 한다 (아래 setup_relay).
+
 # 전략환경영향평가 / 환경영향평가 — 목록·상세 URL과 검색엔진 파라미터가 유형별로 다르다.
 CATEGORIES = {
     "strat": {
@@ -150,6 +240,24 @@ def log(msg):
     except UnicodeEncodeError:
         enc = sys.stdout.encoding or "utf-8"
         print(msg.encode(enc, errors="replace").decode(enc, errors="replace"), flush=True)
+
+
+def setup_relay():
+    """EIASS 요청만 서울 중계로 돌린다. 주소·키가 없으면 아무 일도 하지 않는다.
+
+    log() 가 만들어진 뒤에 불러야 해서 여기에 둔다.
+    """
+    if RELAY_URL and RELAY_KEY:
+        # 주소 앞부분이 더 길게 맞는 통로가 이긴다 → EIASS 만 중계, 나머지는 그대로.
+        SESSION.mount(BASE + "/", _RelayAdapter(RELAY_URL, RELAY_KEY))
+        log(f"[통로] EIASS 는 서울 중계를 거칩니다 ({RELAY_REGION})")
+    elif RELAY_URL or RELAY_KEY:
+        log("[통로] EIASS_RELAY_URL 과 EIASS_RELAY_KEY 는 **둘 다** 있어야 합니다 — 직접 접속으로 갑니다")
+    else:
+        log("[통로] EIASS 직접 접속")
+
+
+setup_relay()
 
 
 # ============================================================

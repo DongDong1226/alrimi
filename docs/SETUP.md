@@ -124,6 +124,8 @@ github.com/DongDong1226/alrimi
 |---|---|
 | `VWORLD_KEY` | 1단계에서 새로 받은 키 |
 | `ANTHROPIC_API_KEY` | `.env` 파일에 있는 것과 같은 값 |
+| `EIASS_RELAY_URL` | 서울 중계 함수 주소 (아래 2-B단계에서 만든다) |
+| `EIASS_RELAY_KEY` | 서울 중계에 쓸 비밀 문자열 (아래 2-B단계) |
 
 > ⚠️ **붙여넣을 때 앞뒤에 공백이나 줄바꿈이 딸려 들어가지 않게 한다.**
 > 공백이 한 칸만 붙어도 VWorld 가 키를 거부하는데, **지도 타일은 멀쩡히 나오고
@@ -147,6 +149,118 @@ VWorld에 같이 보내는데, 등록한 주소와 다르면 `INCORRECT_KEY` 오
 
 > Secrets와 Variables의 차이: Secret은 넣고 나면 다시 못 본다(가려진다).
 > Variable은 비밀이 아닌 값이라 그냥 보인다. 주소는 비밀이 아니니 Variable에 넣는다.
+
+---
+
+## 2-B단계 — 서울 중계를 만든다 (15분) ★ 자동 수집을 켜려면 필요하다
+
+**왜 필요한가.** GitHub 서버(미국)에서는 EIASS 접속이 **6번 중 1번**만 된다.
+차단은 아니다 — 전 세계 20곳 중 17곳에서 정상이고, 같은 서버에서 VWorld(한국)는
+0.43초에 붙는데 EIASS만 시간 초과했다. **EIASS 쪽 문제다.**
+
+그래서 **EIASS로 가는 요청만** 서울에 둔 작은 중계를 거치게 한다.
+2026-08-09 실측: **서울에서 13번 호출 13번 성공**, 7.4MB PDF도 바이트 단위까지 같았다.
+
+> **화면·배포와는 무관하다.** 이걸 안 해도 사이트는 정상이고, 수집만 사람이 하게 된다
+> (`tools/run_daily.bat` 더블클릭). 자동 수집을 켜고 싶을 때만 하면 된다.
+
+### ① Supabase 프로젝트 만들기
+
+1. **supabase.com** → `Start your project` → **GitHub 계정으로 가입**
+2. 조직(Organization) 만들기 — Plan은 **`Free`**
+3. 새 프로젝트:
+
+| 칸 | 값 |
+|---|---|
+| Project name | `alrimi-relay` |
+| Database Password | 자동 생성 후 어딘가 저장 (이 용도로는 안 쓴다) |
+| **Region** | **`Northeast Asia (Seoul)`** |
+
+> ### ⚠️ Region을 틀리면 처음부터 다시다
+> **지역은 만든 뒤에 바꿀 수 없다.** `Tokyo`·`Singapore`와 헷갈리기 쉽다.
+> 서울이 아니면 중계를 두는 의미가 통째로 없어진다.
+
+### ② 함수 배포
+
+1. 왼쪽 메뉴 **`Edge Functions`** → `Deploy a new function` → **`Via Editor`**
+2. 함수 이름을 정한다 (**아무거나 좋다.** 지금 쓰는 것은 `eiass-check`).
+   **주소만 GitHub Secret 과 맞으면 된다.**
+3. 편집기 내용을 **전부 지우고**(`Ctrl+A` → `Delete`)
+   저장소의 **`tools/relay/index.ts`** 내용을 통째로 붙여넣는다
+4. `Deploy function`
+
+> **원본이 저장소에 있는 이유**: Supabase 대시보드 편집기는 **버전 관리가 없다.**
+> 실수로 지우면 복구가 안 되므로 `tools/relay/index.ts` 가 정본이다.
+> 함수를 고칠 일이 있으면 **저장소를 먼저 고치고** 그걸 붙여넣는다.
+
+### ③ 인증 설정 두 가지
+
+**(1) Verify JWT 끄기** — 함수 설정에서 끈다. 대신 아래 `RELAY_KEY`로 막는다.
+
+**(2) `RELAY_KEY` 환경변수 넣기**
+
+가는 길: **`Project Settings` → `Edge Functions` → `Secrets`**
+(주소로 바로 가려면 `https://supabase.com/dashboard/project/<프로젝트ID>/settings/functions`)
+
+`Add new secret`:
+
+| Key | Value |
+|---|---|
+| `RELAY_KEY` | 아무도 못 맞출 긴 문자열 (아래 방법으로 만든다) |
+
+키 만드는 법 — 명령창에 그대로 붙여넣으면 43글자 무작위 문자열이 나온다:
+
+```bash
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
+- **함수를 다시 배포할 필요 없다.** 저장하면 바로 적용된다.
+- Key 이름은 **`RELAY_KEY`** 정확히 그대로. 대소문자·밑줄까지 같아야 한다.
+- **앞뒤 공백이 딸려 들어가지 않게 한다.** 이 프로젝트는 VWorld 키 공백 때문에 한 번 크게 헤맸다.
+
+> **키가 잘 들어갔는지 확인하는 법 (키를 몰라도 된다)**
+> 키 없이 함수를 그냥 불러 본다:
+> ```bash
+> curl -s -i -H "x-relay-url: https://www.eiass.go.kr/" -H "x-relay-method: GET" <함수주소>
+> ```
+> | 응답 | 뜻 |
+> |---|---|
+> | `500` · `no-relay-key` | RELAY_KEY 를 아직 안 넣었다 |
+> | `401` · `bad-key` | **잘 들어갔다** (키가 없으니 거절되는 게 정상) |
+> | 그 밖 | 함수가 배포 안 됐거나 Verify JWT 가 켜져 있다 |
+
+> **이 키가 왜 필요한가.** 없으면 아무나 우리 함수를 불러 EIASS를 긁을 수 있다.
+> 함수는 `eiass.go.kr` 주소만 처리하도록 막아 두었지만, 키까지 있어야 안전하다.
+>
+> **★ 이 키를 저장소에 넣지 않는다.** Supabase 환경변수와 GitHub Secret 두 곳에만 둔다.
+> (2026-08-07에 `assets/config.js`에 키를 적어 커밋했다가 새로 발급받아야 했다)
+
+### ④ GitHub Secret 두 개 등록
+
+2단계에서 만든 Secrets 화면으로 돌아가 넣는다:
+
+| Name | 값 |
+|---|---|
+| `EIASS_RELAY_URL` | `https://<프로젝트ID>.supabase.co/functions/v1/eiass-relay` |
+| `EIASS_RELAY_KEY` | ③에서 만든 `RELAY_KEY`와 **똑같은 값** |
+
+### ⑤ 통하는지 확인
+
+`Actions` → **`EIASS 연결 확인 (시험용)`** → `Run workflow`.
+**자료는 하나도 안 건드리므로 몇 번을 돌려도 안전하다.**
+
+성공하면 이런 주석이 나온다:
+
+```
+[2차·중계] 성공 — 지역 ap-northeast-2, 목록 8478 bytes, 900ms
+[판정] 서울 중계로 EIASS 수집이 가능합니다
+```
+
+실패하면 확인 순서: ① 함수가 살아 있나 ② `RELAY_KEY`가 양쪽에 같나
+③ **지역이 `ap-northeast-2`로 찍히나** ④ EIASS 인증서가 바뀌지 않았나
+
+> **`지역`이 `ap-northeast-2`가 아니면 실패로 친다.** 중계는 "부르는 사람과 가까운
+> 곳에서 도는 것"이 기본이라, 서울을 지정하지 못하면 **미국에서 돌아** 아무 의미가 없다.
 
 ---
 

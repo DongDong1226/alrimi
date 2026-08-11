@@ -1,20 +1,17 @@
-# GitHub 러너에서 EIASS 로 가는 두 가지 길을 시험한다: ① 직접 ② Cloudflare WARP 터널.
+# EIASS 로 가는 길이 살아 있는지 확인한다. **자료는 건드리지 않는다.**
 #
-# ── 배경 (2026-08-06, HANDOFF §4) ──────────────────────────────────
-#   - EIASS 는 해외를 막지 않는다: 전 세계 20곳 중 17곳 정상 (미국 LA 0.49초).
-#   - 그런데 GitHub 러너(Azure)에서는 6번 중 1번만 성공했다.
-#   - 같은 러너·같은 순간에 VWorld 는 0.43초에 붙고 EIASS 만 시간 초과
-#     → Azure↔한국 경로 문제가 아니라 EIASS 쪽이 Azure 대역을 불안정하게 거르는 것.
-#   - Cloudflare 서버에서는 EIASS 가 정상 응답했다(확인함).
-#     → EIASS 행 트래픽만 WARP 터널로 태우면 될 가능성이 높다. 이 워크플로가 그걸 확인한다.
+# 언제 쓰나
+#   - 자동 수집이 실패했는데 원인이 '길'인지 '수집기'인지 가르고 싶을 때
+#   - Supabase 중계를 새로 배포했거나 키를 바꾼 뒤 확인할 때
+#   - EIASS 인증서가 갱신된 뒤(2027-03-29 예정) 중계가 아직 통하는지 볼 때
 #
-# ── 이 파일이 하지 않는 것 (안전장치) ──────────────────────────────
-#   저장소를 내려받지 않는다 / data 를 읽지도 쓰지도 않는다 /
-#   커밋·푸시하지 않는다 / Anthropic API 를 부르지 않는다 (비용 0원)
+# 실행: GitHub 저장소 → Actions → 이 워크플로 → Run workflow
+# 결과: 로그를 못 보는 사람도 알 수 있게 [판정] 주석으로 내보낸다.
 #
-# 쓰는 법: Actions 탭 → 이 워크플로 → Run workflow → 끝나면 주석(Annotations)을 본다.
-#   [1차] 직접 연결과 [2차] WARP 터널의 성패가 각각 나온다.
-#   [2차]가 성공이면 collect.yml 의 자동 수집이 같은 길로 살아난다 (이미 넣어 둠).
+# ── 2026-08-09: WARP 시험을 걷어내고 서울 중계 시험으로 바꿨다 ──────
+# WARP 터널 방식은 자동 수집 3회 연속 실패로 탈락했고, 그때 VWorld 까지
+# 같이 실패해서 러너 네트워크를 망가뜨린 것으로 의심된다. 되살리지 말 것.
+# 자세한 경위는 docs/HISTORY.md §4.
 
 name: EIASS 연결 확인 (시험용)
 
@@ -37,104 +34,55 @@ jobs:
           LOC=$(echo "$D" | python3 -c "import sys,json;d=json.load(sys.stdin);print(d.get('country',''),'/',d.get('city',''),d.get('org',''))" 2>/dev/null)
           echo "::notice::[러너위치] IP=${IP} ${LOC}"
 
-      - name: 주소 준비 (DNS 를 HTTPS 로 직접 묻고 hosts 에 심음)
+      # 1차 — 예전 방식. 되면 좋지만 6번 중 1번만 됐다(2026-08-06 실측).
+      - name: 1차 — GitHub 에서 EIASS 로 직접
+        id: direct
         run: |
-          HOST="www.eiass.go.kr"
-          for URL in \
-            "https://cloudflare-dns.com/dns-query?name=${HOST}&type=A" \
-            "https://dns.google/resolve?name=${HOST}&type=A"; do
-            for I in 1 2 3; do
-              IP=$(curl -s --max-time 10 -H 'accept: application/dns-json' "$URL" \
-                | python3 -c "import sys,json;d=json.load(sys.stdin);a=[x['data'] for x in d.get('Answer',[]) if x.get('type')==1];print(a[0] if a else '')" 2>/dev/null)
-              [ -n "$IP" ] && break 2
-              sleep 2
-            done
-          done
-          [ -n "$IP" ] || IP="211.114.21.111"   # 조회 전부 실패 시 최근 확인 주소 (인증서 검증이 지켜줌)
-          echo "${IP} ${HOST}" | sudo tee -a /etc/hosts
-          echo "EIASS_IP=${IP}" >> "$GITHUB_ENV"
-          echo "::notice::[주소] ${HOST} -> ${IP}"
-
-      # 실제 수집이 쓰는 목록 API(POST)까지 두드려 봐야 진짜 확인이다
-      - name: 1차 — 직접 연결
-        run: |
-          T0=$SECONDS
-          CODE=$(curl -s -o /tmp/direct.html -w "%{http_code}" --max-time 15 -A "Mozilla/5.0" \
-            --data-urlencode "query=" \
-            --data-urlencode "collection=draft" \
-            --data-urlencode "urlString=&alias=1&orgnCd=&sido=" \
-            --data-urlencode "viewName=eiass/user/partcptn/choan/choanSperssList_searchApi" \
-            --data-urlencode "currentPage=1" \
-            "https://www.eiass.go.kr/searchApi/search.do" || echo "000")
-          TOOK=$((SECONDS-T0))
-          if [ "$CODE" = "200" ] && grep -q tbl01 /tmp/direct.html; then
-            echo "DIRECT=성공" >> "$GITHUB_ENV"
-            echo "::notice::[1차 직접] 성공 — HTTP 200, 목록 정상 (${TOOK}초)"
+          T0=$(date +%s%3N)
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://www.eiass.go.kr/ || echo "000")
+          MS=$(( $(date +%s%3N) - T0 ))
+          echo "직접 연결: HTTP ${CODE} (${MS}ms)"
+          if [ "$CODE" = "200" ]; then
+            echo "::notice::[1차·직접] 성공 HTTP ${CODE} (${MS}ms)"
           else
-            echo "DIRECT=실패" >> "$GITHUB_ENV"
-            echo "::warning::[1차 직접] 실패 — HTTP ${CODE} (${TOOK}초)"
+            echo "::notice::[1차·직접] 실패 HTTP ${CODE} (${MS}ms) — 예상된 결과입니다"
           fi
 
-      - name: 2차 — WARP 터널로 연결 (EIASS 행 트래픽만)
+      # 2차 — 지금 실제로 쓰는 길. 이게 성공해야 자동 수집이 돈다.
+      - name: 2차 — 서울 중계를 거쳐 EIASS 로
+        env:
+          EIASS_RELAY_URL: ${{ secrets.EIASS_RELAY_URL }}
+          EIASS_RELAY_KEY: ${{ secrets.EIASS_RELAY_KEY }}
         run: |
-          sudo apt-get update -qq >/dev/null 2>&1 || true
-          sudo apt-get install -y -qq wireguard-tools >/dev/null
-          WGCF_URL=$(curl -s --max-time 20 https://api.github.com/repos/ViRb3/wgcf/releases/latest \
-            | python3 -c "import sys,json;print([a['browser_download_url'] for a in json.load(sys.stdin)['assets'] if a['name'].endswith('linux_amd64')][0])")
-          curl -fsSL --max-time 60 "$WGCF_URL" -o wgcf && chmod +x wgcf
-          ./wgcf register --accept-tos >/dev/null 2>&1 || ./wgcf register --accept-tos
-          ./wgcf generate >/dev/null
-          sed -i '/^DNS *=/d' wgcf-profile.conf
-          sed -i '/^AllowedIPs/d' wgcf-profile.conf
-          sed -i "/^\[Peer\]/a AllowedIPs = ${EIASS_IP}/32" wgcf-profile.conf
-          sudo mkdir -p /etc/wireguard
-          sudo cp wgcf-profile.conf /etc/wireguard/wgcf.conf
-
-          try_port() {
-            sudo sed -i "/^Endpoint/s|:[0-9]*$|:$1|" /etc/wireguard/wgcf.conf
-            sudo wg-quick up wgcf >/dev/null 2>&1 || return 1
-            sleep 2
-            HS=$(sudo wg show wgcf latest-handshakes | awk '{print $2}')
-            echo "  포트 $1 — 핸드셰이크: ${HS:-0}"
-            [ "${HS:-0}" != "0" ]
-          }
-
-          WARP=실패
-          for PORT in 2408 500; do
-            if try_port "$PORT"; then
-              T0=$SECONDS
-              CODE=$(curl -s -o /tmp/warp.html -w "%{http_code}" --max-time 15 -A "Mozilla/5.0" \
-                --data-urlencode "query=" \
-                --data-urlencode "collection=draft" \
-                --data-urlencode "urlString=&alias=1&orgnCd=&sido=" \
-                --data-urlencode "viewName=eiass/user/partcptn/choan/choanSperssList_searchApi" \
-                --data-urlencode "currentPage=1" \
-                "https://www.eiass.go.kr/searchApi/search.do" || echo "000")
-              TOOK=$((SECONDS-T0))
-              if [ "$CODE" = "200" ] && grep -q tbl01 /tmp/warp.html; then
-                WARP="성공(포트 ${PORT}, ${TOOK}초)"
-                break
-              fi
-              echo "  포트 ${PORT} — 터널은 붙었지만 EIASS 응답 없음 (HTTP ${CODE}, ${TOOK}초)"
-            fi
-            sudo wg-quick down wgcf >/dev/null 2>&1 || true
-          done
-
-          echo "WARP=${WARP}" >> "$GITHUB_ENV"
-          if [ "$WARP" != "실패" ]; then
-            echo "::notice::[2차 WARP] ${WARP} — HTTP 200, 목록 정상"
-          else
-            echo "::warning::[2차 WARP] 실패"
+          if [ -z "$EIASS_RELAY_URL" ] || [ -z "$EIASS_RELAY_KEY" ]; then
+            echo "::error::[2차·중계] EIASS_RELAY_URL / EIASS_RELAY_KEY Secret 이 없습니다. docs/SETUP.md 참고"
+            exit 1
           fi
+          FORM='query=&collection=draft&urlString=%26alias%3D1%26orgnCd%3D%26sido%3D&viewName=eiass/user/partcptn/choan/choanSperssList_searchApi&currentPage=1&sort=DRFOP_TMDT_START_DT/DESC,BIZ_SEQ/DESC'
+          T0=$(date +%s%3N)
+          OUT=$(curl -s -o body.bin -D head.txt -w '%{http_code}' --max-time 90 -X POST "$EIASS_RELAY_URL" -H "x-relay-key: $EIASS_RELAY_KEY" -H "x-relay-url: https://www.eiass.go.kr/searchApi/search.do" -H "x-relay-method: POST" -H "x-region: ap-northeast-2" -H "content-type: application/x-www-form-urlencoded" --data "$FORM")
+          MS=$(( $(date +%s%3N) - T0 ))
+          UP=$(grep -i '^x-upstream-status' head.txt | tr -d '\015' | awk '{print $2}')
+          REGION=$(grep -i '^x-sb-edge-region' head.txt | tr -d '\015' | awk '{print $2}')
+          SIZE=$(wc -c < body.bin)
+          echo "중계 ${OUT} / EIASS ${UP} / ${SIZE} bytes / 지역 ${REGION} / ${MS}ms"
+          # 중계가 거절했으면 까닭이 본문에 한글로 들어 있다 (헤더에는 짧은 코드만)
+          if [ "$OUT" != "200" ]; then
+            echo "중계가 거절한 까닭:"; head -c 400 body.bin; echo
+          fi
+          # 지역이 서울이 아니면 중계를 거치는 뜻이 없다 (기본값은 '부르는 사람과 가까운 곳')
+          if [ "$OUT" = "200" ] && [ "$UP" = "200" ] && [ "$SIZE" -gt 1000 ] && [ "$REGION" = "ap-northeast-2" ]; then
+            echo "::notice::[2차·중계] 성공 — 지역 ${REGION}, 목록 ${SIZE} bytes, ${MS}ms"
+            echo "::notice::[판정] 서울 중계로 EIASS 수집이 가능합니다"
+          else
+            echo "::error::[2차·중계] 실패 (중계 ${OUT} / EIASS ${UP} / 지역 ${REGION} / ${SIZE} bytes)"
+            echo "::error::[판정] 중계가 통하지 않습니다. 확인 순서: ① Supabase 함수가 살아 있나 ② RELAY_KEY 가 양쪽에 같나 ③ 프로젝트 지역이 서울인가 ④ EIASS 인증서가 바뀌지 않았나(tools/relay/index.ts 맨 위 주석)"
+            exit 1
+          fi
+          rm -f body.bin head.txt
 
-      - name: 판정
+      - name: VWorld 도 되는지 (수집에 함께 필요하다)
+        if: always()
         run: |
-          echo "직접: ${DIRECT} / WARP: ${WARP}"
-          if [ "${WARP}" != "실패" ]; then
-            V="WARP 터널이 통한다 → collect.yml 자동 수집이 이 길로 돈다. 며칠 초록불만 확인하면 된다."
-          elif [ "${DIRECT}" = "성공" ]; then
-            V="이번엔 직접도 됐다(운). WARP 가 안 되는 게 문제 → 몇 번 더 돌려 보고, 계속 WARP 실패면 self-hosted 러너로."
-          else
-            V="둘 다 실패 → GitHub 러너로는 방법이 없다. self-hosted 러너(담당자 PC)가 확실한 길이다. HANDOFF §2."
-          fi
-          echo "::notice::[판정] 직접=${DIRECT} · WARP=${WARP} → ${V}"
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 https://api.vworld.kr/ || echo "000")
+          echo "::notice::[VWorld] HTTP ${CODE}"

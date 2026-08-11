@@ -100,6 +100,7 @@ data/regions.json              전국 행정구역 목록 (git 포함 — 자주
 data/sido.json                 시·도 경계 도형, 미리 단순화 (git 포함, 367KB — 자주 안 바뀜)
 data/routes.json               관리자가 직접 그린 노선 (git 포함, 없어도 정상)
 tools/build_data.py            EIASS 수집 → projects.json 생성
+tools/relay/index.ts           EIASS 중계 함수 원본 (Supabase Edge Function, 서울)
 tools/build_regions.py         VWorld → regions.json 생성
 tools/build_boundaries.py      VWorld → sido.json 생성 (행정구역 개편 때만 다시 돌린다)
 tools/run_daily.bat            손으로 급히 수집할 때 (반드시 CRLF). 평소 수집은 collect.yml 이 한다
@@ -195,7 +196,26 @@ AI는 **번역만** 한다. 분석·판단·보충을 하지 않는다.
 | 첨부파일 | 상세 HTML의 `generalView('FILE_SEQ','파일명')` 링크에서 뽑는다 |
 | 파일 받기 | `GET /common/file/downloadFileByFileSeq.do?FILE_SEQ=..&SYSTEM_NAME=PERSS`<br>**로그인·세션 없이 그대로 내려온다** (확인함) |
 
-- **★ GitHub 서버(미국 Azure)에서는 EIASS 접속이 거의 안 된다. 한국 PC에서는 100% 된다.**
+> ### ★ EIASS 는 서울 중계를 거친다 (2026-08-09 도입)
+>
+> GitHub 서버에서 EIASS 접속이 안 되는 문제를 **EIASS 로 가는 요청만 서울에서 대신 걸어**
+> 해결했다. 중계 함수 원본은 `tools/relay/index.ts` (Supabase Edge Function, 서울 리전).
+>
+> - **켜고 끄는 것은 환경변수 두 개뿐이다** — `EIASS_RELAY_URL`·`EIASS_RELAY_KEY`.
+>   없으면 지금까지처럼 직접 접속한다. **한국 PC(`run_daily.bat`)는 직접 가는 게 빠르므로 안 쓴다.**
+> - **VWorld·Anthropic 은 중계를 타지 않는다.** `requests` 가 주소별로 통로를 나눠 쓰는 성질을
+>   이용해 EIASS 주소일 때만 갈아끼운다(`_RelayAdapter`). **부르는 코드는 한 줄도 안 바뀌었다.**
+> - **★ `x-region: ap-northeast-2` 헤더가 없으면 미국에서 돈다.** 중계는 "부르는 사람과 가까운
+>   곳"에서 도는 것이 기본이다. 이 헤더가 빠지면 조용히 예전 상태로 돌아간다.
+> - **EIASS 는 중간 인증서를 안 보낸다.** 브라우저·파이썬은 알아서 보충하지만 Deno 는 안 해서
+>   `UnknownIssuer` 로 끊긴다. 그래서 중계에 그 한 장을 넣어 두었다(검증을 끄는 게 아니다).
+>   **EIASS 인증서는 2027-03-29 만료** — 갱신 때 인증기관이 바뀌면 중계가 멈춘다.
+>   새로 받는 방법은 `tools/relay/index.ts` 맨 위 주석에 있다.
+> - **HTTP 헤더에 한글을 넣지 말 것.** 헤더 값은 라틴 문자만 된다. 중계가 오류를 한글로
+>   헤더에 담았다가 오류를 알리려다 또 죽었다(2026-08-09에 겪음). **까닭은 본문에, 헤더에는 짧은 아스키 코드만.**
+> - ~~WARP 터널~~ 은 걷어냈다. 3회 연속 실패했고 그때 VWorld 까지 같이 죽었다. **되살리지 말 것.**
+
+- **★ GitHub 서버(미국 Azure)에서는 EIASS 직접 접속이 거의 안 된다. 한국 PC에서는 100% 된다.**
   (2026-08-06 실측. 자세한 경위와 결정 대기 사항은 `docs/HANDOFF.md` §2·§4)
   - **"해외 IP 차단"은 사실이 아니다.** 전 세계 20개 노드 중 17곳 정상
     (미국 LA 0.49초, 댈러스 1.09초, 독일·프랑스·네덜란드·러시아·인도·베트남).

@@ -1,25 +1,21 @@
 # EIASS 공람 자료를 매일 모아서 커밋하고, 사이트를 다시 배포한다.
 #
-# ── 2026-08-06: 자동 실행을 켰다 ───────────────────────────────────
-# 예전에는 "EIASS 가 해외 IP 를 막아서 GitHub 에서는 불가능" 이라고 적고
-# 자동 실행을 꺼 뒀는데, 다시 확인해 보니 **사실이 아니었다.**
+# ── 2026-08-09: 서울 중계를 도입했다 (WARP 는 걷어냈다) ─────────────
+# GitHub 러너(미국 Azure)에서 EIASS 접속은 **6번 중 1번**만 됐다.
+# 차단은 아니다 — 전 세계 20곳 중 17곳에서 정상이고, 같은 러너에서
+# VWorld(한국)는 0.43초에 붙는데 EIASS 만 시간 초과했다. EIASS 쪽 문제다.
 #
-#   - 전 세계 20개 노드 중 17곳에서 EIASS 정상 응답
-#     (미국 LA 0.49초, 댈러스 1.09초, 독일·프랑스·네덜란드·러시아·인도·베트남)
-#   - GitHub 러너(미국 Azure)에서도 EIASS 0.23초, VWorld 0.22초로 정상 접속
-#   - 그 결론은 2026-08-01 에 **딱 한 번** 실행해 실패한 것을 근거로 내려졌고,
-#     원인을 밝히려고 만든 '연결 확인' 단계는 그때 존재하지도 않았다.
+# 해결: **EIASS 로 가는 요청만** 서울에 둔 중계를 거치게 했다.
+#   중계 함수 원본 = tools/relay/index.ts (Supabase Edge Function, 서울 리전)
+#   2026-08-09 실측 — 서울에서 13번 호출 13번 성공, 7.4MB PDF 도 바이트 단위로 동일.
+#   목록 조회 평균 121ms. (GitHub 직접 접속은 17%)
 #
-# 다만 **접속이 간헐적으로 불안정한 것은 사실이다.** 3번 시험에 1번 성공했다.
-#     1차 52.159.244.171  DNS 조회 실패 (10초)
-#     2차 9.234.149.180   DNS 는 됐는데 TCP 443 이 20초 무응답
-#     3차 20.161.78.74    전부 정상 (0.23초)
-# 2·3차는 같은 데이터센터인데 결과가 달랐다 = 차단이 아니라 불안정.
+# ★ WARP 터널 방식은 지웠다. 8/7~8/8 자동 수집 3회 모두 같은 자리에서 죽었고,
+#   그때 **VWorld 까지 같이 실패**했다(8/6 에는 0.43초에 붙던 것). WARP 설치가
+#   러너 네트워크를 망가뜨린 것으로 보인다. 되살리지 말 것. (docs/HISTORY.md §4)
 #
-# 그래서 build_data.py 안에 재시도 장치를 넣었다(SESSION).
-# 연결이 안 되면 4초·8초·16초 쉬면서 최대 4번까지 스스로 다시 시도한다.
-# 그래도 실패하면 그날 자료가 안 바뀔 뿐이고, 화면은 어제 자료로 정상 동작한다.
-# (워크플로가 실패하면 GitHub 이 저장소 주인에게 메일을 보낸다)
+# 중계 주소·키가 없으면 build_data.py 는 예전처럼 직접 접속한다(그러면 또 실패할 뿐,
+# 자료는 안 망가진다). 한국 PC 의 run_daily.bat 은 중계를 안 쓰고 직접 간다.
 
 name: EIASS 공람 자료 수집
 
@@ -73,96 +69,38 @@ jobs:
       - name: 필요한 패키지 설치
         run: pip install -r requirements.txt
 
-      # ── EIASS 로 가는 길을 먼저 확보한다 ─────────────────────────────
-      # GitHub 러너(Azure)에서는 EIASS 직접 접속이 6번 중 1번만 됐다 (HANDOFF §4).
-      # 같은 순간 VWorld(한국)는 0.43초에 붙었으므로, 경로 문제가 아니라
-      # EIASS 쪽(또는 그 앞의 보안장비)이 Azure 대역을 불안정하게 걸러내는 것이다.
-      #
-      # 그래서 **EIASS 로 가는 트래픽만** Cloudflare WARP 터널(무료·계정 불요)로 태운다.
-      #   - EIASS 는 해외 접속을 막지 않는다(전 세계 17/20곳 정상, Cloudflare 서버에서도 정상).
-      #     의도적 차단을 뚫는 게 아니라 "다른 통신사 회선으로 거는 것"에 가깝다.
-      #     발주처가 그 사이트의 주인(기후에너지환경부)이고, EIASS 측이 원치 않는다는
-      #     신호가 있으면 이 방식은 중단한다.
-      #   - GitHub·VWorld·Anthropic 트래픽은 터널을 타지 않는다 (EIASS IP /32 만 라우팅).
-      # 순서: WARP(2408) → WARP(500) → 직접 연결 → 모두 실패면 비용 0원으로 안전 중단.
-      - name: EIASS 가는 길 확보 (WARP 터널 → 안 되면 직접)
+      # ── EIASS 로 가는 길 확인 ────────────────────────────────────────
+      # 서울 중계가 살아 있는지 먼저 본다. 중계가 죽었으면 수집을 아예 시작하지 않는다
+      # (반쪽 수집이 멀쩡한 자료를 덮어쓰는 게 가장 위험하다).
+      - name: EIASS 가는 길 확인 (서울 중계)
+        env:
+          EIASS_RELAY_URL: ${{ secrets.EIASS_RELAY_URL }}
+          EIASS_RELAY_KEY: ${{ secrets.EIASS_RELAY_KEY }}
         run: |
-          HOST="www.eiass.go.kr"
-
-          # EIASS 쪽 DNS 가 가끔 응답하지 않아서(HANDOFF §4) HTTPS 로 직접 묻는다
-          resolve_ip() {
-            for URL in \
-              "https://cloudflare-dns.com/dns-query?name=${HOST}&type=A" \
-              "https://dns.google/resolve?name=${HOST}&type=A"; do
-              for I in 1 2 3; do
-                GOT=$(curl -s --max-time 10 -H 'accept: application/dns-json' "$URL" \
-                  | python3 -c "import sys,json;d=json.load(sys.stdin);a=[x['data'] for x in d.get('Answer',[]) if x.get('type')==1];print(a[0] if a else '')" 2>/dev/null)
-                if [ -n "$GOT" ]; then echo "$GOT"; return 0; fi
-                sleep 2
-              done
-            done
-            # 조회가 전부 실패하면 최근까지 확인된 주소를 쓴다.
-            # 주소가 바뀌었어도 인증서 검증이 있어 엉뚱한 서버와 통신하게 되지는 않는다.
-            echo "211.114.21.111"
-          }
-
-          probe() {
-            curl -s -o /dev/null --max-time 8 "https://${HOST}/" && echo OK || echo FAIL
-          }
-
-          setup_warp_base() {
-            sudo apt-get update -qq >/dev/null 2>&1 || true
-            sudo apt-get install -y -qq wireguard-tools >/dev/null 2>&1 || return 1
-            WGCF_URL=$(curl -s --max-time 20 https://api.github.com/repos/ViRb3/wgcf/releases/latest \
-              | python3 -c "import sys,json;print([a['browser_download_url'] for a in json.load(sys.stdin)['assets'] if a['name'].endswith('linux_amd64')][0])" 2>/dev/null)
-            [ -n "$WGCF_URL" ] || return 1
-            curl -fsSL --max-time 60 "$WGCF_URL" -o wgcf || return 1
-            chmod +x wgcf
-            ./wgcf register --accept-tos >/dev/null 2>&1 || ./wgcf register --accept-tos || return 1
-            ./wgcf generate >/dev/null 2>&1 || return 1
-            sed -i '/^DNS *=/d' wgcf-profile.conf            # 러너의 DNS 는 건드리지 않는다
-            sed -i '/^AllowedIPs/d' wgcf-profile.conf        # 전체 트래픽 라우팅을 지우고
-            sed -i "/^\[Peer\]/a AllowedIPs = ${IP}/32" wgcf-profile.conf   # EIASS 만 터널로
-            sudo mkdir -p /etc/wireguard
-            sudo cp wgcf-profile.conf /etc/wireguard/wgcf.conf
-          }
-          warp_up_port() {
-            sudo sed -i "/^Endpoint/s|:[0-9]*$|:$1|" /etc/wireguard/wgcf.conf
-            sudo wg-quick up wgcf >/dev/null 2>&1 || return 1
-            sleep 2
-          }
-          warp_down() { sudo wg-quick down wgcf >/dev/null 2>&1 || true; }
-
-          IP=$(resolve_ip)
-          echo "${IP} ${HOST}" | sudo tee -a /etc/hosts >/dev/null
-          echo "EIASS 주소: ${IP}"
-          VW=$(curl -s -o /dev/null --max-time 8 https://api.vworld.kr/ && echo OK || echo FAIL)
-
-          ROUTE=""
-          if setup_warp_base; then
-            if warp_up_port 2408 && [ "$(probe)" = "OK" ]; then
-              ROUTE="WARP터널(2408)"
-            else
-              warp_down
-              if warp_up_port 500 && [ "$(probe)" = "OK" ]; then
-                ROUTE="WARP터널(500)"
-              else
-                warp_down
-              fi
-            fi
-          else
-            echo "WARP 준비 실패 — 직접 연결만 시도합니다"
-          fi
-          if [ -z "$ROUTE" ] && [ "$(probe)" = "OK" ]; then
-            ROUTE="직접연결"
-          fi
-
-          if [ -n "$ROUTE" ]; then
-            echo "::notice::[통로] ${ROUTE} 로 EIASS 연결 성공 (${IP}) / VWorld ${VW}"
-          else
-            echo "::error::[통로] WARP·직접 모두 실패 — 수집을 시작하지 않고 멈춥니다 (비용 0원, 자료 안전) / VWorld ${VW}"
+          if [ -z "$EIASS_RELAY_URL" ] || [ -z "$EIASS_RELAY_KEY" ]; then
+            echo "::error::[통로] EIASS_RELAY_URL / EIASS_RELAY_KEY Secret 이 없습니다. docs/SETUP.md 참고"
             exit 1
           fi
+          # 중계를 거쳐 EIASS 목록 첫 쪽을 실제로 받아 본다 (자료는 저장하지 않는다).
+          # 요청 형식은 build_data.py 의 fetch_list_page 와 같다.
+          FORM='query=&collection=draft&urlString=%26alias%3D1%26orgnCd%3D%26sido%3D&viewName=eiass/user/partcptn/choan/choanSperssList_searchApi&currentPage=1&sort=DRFOP_TMDT_START_DT/DESC,BIZ_SEQ/DESC'
+          OUT=$(curl -s -o body.bin -D head.txt -w '%{http_code}' --max-time 90 -X POST "$EIASS_RELAY_URL" -H "x-relay-key: $EIASS_RELAY_KEY" -H "x-relay-url: https://www.eiass.go.kr/searchApi/search.do" -H "x-relay-method: POST" -H "x-region: ap-northeast-2" -H "content-type: application/x-www-form-urlencoded" --data "$FORM")
+          # 헤더 줄 끝의 CR(8진수 015)을 떼고 값만 뽑는다
+          UP=$(grep -i '^x-upstream-status' head.txt | tr -d '\015' | awk '{print $2}')
+          REGION=$(grep -i '^x-sb-edge-region' head.txt | tr -d '\015' | awk '{print $2}')
+          SIZE=$(wc -c < body.bin)
+          VW=$(curl -s -o /dev/null --max-time 8 https://api.vworld.kr/ && echo OK || echo FAIL)
+          echo "중계 ${OUT} / EIASS ${UP} / ${SIZE} bytes / 지역 ${REGION} / VWorld ${VW}"
+          # 지역이 서울이 아니면 중계를 거치는 뜻이 없다.
+          # 기본값이 '부르는 사람과 가까운 곳'이라, x-region 이 안 먹으면 미국에서 돈다.
+          if [ "$OUT" = "200" ] && [ "$UP" = "200" ] && [ "$SIZE" -gt 1000 ] && [ "$REGION" = "ap-northeast-2" ]; then
+            echo "::notice::[통로] 서울 중계로 EIASS 연결 성공 (${SIZE} bytes) / VWorld ${VW}"
+          else
+            head -c 400 body.bin || true
+            echo "::error::[통로] 서울 중계 실패 (중계 ${OUT} / EIASS ${UP} / 지역 ${REGION}) — 수집을 시작하지 않고 멈춥니다 (비용 0원, 자료 안전) / VWorld ${VW}"
+            exit 1
+          fi
+          rm -f body.bin head.txt
 
       # 수집이 부실하게 끝났을 때 멀쩡한 자료를 덮어쓰지 않도록, 먼저 지금 건수를 세어 둔다.
       - name: 수집 전 건수 기록
@@ -186,6 +124,10 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           # VWorld 데이터 API 는 발급 때 등록한 서비스 URL 을 같이 보내야 한다.
           VWORLD_DOMAIN: ${{ vars.VWORLD_DOMAIN }}
+          # ★ EIASS 요청만 서울 중계를 거친다. VWorld·Anthropic 은 직접 간다.
+          #   이 둘이 없으면 build_data.py 는 예전처럼 직접 접속한다(그러면 대개 실패한다).
+          EIASS_RELAY_URL: ${{ secrets.EIASS_RELAY_URL }}
+          EIASS_RELAY_KEY: ${{ secrets.EIASS_RELAY_KEY }}
         run: |
           set -o pipefail
           ARGS=""
