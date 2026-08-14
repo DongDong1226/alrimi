@@ -4,9 +4,9 @@
   "stats": {
     "underReview": {
       "strat": 117,
-      "main": 112,
-      "small": 374,
-      "total": 603
+      "main": 113,
+      "small": 367,
+      "total": 597
     }
   },
   "projects": [
@@ -13645,6 +13645,39 @@
       "sourceStepCd": null,
       "sourceViewPath": "/partcptn/choan/choanEiassView.do",
       "opinionEnd": "2026-09-07"
+    },
+    {
+      "id": "ME2026G004-45762",
+      "category": "main",
+      "categoryLabel": "환경영향평가",
+      "name": "수서~광주 복선전철(1공구) 건설사업",
+      "org": "국토교통부",
+      "tel": "031-215-2008",
+      "address": "서울특별시 강남구 수서동 (밤고개로 99)",
+      "locationTypes": [],
+      "segments": [],
+      "bizType": "철도(도시철도 포함)의 건설",
+      "isRiver": false,
+      "lat": null,
+      "lon": null,
+      "periodStart": "2026-07-03",
+      "periodEnd": "2026-08-07",
+      "viewPlace": "강남구 환경과, 강남구 혁신전략과, 수서동주민센터, 세곡동주민센터, 송파구 맑은환경과",
+      "briefPlace": "성모자애복지관 지하1층 이룸홀(강당)",
+      "briefWhen": "2026년 8월 7일 19:00",
+      "opinionPeriod": "2026.07.03 ~ 2026.08.14",
+      "deptName": "(주)수서역환승센터복합개발",
+      "deptTel": "031-215-2008",
+      "summaryFileSeq": null,
+      "analysis": null,
+      "riverNames": [],
+      "routeGeom": null,
+      "routeSource": null,
+      "sourceBizCd": "ME2026G004",
+      "sourceBizSeq": "45762",
+      "sourceStepCd": null,
+      "sourceViewPath": "/partcptn/choan/choanEiassView.do",
+      "opinionEnd": "2026-08-14"
     },
     {
       "id": "ME2026C013-45761",
