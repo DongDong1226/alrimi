@@ -76,14 +76,6 @@ const DEFAULT_UA =
 
 const RELAY_KEY = Deno.env.get("RELAY_KEY") ?? "";
 
-/** 헤더에는 아스키만 실을 수 있어서 쿠키 목록을 base64 로 접어 보낸다. */
-function packCookies(list: string[]): string {
-  const bytes = new TextEncoder().encode(JSON.stringify(list));
-  let s = "";
-  for (const b of bytes) s += String.fromCharCode(b);
-  return btoa(s);
-}
-
 /** 중계가 거절할 때. **까닭(한글)은 반드시 본문에 담는다.**
  *  HTTP 헤더 값에는 라틴 문자만 넣을 수 있어서, 한글을 헤더에 넣으면
  *  오류를 알리려다 그 자리에서 또 죽는다(TypeError). 실제로 겪어서 고쳤다.
@@ -117,8 +109,8 @@ Deno.serve(async (req) => {
     headers["Content-Type"] =
       req.headers.get("content-type") ?? "application/x-www-form-urlencoded";
   }
-  const cookie = req.headers.get("x-relay-cookie");
-  if (cookie) headers["Cookie"] = cookie;
+  // 쿠키는 주고받지 않는다 — EIASS 는 목록·상세·첨부 모두 로그인이나 세션 없이
+  // 그대로 응답한다(확인함). 부르는 쪽(build_data.py)에도 같은 설명이 있다.
 
   try {
     const client = (Deno as any).createHttpClient({ caCerts: [SECTIGO_INTERMEDIATE] });
@@ -138,12 +130,12 @@ Deno.serve(async (req) => {
     // (그래야 부르는 쪽이 '중계가 실패한 것'과 'EIASS 가 404 를 준 것'을 구분할 수 있다)
     const h = new Headers({
       "content-type": "application/octet-stream",
+      // 글자 인코딩이 여기 실려 간다. EIASS 는 charset=UTF-8 을 명시하므로
+      // 그대로 넘기면 부르는 쪽에서 한글이 안 깨진다.
       "x-upstream-status": String(up.status),
       "x-upstream-content-type": up.headers.get("content-type") ?? "",
       "x-upstream-ms": String(Date.now() - t0),
     });
-    const sc = (up.headers as any).getSetCookie?.() ?? [];
-    if (sc.length) h.set("x-upstream-cookies", packCookies(sc));
     return new Response(buf, { status: 200, headers: h });
   } catch (e) {
     const msg = String(e);

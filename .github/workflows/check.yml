@@ -39,7 +39,8 @@ jobs:
         id: direct
         run: |
           T0=$(date +%s%3N)
-          CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://www.eiass.go.kr/ || echo "000")
+          # 실패해도 -w 가 '000' 을 찍어 주므로 || echo 를 덧붙이면 000000 이 된다 (겪음)
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 https://www.eiass.go.kr/ || true)
           MS=$(( $(date +%s%3N) - T0 ))
           echo "직접 연결: HTTP ${CODE} (${MS}ms)"
           if [ "$CODE" = "200" ]; then
@@ -81,8 +82,17 @@ jobs:
           fi
           rm -f body.bin head.txt
 
+      # VWorld 는 주소를 좌표로 바꾸는 데 쓴다. 중계를 타지 않고 GitHub 에서 직접 간다.
+      # ★ 루트(/) 만 찔러 보면 뜻이 없다 — 실제로 쓰는 경로를 불러야 한다.
+      #   2026-08-12 에 루트가 502 를 준 적이 있는데, 한국에서는 같은 시각 200 이었다.
+      #   (그때 8/6 기록으로는 같은 러너에서 0.43초에 붙었었다 — 한 번 본 것으로 단정하지 말 것)
       - name: VWorld 도 되는지 (수집에 함께 필요하다)
         if: always()
         run: |
-          CODE=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 https://api.vworld.kr/ || echo "000")
-          echo "::notice::[VWorld] HTTP ${CODE}"
+          ROOT=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 https://api.vworld.kr/ || true)
+          # 실제로 쓰는 지오코더 경로. 키가 없어도 '연결이 되는가'는 알 수 있다.
+          GEO=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "https://api.vworld.kr/req/address?service=address&request=getcoord&version=2.0&type=PARCEL&format=json&address=%EC%84%9C%EC%9A%B8&key=probe" || true)
+          echo "::notice::[VWorld] 루트 HTTP ${ROOT} / 지오코더 경로 HTTP ${GEO}"
+          if [ "$GEO" = "000" ]; then
+            echo "::error::[VWorld] 지오코더에 아예 닿지 않습니다. 새 사업의 좌표를 못 얻습니다 (다음 수집 때 다시 시도하므로 치명적이진 않습니다)"
+          fi

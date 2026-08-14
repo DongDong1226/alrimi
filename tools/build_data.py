@@ -168,10 +168,6 @@ class _RelayAdapter:
         if body:
             headers["Content-Type"] = request.headers.get(
                 "Content-Type", "application/x-www-form-urlencoded")
-        cookie = request.headers.get("Cookie")
-        if cookie:
-            headers["x-relay-cookie"] = cookie
-
         r = self.session.post(self.relay_url, data=body, headers=headers,
                               timeout=timeout or 120)
 
@@ -185,23 +181,28 @@ class _RelayAdapter:
                 f"[중계 실패 {r.status_code}{'/' + code if code else ''}] {why}")
 
         resp = requests.Response()
-        resp.status_code = int(r.headers["x-upstream-status"])
+        try:
+            resp.status_code = int(r.headers["x-upstream-status"])
+        except ValueError:
+            raise requests.exceptions.RequestException(
+                f"[중계 응답 이상] x-upstream-status 가 숫자가 아닙니다: "
+                f"{r.headers['x-upstream-status']!r}")
         resp._content = r.content
         resp.url = request.url
         resp.request = request
         resp.reason = ""
+        # 글자 인코딩은 이 헤더로 정해진다. EIASS 는 charset=UTF-8 을 명시하므로
+        # 그대로 넘겨주면 한글이 안 깨진다 (직접 접속했을 때와 똑같이 동작한다).
         ctype = r.headers.get("x-upstream-content-type", "")
         resp.headers = requests.structures.CaseInsensitiveDict()
         if ctype:
             resp.headers["Content-Type"] = ctype
-        packed = r.headers.get("x-upstream-cookies")
-        if packed:
-            try:
-                import base64
-                for c in json.loads(base64.b64decode(packed).decode("utf-8")):
-                    resp.headers["Set-Cookie"] = c      # 마지막 것만 남지만 지금은 쿠키를 안 쓴다
-            except Exception:
-                pass
+        # 쿠키는 주고받지 않는다.
+        #   EIASS 는 목록·상세·첨부 모두 로그인이나 세션 없이 그대로 응답한다(확인함).
+        #   requests 의 쿠키 저장소는 응답 헤더가 아니라 raw 응답을 보기 때문에,
+        #   여기서 Set-Cookie 를 넣어 봐야 **실제로는 아무 일도 일어나지 않는다.**
+        #   그래서 '되는 것처럼 보이는 코드'를 두지 않고 아예 뺐다.
+        #   나중에 EIASS 가 세션을 요구하게 되면 이 통로부터 손봐야 한다.
         return resp
 
     def close(self):

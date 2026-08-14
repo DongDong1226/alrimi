@@ -1886,7 +1886,8 @@ function render(){
     return;
   }
 
-  grid.innerHTML = cut.rows.map(p => projCardHtml(p)).join("");
+  // 홈 목록은 범위로 걸러 낸 목록이므로 '반경 밖' 표시가 뜻을 가진다
+  grid.innerHTML = cut.rows.map(p => projCardHtml(p, { scope: homeScope })).join("");
 }
 
 /* 사업 카드 한 장.
@@ -1895,9 +1896,15 @@ function render(){
 
    opts.closed = true  … 기한이 지난 사업 (담아 둔 것만 이렇게 들어온다)
                           흐리게 그리고, 거리·범위 밖 표시처럼 '지금 기준'인 것은 빼고,
-                          지도 단추도 빼 준다 (지도에는 진행 중인 사업만 찍히기 때문). */
+                          지도 단추도 빼 준다 (지도에는 진행 중인 사업만 찍히기 때문).
+   opts.scope         … '반경 밖' 표시를 붙일 기준 범위.
+                          **범위로 걸러 낸 목록에서만 뜻이 있다.**
+                          담은 사업 화면은 범위로 거르지 않으므로 넘기지 않는다 —
+                          일부러 담아 둔 사업에 "반경 밖"이라고 하면
+                          "왜 여기 있지?" 하게 된다 (2026-08-14에 실제로 그렇게 나왔다). */
 function projCardHtml(p, opts = {}){
   const closed = !!opts.closed;
+  const scope = opts.scope || null;
   const saved = isSaved(p.id);
   const dist = closed ? null : distText(p);
   return `
@@ -1913,7 +1920,7 @@ function projCardHtml(p, opts = {}){
         ${p.dday !== null
           ? `<span class="badge ${p.dday <= 3 ? "badge--live" : "badge--dday"}">D-${p.dday}</span>`
           : `<span class="badge badge--line">${esc(p.stage)}</span>`}
-        ${p.viewClosed && !closed ? `<span class="badge badge--line">공람 종료 · 의견 접수 중</span>` : ``}${closed ? "" : outsideBadge(p, homeScope)}
+        ${p.viewClosed && !closed ? `<span class="badge badge--line">공람 종료 · 의견 접수 중</span>` : ``}${scope ? outsideBadge(p, scope) : ""}
       </div>
       <p class="ttl">${esc(p.name)}</p>
       <p class="desc">공람기간 ${esc(p.period)}${p.opinionEnd ? `<br><b class="op-end">의견 마감 ${esc(p.opinionEnd)}</b>` : ""}</p>

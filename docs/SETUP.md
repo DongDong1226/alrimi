@@ -237,12 +237,36 @@ python -c "import secrets; print(secrets.token_urlsafe(32))"
 
 ### ④ GitHub Secret 두 개 등록
 
+> ### ⚠️ 같은 키인데 **이름이 두 곳에서 다르다** (여기서 한 번 걸렸다)
+>
+> | 어디 | 이름 | 무엇 |
+> |---|---|---|
+> | **Supabase** 환경변수 | **`RELAY_KEY`** | 함수가 읽는다 |
+> | **GitHub** Secret | **`EIASS_RELAY_KEY`** | 워크플로가 읽는다 |
+> | **GitHub** Secret | **`EIASS_RELAY_URL`** | 함수 주소 |
+>
+> **값은 같고 이름만 다르다.** GitHub 에는 VWorld·Anthropic 키도 함께 있어서
+> "무엇의 키인지" 구분하려고 `EIASS_` 를 붙였다.
+> Supabase 쪽 이름(`RELAY_KEY`)을 GitHub 에 그대로 넣으면 워크플로가 **못 찾는다.**
+
 2단계에서 만든 Secrets 화면으로 돌아가 넣는다:
 
 | Name | 값 |
 |---|---|
-| `EIASS_RELAY_URL` | `https://<프로젝트ID>.supabase.co/functions/v1/eiass-relay` |
+| `EIASS_RELAY_URL` | `https://<프로젝트ID>.supabase.co/functions/v1/<함수이름>` |
 | `EIASS_RELAY_KEY` | ③에서 만든 `RELAY_KEY`와 **똑같은 값** |
+
+**넣는 자리도 주의한다.** 이 화면은 탭이 두 겹이다:
+
+```
+Settings → Secrets and variables → [Actions]      ← Dependabot·Codespaces 아님
+   ├─ [Secrets]  탭 ← 위 둘은 여기
+   └─ [Variables] 탭 ← VWORLD_DOMAIN 만 여기
+```
+
+그리고 **`Repository secrets`** 아래여야 한다 (`Environment secrets` 는 워크플로가 못 본다).
+
+**이름은 나중에 못 고친다.** 틀렸으면 지우고 새로 만든다.
 
 ### ⑤ 통하는지 확인
 
