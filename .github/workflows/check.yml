@@ -82,17 +82,59 @@ jobs:
           fi
           rm -f body.bin head.txt
 
-      # VWorld 는 주소를 좌표로 바꾸는 데 쓴다. 중계를 타지 않고 GitHub 에서 직접 간다.
-      # ★ 루트(/) 만 찔러 보면 뜻이 없다 — 실제로 쓰는 경로를 불러야 한다.
-      #   2026-08-12 에 루트가 502 를 준 적이 있는데, 한국에서는 같은 시각 200 이었다.
-      #   (그때 8/6 기록으로는 같은 러너에서 0.43초에 붙었었다 — 한 번 본 것으로 단정하지 말 것)
-      - name: VWorld 도 되는지 (수집에 함께 필요하다)
+      # ── VWorld 지오코딩 ──────────────────────────────────────────────
+      # 주소를 좌표로 바꾸는 데 쓴다. 중계를 타지 않고 GitHub 에서 직접 간다.
+      #
+      # ★ HTTP 상태만 보면 안 된다. VWorld 는 키를 거부할 때도 **HTTP 200** 에
+      #   {"response":{"status":"ERROR",...}} 를 담아 준다.
+      #   그래서 예전 점검은 '연결됨'이라고 답했는데 실제 수집에서는 좌표가 하나도 안 나왔다
+      #   (2026-08-14~15: 새 사업 9건 전부 좌표 없음, 그런데도 수집은 '성공'으로 끝남).
+      #   여기서는 **진짜 키로 진짜 주소를 조회해서 status 를 읽는다.**
+      - name: VWorld 지오코딩이 실제로 되는지
         if: always()
+        env:
+          VWORLD_KEY: ${{ secrets.VWORLD_KEY }}
+          VWORLD_DOMAIN: ${{ vars.VWORLD_DOMAIN }}
         run: |
-          ROOT=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 https://api.vworld.kr/ || true)
-          # 실제로 쓰는 지오코더 경로. 키가 없어도 '연결이 되는가'는 알 수 있다.
-          GEO=$(curl -s -o /dev/null -w '%{http_code}' --max-time 15 "https://api.vworld.kr/req/address?service=address&request=getcoord&version=2.0&type=PARCEL&format=json&address=%EC%84%9C%EC%9A%B8&key=probe" || true)
-          echo "::notice::[VWorld] 루트 HTTP ${ROOT} / 지오코더 경로 HTTP ${GEO}"
-          if [ "$GEO" = "000" ]; then
-            echo "::error::[VWorld] 지오코더에 아예 닿지 않습니다. 새 사업의 좌표를 못 얻습니다 (다음 수집 때 다시 시도하므로 치명적이진 않습니다)"
+          if [ -z "$VWORLD_KEY" ]; then
+            echo "::error::[VWorld] VWORLD_KEY Secret 이 없습니다"
+            exit 0
           fi
+          python3 - <<'PY'
+          import json, os, urllib.parse, urllib.request
+
+          key = (os.environ.get("VWORLD_KEY") or "").strip()
+          domain = (os.environ.get("VWORLD_DOMAIN") or "").strip()
+
+          def probe(label, extra=None):
+              p = {"service": "address", "request": "getcoord", "version": "2.0",
+                   "crs": "epsg:4326", "type": "parcel", "format": "json",
+                   "address": "경기도 군포시 당정동", "key": key}
+              if extra:
+                  p.update(extra)
+              url = "https://api.vworld.kr/req/address?" + urllib.parse.urlencode(p)
+              try:
+                  with urllib.request.urlopen(url, timeout=20) as r:
+                      body = json.loads(r.read().decode("utf-8"))
+                  res = body.get("response", {}) or {}
+                  st = res.get("status")
+                  pt = (res.get("result") or {}).get("point")
+                  err = (res.get("error") or {}).get("text", "")
+                  print(f"  {label:<22} status={st} {'좌표 있음' if pt else err}")
+                  return st == "OK" and bool(pt)
+              except Exception as e:
+                  print(f"  {label:<22} 실패: {type(e).__name__} {e}")
+                  return False
+
+          print("VWorld 지오코딩 시험 (미국 러너에서)")
+          ok1 = probe("domain 없이")
+          ok2 = probe("domain 붙여서", {"domain": domain}) if domain else None
+
+          if ok1 or ok2:
+              which = "domain 없이" if ok1 else "domain 을 붙이면"
+              print(f"::notice::[VWorld] 지오코딩 성공 — {which} 됩니다")
+          else:
+              print("::error::[VWorld] 지오코딩이 GitHub 러너에서 거부됩니다. "
+                    "새 사업의 좌표가 비어 지도·반경에서 빠집니다. "
+                    "→ VWorld 도 서울 중계를 태우는 것을 검토할 것 (docs/HANDOFF.md)")
+          PY

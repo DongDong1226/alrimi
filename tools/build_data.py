@@ -773,9 +773,18 @@ def build_address_candidates(address):
 
 
 def geocode_address(address, vworld_key):
+    """주소를 위경도로 바꾼다. 못 찾으면 (None, None).
+
+    ★ 못 찾은 까닭을 반드시 남긴다.
+      예전에는 VWorld 가 '주소를 못 찾았다'고 답한 것과 '키를 거부한 것'을 구분하지 않고
+      똑같이 조용히 (None, None) 을 돌려줬다. 그래서 2026-08-14~15 자동 수집에서
+      **새 사업 9건의 좌표가 전부 비었는데도 로그에 아무것도 안 남았다.**
+      수집은 '성공'으로 끝나고 지도에서만 사업이 사라지는, 가장 알아채기 어려운 실패였다.
+    """
     if not vworld_key or not address:
         return None, None
     url = "https://api.vworld.kr/req/address"
+    last_status, last_msg = None, None
     for candidate in build_address_candidates(address):
         for addr_type in ("road", "parcel"):
             try:
@@ -788,11 +797,18 @@ def geocode_address(address, vworld_key):
                     "type": addr_type,
                     "key": vworld_key,
                 }, verify=VERIFY_SSL, timeout=10)
-                point = r.json().get("response", {}).get("result", {}).get("point")
+                res = (r.json() or {}).get("response", {}) or {}
+                point = (res.get("result") or {}).get("point")
                 if point:
                     return float(point["y"]), float(point["x"])
+                last_status = res.get("status")
+                last_msg = ((res.get("error") or {}).get("text")
+                            or (res.get("error") or {}).get("level"))
             except Exception as e:
                 log(f"    [지오코딩 오류:{addr_type}:{candidate}] {e}")
+    # NOT_FOUND 는 '그 주소가 없다'는 정상 답이지만, ERROR 는 키·권한·차단 문제다.
+    if last_status and last_status != "NOT_FOUND":
+        log(f"    [지오코딩 거부] status={last_status} {last_msg or ''} — 주소: {address[:40]}")
     return None, None
 
 
