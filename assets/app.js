@@ -68,6 +68,19 @@ function toggleSaved(id){
 
 let S = Object.assign({}, DEFAULTS, lsGet(LSKEY, {}));
 
+/* ★ 옛 기본 동네('경기도 하남시 미사동')를 걷어낸다.
+   2026-08-06 에 기본값을 '전국'으로 바꿨는데, 그 전에 한 번이라도 들어온 브라우저는
+   설정에 옛 값이 저장돼 있어서 **새 기본값이 영영 안 먹는다**
+   (저장된 설정이 DEFAULTS 를 덮어쓰기 때문). 그래서 그 값이면 지우고 새 기본값을 쓴다.
+   관리자가 일부러 하남 미사동을 넣어 둔 경우도 같이 초기화되지만,
+   그건 관리자 화면에서 다시 넣으면 된다. */
+const LEGACY_DEF_HOOD = { sido:"경기도", sgg:"하남시", dong:"미사동" };
+if(S.defHood && S.defHood.sido === LEGACY_DEF_HOOD.sido
+   && S.defHood.sgg === LEGACY_DEF_HOOD.sgg && S.defHood.dong === LEGACY_DEF_HOOD.dong){
+  S.defHood = Object.assign({}, DEFAULTS.defHood);
+  lsSet(LSKEY, S);
+}
+
 /* 저장해 둔 키에 공백이 섞여 있으면 걷어낸다. 비어 있으면 배포에 심어 둔 키를 쓴다.
    (안 그러면 방문자에게 지도가 안 보인다) */
 S.vworldKey = String(S.vworldKey || "").trim() || BUILD_VWORLD_KEY;
@@ -2946,7 +2959,10 @@ $("#admSave").addEventListener("click", () => {
   S.org            = $("#a-org").value.trim();
   S.person         = $("#a-person").value.trim();
   S.tel            = $("#a-tel").value.trim();
-  S.defHood        = { sido:$("#a-d-sido").value.trim(), sgg:$("#a-d-sgg").value.trim(), dong:$("#a-d-dong").value.trim() };
+  // 비워 두면 '전국 / 전체 / 전체'로 둔다 (화면 안내문과 같게).
+  S.defHood        = { sido:$("#a-d-sido").value.trim() || ALL_SIDO,
+                       sgg: $("#a-d-sgg").value.trim()  || ANY,
+                       dong:$("#a-d-dong").value.trim() || ANY };
   S.adminPw        = $("#a-pw").value || DEFAULTS.adminPw;
   const ok = lsSet(LSKEY, S);
   applySettings();

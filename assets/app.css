@@ -432,6 +432,12 @@ button{cursor:pointer}
   background:none;border:0;padding:0}
 .footer-policy a.em,.footer-policy button.em{color:#fff;font-weight:600}
 .footer-copy{font-size:13px;color:rgba(255,255,255,.4)}
+/* 자료 출처 표기 — 공공누리 제4유형은 '출처표시'가 이용 조건이라 항상 보여야 한다.
+   저작권 문구보다 조용하게 두되, 링크는 읽힐 만큼은 밝게 둔다. */
+.footer-src{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.12);
+  color:rgba(255,255,255,.55);line-height:1.7}
+.footer-src a{color:rgba(255,255,255,.85);text-decoration:underline}
+.footer-src a:hover{color:#fff}
 
 .totop{position:fixed;right:22px;bottom:22px;width:46px;height:46px;border-radius:50%;background:#fff;
   border:1px solid var(--line-2);box-shadow:var(--sh-md);display:flex;align-items:center;

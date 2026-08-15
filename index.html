@@ -147,7 +147,10 @@
       <div class="header-actions">
         <button class="hood-pill js-change" type="button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg>
-          <span id="hood-pill-label">경기 하남시 미사동</span>
+          <!-- 처음 들어온 사람은 동네를 아직 안 정했다. 기본값은 '전국'이다
+               (app.js 의 DEFAULTS.defHood). 여기에 특정 동네 이름을 적어 두면
+               자바스크립트가 값을 채우기 전까지 그 동네가 잠깐 보인다 — m.html 과 맞춘다 -->
+          <span id="hood-pill-label">전국</span>
         </button>
       </div>
     </div>
@@ -161,7 +164,7 @@
       <div class="wrap hero-home">
         <div class="reveal">
           <!-- 초안 공람 단계는 아직 짓기 전(계획 단계)이라 "진행 중"이라고 쓰지 않는다. -->
-          <h1>지금 <span class="hl" id="h-hood">미사동</span>에서<br>계획 중인 개발사업 <span class="hl" id="h-count">0</span>건</h1>
+          <h1>지금 <span class="hl" id="h-hood">전국</span>에서<br>계획 중인 개발사업 <span class="hl" id="h-count">0</span>건</h1>
 
           <form class="searchbar" onsubmit="return false">
             <svg class="lead-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"></circle><path d="m20 20-3.5-3.5"></path></svg>
@@ -182,7 +185,7 @@
           <div class="hood-head">
             <div>
               <p class="lb">내 동네</p>
-              <p class="nm" id="hood-card-name">경기 하남시 미사동</p>
+              <p class="nm" id="hood-card-name">전국</p>
             </div>
             <button class="chg js-change" type="button">변경</button>
           </div>
@@ -330,6 +333,16 @@
             <button type="button" data-modal="m-contact">문의</button>
           </div>
           <p class="footer-copy">© 2026 기후에너지환경부. 환경영향평가 정보지원시스템(EIASS)에 공개된 자료를 정리해 보여드립니다. 원문과 다른 부분이 있으면 원문이 우선합니다.</p>
+          <!-- 자료 출처 표기 (공공누리 제4유형은 '출처표시'가 의무다).
+               EIASS 푸터 실측: img_opentype04.png = 공공누리 제4유형.
+               온라인에서는 출처 사이트로 가는 링크를 함께 두어야 한다. -->
+          <p class="footer-copy footer-src">
+            <b>자료 출처</b> 본 서비스는 기후에너지환경부 국립환경과학원이
+            <a href="https://www.eiass.go.kr/" target="_blank" rel="noopener">환경영향평가 정보지원시스템(EIASS)</a>에
+            공공누리 제4유형(출처표시·상업적 이용금지·변경금지)으로 개방한 공람 공고 자료를 이용하였습니다.
+            비영리 공공 안내 목적으로만 제공하며, 화면의 요약·해석은 원문이 아닙니다.
+            <a href="https://www.kogl.or.kr/info/license.do" target="_blank" rel="noopener">공공누리 이용조건</a>
+          </p>
         </div>
       </div>
     </div>
@@ -433,11 +446,11 @@
           </div>
           <div class="fld">
             <label for="a-defhood">기본 동네</label>
-            <p class="hint">첫 화면에서 미리 선택되어 있을 지역입니다.</p>
+            <p class="hint">첫 화면에서 미리 선택되어 있을 지역입니다. 비워 두면 <b>전국</b>입니다.</p>
             <div class="fld-3">
-              <input id="a-d-sido" type="text" placeholder="경기도">
-              <input id="a-d-sgg" type="text" placeholder="하남시">
-              <input id="a-d-dong" type="text" placeholder="미사동">
+              <input id="a-d-sido" type="text" placeholder="전국">
+              <input id="a-d-sgg" type="text" placeholder="전체">
+              <input id="a-d-dong" type="text" placeholder="전체">
             </div>
           </div>
           <div class="fld">

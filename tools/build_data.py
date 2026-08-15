@@ -953,6 +953,21 @@ def load_existing(path):
 REFRESHABLE = ["viewPlace", "briefPlace", "briefWhen", "opinionPeriod", "deptName", "deptTel"]
 
 
+def view_closed(period_end, day):
+    """공람 기간이 끝났는가.
+
+    평가서 초안은 법적으로 **공람 기간에만** 열람할 수 있다.
+    그래서 공람이 끝나면 그 내용을 옮긴 AI 해석도 함께 닫는다.
+    (의견 제출 기한은 공람 종료 +7일까지라 사업 자체는 화면에 남는다 — 헷갈리지 말 것)
+    """
+    if not period_end:
+        return False
+    try:
+        return datetime.date.fromisoformat(period_end) < day
+    except ValueError:
+        return False
+
+
 def needs_detail_refresh(cached):
     """상세를 다시 받아야 하는가.
 
@@ -1055,7 +1070,13 @@ def build(args):
 
             # --retry-analysis: AI 해석이 비어 있는 사업만 골라 다시 받는다.
             # (응답이 잘리거나 형식이 깨져 실패했던 것들. 전체를 다시 받을 필요는 없다)
-            if cached and args.retry_analysis and not cached.get("analysis"):
+            #
+            # ★ 단 **공람이 끝난 사업은 다시 받지 않는다.** 저장 직전에 해석을 지우므로
+            #   (아래 '공람이 끝난 사업의 해석은 파일에서 지운다' 참고) 여기서 다시 받으면
+            #   방금 지운 것을 되살리는 셈이 된다. 어차피 공람이 끝나면 EIASS 가 첨부를
+            #   내려서 받아지지도 않는다 — 돈만 쓰고 빈손으로 끝난다.
+            if (cached and args.retry_analysis and not cached.get("analysis")
+                    and not view_closed(it["period_end"], today)):
                 log(f"  ! {it['name']} (해석이 비어 있어 다시 받습니다)")
                 cached = None
 
@@ -1184,6 +1205,31 @@ def build(args):
     if dropped:
         log(f"[안내] 공람 기간이 끝난 {dropped}건은 저장하지 않았습니다.")
 
+    # ★★ 공람이 끝난 사업의 환경영향분석은 **파일에서 아예 지운다.**
+    #
+    # 화면(app.js 의 eiaSection)이 공람 기간(viewOpen)으로 잠그고 있지만,
+    # 그것은 "화면에 안 그린다"는 뜻일 뿐이다. data/projects.json 은
+    # 누구나 주소로 곧장 내려받을 수 있는 공개 파일이라, 해석 글자가 파일 안에 남아 있으면
+    # **화면 규칙만으로는 지켜지지 않는다.** (해커가 아니어도 주소만 알면 읽힌다)
+    #
+    # 평가서 초안은 법적으로 공람 기간에만 열람할 수 있으므로,
+    # 그 내용을 옮긴 해석도 공람 종료와 함께 **자료에서** 닫아야 한다.
+    # 사업명·기간·기관·설명회 같은 사실 정보는 그대로 둔다. 지우는 것은 해석뿐이다.
+    #
+    # 기준은 '의견제출 마감일'이 아니라 **'공람 종료일'** 이다. 절대 헷갈리지 말 것 —
+    # 공람이 끝나고 의견만 받는 기간에도 해석은 닫혀 있어야 한다.
+    withheld = 0
+    for p in kept:
+        if not view_closed(p.get("periodEnd"), end_day):
+            continue
+        if p.get("analysis") or p.get("summaryEasy"):
+            p["analysis"] = None
+            p.pop("summaryEasy", None)
+            withheld += 1
+    if withheld:
+        log(f"[공람 종료] {withheld}건의 환경영향분석을 파일에서 지웠습니다 "
+            f"(평가서 초안은 공람 기간에만 볼 수 있습니다).")
+
     # 지난 결과에는 있었지만 이번 목록에 없는 사업 = 공람이 끝나 EIASS 목록에서 빠진 것.
     gone = len(existing) - reused_count
     if gone > 0:
@@ -1209,7 +1255,18 @@ def build(args):
         json.dump({
             "generatedAt": end_day.isoformat(),
             "note": ("이 파일은 tools/build_data.py가 EIASS 공개 자료를 바탕으로 자동 생성합니다. "
-                     "생성 시점에 초안 공람 기간 안에 있던 사업만 담겨 있습니다."),
+                     "생성 시점에 초안 공람 기간 안에 있던 사업만 담겨 있습니다. "
+                     "공람이 끝난 사업의 analysis(환경영향분석)는 담지 않습니다 — "
+                     "평가서 초안은 법적으로 공람 기간에만 열람할 수 있기 때문입니다."),
+            # 자료 출처 — 이 파일만 따로 받아 가는 사람에게도 이용 조건이 전달되어야 한다.
+            # (EIASS 푸터 실측: 공공누리 제4유형 = 출처표시·상업적 이용금지·변경금지)
+            "source": {
+                "name": "환경영향평가 정보지원시스템(EIASS)",
+                "org": "기후에너지환경부 국립환경과학원",
+                "url": "https://www.eiass.go.kr/",
+                "license": "공공누리 제4유형 (출처표시·상업적 이용금지·변경금지)",
+                "licenseUrl": "https://www.kogl.or.kr/info/license.do",
+            },
             "stats": {
                 # EIASS 사업조회에서 '진행현황=진행중'으로 세어 온 건수.
                 # 공람 중인 사업(projects)과는 다른 모수다.

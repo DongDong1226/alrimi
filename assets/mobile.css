@@ -209,6 +209,9 @@ body.m .pg{min-width:40px;min-height:40px}
 .m-foot-links button,.m-foot-links a{color:#fff;font-weight:700;background:none;border:0;
   padding:6px 0;text-decoration:underline;font-size:var(--fs-body-xs)}
 .m-copy{color:#8fa6d4;line-height:1.7}
+/* 자료 출처 표기 — 공공누리 제4유형은 '출처표시'가 이용 조건이라 항상 보여야 한다 */
+.m-src{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.12)}
+.m-src a{color:#fff;text-decoration:underline}
 .m-totop{bottom:calc(var(--m-tabh) + var(--m-safe) + 14px)}
 
 /* ============================================================
