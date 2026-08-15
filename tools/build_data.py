@@ -643,9 +643,17 @@ RIVER_NAME_BLOCKLIST = {
 }
 
 
+# '계획대상하천'처럼 앞에 말이 붙은 것도 하천 이름이 아니다.
+# **접미사로 거를 때는 아주 좁게 잡는다** — '소하천'으로 끝나는 진짜 이름이 실제로 있다
+# (주평소하천·국서소하천·용소소하천·주계소하천). 넓게 거르면 멀쩡한 하천이 사라진다.
+RIVER_NAME_GENERIC_SUFFIX = ("대상하천",)
+
+
 def extract_river_names(text):
     names = set(re.findall(r"([가-힣]{2,6}천)\b", text or ""))
-    return sorted(n for n in names if n not in RIVER_NAME_BLOCKLIST)
+    def generic(n):
+        return n in RIVER_NAME_BLOCKLIST or n.endswith(RIVER_NAME_GENERIC_SUFFIX)
+    return sorted(n for n in names if not generic(n))
 
 
 # 하천을 따라가는 사업인지 판단한다.
@@ -981,12 +989,14 @@ def needs_detail_refresh(cached):
     return False
 
 
-def refresh_cached(cached, item, vworld_key, skip_geocode, category_key, delay):
+def refresh_cached(cached, item, vworld_key, skip_geocode, category_key, delay,
+                   vworld_domain=None, skip_route=False):
     """재사용하는 사업에서 '싸게 고칠 수 있는 것'만 손본다.
 
     · 공람 기간: 목록에 나온 최신 값으로 갱신한다 (기간이 연장되는 경우가 있다).
     · 설명회·공람 장소·의견 받는 곳: 아직 안 정해진 값이 있으면 상세를 다시 받는다.
     · 좌표: 지난번에 못 찾았으면 다시 시도한다 (지오코딩은 돈이 들지 않는다).
+    · **노선 도형: 하천 이름은 찾았는데 도형이 비어 있으면 다시 받는다.** 좌표와 같은 이유다.
     · AI 해석: 다시 하지 않는다. 한 번 실패한 요약문은 내일도 실패할 가능성이 크고,
       매일 다시 부르면 그만큼 비용이 계속 나간다. 전부 다시 받으려면 --full 을 쓴다.
     """
@@ -1013,6 +1023,25 @@ def refresh_cached(cached, item, vworld_key, skip_geocode, category_key, delay):
         if lat is not None:
             cached["lat"], cached["lon"] = lat, lon
             log("    (재사용) 지난번에 못 찾은 좌표를 채웠습니다")
+
+    # ★ 노선 도형 되받기 — 좌표와 똑같은 문제가 노선에도 있었다.
+    #
+    # 하천 이름은 요약문에서 잘 뽑았는데(riverNames 는 채워져 있는데) 도형이 비어 있으면,
+    # 그날 VWorld 가 응답하지 않았던 것이다. 그런데 여기에 되받는 코드가 없어서
+    # **한 번 비면 영영 비어 있었다.** 증분 수집은 이미 받아 둔 사업을 통째로 건너뛰기 때문이다.
+    #   실측(2026-08-16): '한강 서울권역'·'상두천' 두 건이 그 상태였다.
+    #   그때 못 받았을 뿐, 지금 물어보면 7개·1개 도형이 그대로 나온다.
+    #   두 건 다 VWorld 가 죽어 있던 8/13~8/15 에 처음 수집된 사업이다.
+    #
+    # 지오코딩과 같이 **VWorld 만 부르므로 돈이 들지 않는다** (PDF·AI 는 건드리지 않는다).
+    if (not skip_route and cached.get("isRiver") and cached.get("riverNames")
+            and not cached.get("routeGeom")):
+        routes = fetch_river_routes(cached["riverNames"], cached.get("lat"), cached.get("lon"),
+                                    vworld_key, vworld_domain)
+        if routes:
+            cached["routeGeom"] = routes
+            cached["routeSource"] = "vworld-river"
+            log(f"    (재사용) 비어 있던 노선 도형 {len(routes)}개를 채웠습니다")
     return cached
 
 
@@ -1084,7 +1113,8 @@ def build(args):
                 log(f"  = {it['name']} (이미 받아 둠)")
                 all_projects.append(
                     refresh_cached(cached, it, vworld_key, args.skip_geocode,
-                                   category_key, args.delay))
+                                   category_key, args.delay,
+                                   vworld_domain, args.skip_route))
                 reused_count += 1
                 continue
 
