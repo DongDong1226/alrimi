@@ -148,14 +148,17 @@ jobs:
               which = "그대로" if ok_real else "domain 을 붙이면"
               print(f"::notice::[판정] VWorld 지오코딩 {which} 됩니다")
           else:
-              # 진짜 키와 틀린 키가 같은 답이면 '키가 거부되는 것'이다
-              same = m1.split(":", 1)[1].strip()[:40] == m3.split(":", 1)[1].strip()[:40]
-              if same:
-                  print("::error::[판정] 진짜 키와 틀린 키의 응답이 같습니다 "
-                        "= GitHub 러너에서 이 키가 **키로 인정되지 않습니다**. "
-                        "VWorld 키 설정(서비스URL·활용API)을 먼저 확인할 것")
+              # ★ '키 문제'와 '아예 답이 안 오는 것'을 먼저 가른다.
+              #   VWorld 가 키를 거부할 때는 **HTTP 200 에 status=ERROR** 를 담아 준다.
+              #   즉 키 문제라면 반드시 status= 가 찍힌다.
+              #   status 가 하나도 없고 연결 실패(502·RemoteDisconnected·타임아웃)뿐이라면
+              #   요청이 API 까지 닿지도 못한 것이고, **키는 아무 상관이 없다.**
+              got_api_answer = any("status=" in m for m in results)
+              if got_api_answer:
+                  print("::error::[판정] VWorld 가 답은 하는데 거절합니다 "
+                        "= 키·권한 문제입니다. 서비스URL 과 활용API(지오코더) 설정을 확인할 것")
               else:
-                  print("::error::[판정] 틀린 키와는 다른 응답입니다 "
-                        "= 키 자체는 인식되는데 거절됩니다. IP·경로 쪽을 의심할 것 "
-                        "(→ VWorld 도 서울 중계를 태우는 방법이 있다, docs/HANDOFF.md)")
+                  print("::error::[판정] VWorld 가 **아예 답을 하지 않습니다** "
+                        "(502 / 연결 끊김). 틀린 키도 똑같이 끊기므로 키 문제가 아닙니다 "
+                        "— EIASS 와 같은 모양입니다. → VWorld 도 서울 중계를 태울 것 (docs/HANDOFF.md §2)")
           PY
