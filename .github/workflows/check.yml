@@ -106,35 +106,56 @@ jobs:
           key = (os.environ.get("VWORLD_KEY") or "").strip()
           domain = (os.environ.get("VWORLD_DOMAIN") or "").strip()
 
-          def probe(label, extra=None):
+          def probe(label, use_key, extra=None):
+              """(성공여부, 한 줄 설명) 을 돌려준다. 설명은 주석으로 내보낸다."""
               p = {"service": "address", "request": "getcoord", "version": "2.0",
                    "crs": "epsg:4326", "type": "parcel", "format": "json",
-                   "address": "경기도 군포시 당정동", "key": key}
+                   "address": "경기도 군포시 당정동", "key": use_key}
               if extra:
                   p.update(extra)
               url = "https://api.vworld.kr/req/address?" + urllib.parse.urlencode(p)
               try:
                   with urllib.request.urlopen(url, timeout=20) as r:
-                      body = json.loads(r.read().decode("utf-8"))
-                  res = body.get("response", {}) or {}
-                  st = res.get("status")
-                  pt = (res.get("result") or {}).get("point")
-                  err = (res.get("error") or {}).get("text", "")
-                  print(f"  {label:<22} status={st} {'좌표 있음' if pt else err}")
-                  return st == "OK" and bool(pt)
+                      raw = r.read().decode("utf-8", "replace")
+                      http = r.status
               except Exception as e:
-                  print(f"  {label:<22} 실패: {type(e).__name__} {e}")
-                  return False
+                  return False, f"{label}: 연결 실패 {type(e).__name__} {str(e)[:60]}"
+              try:
+                  res = (json.loads(raw).get("response") or {})
+              except Exception:
+                  return False, f"{label}: HTTP {http} 인데 JSON 이 아님 — {raw[:70]}"
+              st = res.get("status")
+              pt = (res.get("result") or {}).get("point")
+              err = (res.get("error") or {})
+              detail = err.get("text") or err.get("level") or ""
+              if st == "OK" and pt:
+                  return True, f"{label}: OK 좌표 받음"
+              return False, f"{label}: HTTP {http} status={st} {detail}"[:180]
 
-          print("VWorld 지오코딩 시험 (미국 러너에서)")
-          ok1 = probe("domain 없이")
-          ok2 = probe("domain 붙여서", {"domain": domain}) if domain else None
+          BOGUS = "00000000-0000-0000-0000-000000000000"
+          results = []
+          ok_real, m1 = probe("진짜 키", key);                      results.append(m1)
+          ok_dom = None
+          if domain:
+              ok_dom, m2 = probe("진짜 키+domain", key, {"domain": domain}); results.append(m2)
+          ok_bogus, m3 = probe("틀린 키(대조군)", BOGUS);            results.append(m3)
 
-          if ok1 or ok2:
-              which = "domain 없이" if ok1 else "domain 을 붙이면"
-              print(f"::notice::[VWorld] 지오코딩 성공 — {which} 됩니다")
+          for m in results:
+              print("  " + m)
+              print(f"::notice::[VWorld] {m}")
+
+          if ok_real or ok_dom:
+              which = "그대로" if ok_real else "domain 을 붙이면"
+              print(f"::notice::[판정] VWorld 지오코딩 {which} 됩니다")
           else:
-              print("::error::[VWorld] 지오코딩이 GitHub 러너에서 거부됩니다. "
-                    "새 사업의 좌표가 비어 지도·반경에서 빠집니다. "
-                    "→ VWorld 도 서울 중계를 태우는 것을 검토할 것 (docs/HANDOFF.md)")
+              # 진짜 키와 틀린 키가 같은 답이면 '키가 거부되는 것'이다
+              same = m1.split(":", 1)[1].strip()[:40] == m3.split(":", 1)[1].strip()[:40]
+              if same:
+                  print("::error::[판정] 진짜 키와 틀린 키의 응답이 같습니다 "
+                        "= GitHub 러너에서 이 키가 **키로 인정되지 않습니다**. "
+                        "VWorld 키 설정(서비스URL·활용API)을 먼저 확인할 것")
+              else:
+                  print("::error::[판정] 틀린 키와는 다른 응답입니다 "
+                        "= 키 자체는 인식되는데 거절됩니다. IP·경로 쪽을 의심할 것 "
+                        "(→ VWorld 도 서울 중계를 태우는 방법이 있다, docs/HANDOFF.md)")
           PY
