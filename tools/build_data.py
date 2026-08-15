@@ -58,7 +58,11 @@ HEADERS = {
                   "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36",
 }
 
-VWORLD_DATA_URL = "https://api.vworld.kr/req/data"
+# VWorld 는 두 가지를 쓴다 — 주소→좌표(지오코더)와 하천 도형(데이터).
+# 둘 다 같은 서버라, 중계를 붙일 때는 이 주소 하나만 보면 된다.
+VWORLD_HOST = "https://api.vworld.kr"
+VWORLD_ADDR_URL = f"{VWORLD_HOST}/req/address"
+VWORLD_DATA_URL = f"{VWORLD_HOST}/req/data"
 RIVER_LAYER = "LT_C_WKMSTRM"      # 하천망도 (하천 구역)
 ROUTE_SIMPLIFY_TOL = 0.0004        # 약 40m — 도형을 이 정도까지 단순화한다
 ROUTE_MAX_KM = 60                  # 사업 위치에서 이만큼 떨어진 동명이천은 버린다
@@ -244,18 +248,30 @@ def log(msg):
 
 
 def setup_relay():
-    """EIASS 요청만 서울 중계로 돌린다. 주소·키가 없으면 아무 일도 하지 않는다.
+    """한국 서버로 가는 요청을 서울 중계로 돌린다. 주소·키가 없으면 아무 일도 하지 않는다.
+
+    중계를 태우는 곳:
+      · EIASS      — 목록·상세·요약문 PDF
+      · VWorld     — 주소→좌표(지오코더), 하천 도형
+                     2026-08-15 추가. GitHub 러너에서 VWorld 가 **아예 답을 하지 않아서**
+                     (502 / 연결 끊김. 틀린 키도 똑같이 끊겼으니 키 문제가 아니다)
+                     새로 들어온 사업 9건의 좌표가 전부 비었다. EIASS 와 같은 모양이다.
+    중계를 안 타는 곳:
+      · Anthropic  — 미국에서 잘 붙는다. 굳이 서울을 거칠 이유가 없고,
+                     **API 키가 중계를 지나가게 하지 않는 편이 낫다.**
 
     log() 가 만들어진 뒤에 불러야 해서 여기에 둔다.
     """
     if RELAY_URL and RELAY_KEY:
-        # 주소 앞부분이 더 길게 맞는 통로가 이긴다 → EIASS 만 중계, 나머지는 그대로.
-        SESSION.mount(BASE + "/", _RelayAdapter(RELAY_URL, RELAY_KEY))
-        log(f"[통로] EIASS 는 서울 중계를 거칩니다 ({RELAY_REGION})")
+        adapter = _RelayAdapter(RELAY_URL, RELAY_KEY)
+        # 주소 앞부분이 더 길게 맞는 통로가 이긴다 → 아래 두 곳만 중계, 나머지는 그대로.
+        SESSION.mount(BASE + "/", adapter)
+        SESSION.mount(VWORLD_HOST + "/", adapter)
+        log(f"[통로] EIASS·VWorld 는 서울 중계를 거칩니다 ({RELAY_REGION})")
     elif RELAY_URL or RELAY_KEY:
         log("[통로] EIASS_RELAY_URL 과 EIASS_RELAY_KEY 는 **둘 다** 있어야 합니다 — 직접 접속으로 갑니다")
     else:
-        log("[통로] EIASS 직접 접속")
+        log("[통로] EIASS·VWorld 직접 접속")
 
 
 setup_relay()
@@ -783,7 +799,7 @@ def geocode_address(address, vworld_key):
     """
     if not vworld_key or not address:
         return None, None
-    url = "https://api.vworld.kr/req/address"
+    url = VWORLD_ADDR_URL
     last_status, last_msg = None, None
     for candidate in build_address_candidates(address):
         for addr_type in ("road", "parcel"):

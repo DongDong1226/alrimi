@@ -83,18 +83,19 @@ jobs:
           rm -f body.bin head.txt
 
       # ── VWorld 지오코딩 ──────────────────────────────────────────────
-      # 주소를 좌표로 바꾸는 데 쓴다. 중계를 타지 않고 GitHub 에서 직접 간다.
+      # 2026-08-15 부터 VWorld 도 서울 중계를 탄다.
+      #   GitHub 러너에서 VWorld 가 **아예 답을 하지 않았다**(502 / 연결 끊김).
+      #   틀린 키도 똑같이 끊겼으니 키 문제가 아니었다 — EIASS 와 같은 모양.
+      #   그래서 **직접 접속이 실패하는 것은 이제 정상이고**, 봐야 할 것은 중계 쪽이다.
       #
-      # ★ HTTP 상태만 보면 안 된다. VWorld 는 키를 거부할 때도 **HTTP 200** 에
-      #   {"response":{"status":"ERROR",...}} 를 담아 준다.
-      #   그래서 예전 점검은 '연결됨'이라고 답했는데 실제 수집에서는 좌표가 하나도 안 나왔다
-      #   (2026-08-14~15: 새 사업 9건 전부 좌표 없음, 그런데도 수집은 '성공'으로 끝남).
-      #   여기서는 **진짜 키로 진짜 주소를 조회해서 status 를 읽는다.**
-      - name: VWorld 지오코딩이 실제로 되는지
+      # ★ HTTP 상태만 보면 안 된다. VWorld 는 키를 거부할 때도 HTTP 200 에
+      #   {"response":{"status":"ERROR"}} 를 담아 준다. 반드시 status 를 읽는다.
+      - name: VWorld 지오코딩 (직접 / 중계)
         if: always()
         env:
           VWORLD_KEY: ${{ secrets.VWORLD_KEY }}
-          VWORLD_DOMAIN: ${{ vars.VWORLD_DOMAIN }}
+          EIASS_RELAY_URL: ${{ secrets.EIASS_RELAY_URL }}
+          EIASS_RELAY_KEY: ${{ secrets.EIASS_RELAY_KEY }}
         run: |
           if [ -z "$VWORLD_KEY" ]; then
             echo "::error::[VWorld] VWORLD_KEY Secret 이 없습니다"
@@ -104,61 +105,71 @@ jobs:
           import json, os, urllib.parse, urllib.request
 
           key = (os.environ.get("VWORLD_KEY") or "").strip()
-          domain = (os.environ.get("VWORLD_DOMAIN") or "").strip()
+          relay = (os.environ.get("EIASS_RELAY_URL") or "").strip()
+          rkey = (os.environ.get("EIASS_RELAY_KEY") or "").strip()
 
-          def probe(label, use_key, extra=None):
-              """(성공여부, 한 줄 설명) 을 돌려준다. 설명은 주석으로 내보낸다."""
-              p = {"service": "address", "request": "getcoord", "version": "2.0",
-                   "crs": "epsg:4326", "type": "parcel", "format": "json",
-                   "address": "경기도 군포시 당정동", "key": use_key}
-              if extra:
-                  p.update(extra)
-              url = "https://api.vworld.kr/req/address?" + urllib.parse.urlencode(p)
-              try:
-                  with urllib.request.urlopen(url, timeout=20) as r:
-                      raw = r.read().decode("utf-8", "replace")
-                      http = r.status
-              except Exception as e:
-                  return False, f"{label}: 연결 실패 {type(e).__name__} {str(e)[:60]}"
+          TARGET = "https://api.vworld.kr/req/address?" + urllib.parse.urlencode({
+              "service": "address", "request": "getcoord", "version": "2.0",
+              "crs": "epsg:4326", "type": "parcel", "format": "json",
+              "address": "경기도 군포시 당정동", "key": key})
+
+          def read(raw):
+              """VWorld 응답 본문에서 (성공여부, 설명) 을 뽑는다."""
               try:
                   res = (json.loads(raw).get("response") or {})
               except Exception:
-                  return False, f"{label}: HTTP {http} 인데 JSON 이 아님 — {raw[:70]}"
+                  return False, f"JSON 이 아님 — {raw[:60]}"
               st = res.get("status")
               pt = (res.get("result") or {}).get("point")
               err = (res.get("error") or {})
-              detail = err.get("text") or err.get("level") or ""
               if st == "OK" and pt:
-                  return True, f"{label}: OK 좌표 받음"
-              return False, f"{label}: HTTP {http} status={st} {detail}"[:180]
+                  return True, f"OK 좌표 {pt.get('y')},{pt.get('x')}"
+              return False, f"status={st} {err.get('text') or err.get('level') or ''}"
 
-          BOGUS = "00000000-0000-0000-0000-000000000000"
-          results = []
-          ok_real, m1 = probe("진짜 키", key);                      results.append(m1)
-          ok_dom = None
-          if domain:
-              ok_dom, m2 = probe("진짜 키+domain", key, {"domain": domain}); results.append(m2)
-          ok_bogus, m3 = probe("틀린 키(대조군)", BOGUS);            results.append(m3)
+          # ① 직접 — 이제는 실패해도 정상이다
+          try:
+              with urllib.request.urlopen(TARGET, timeout=20) as r:
+                  ok_direct, msg = read(r.read().decode("utf-8", "replace"))
+          except Exception as e:
+              ok_direct, msg = False, f"연결 실패 {type(e).__name__} {str(e)[:50]}"
+          print(f"  직접: {msg}")
+          print(f"::notice::[VWorld·직접] {msg}"
+                + ("" if ok_direct else " — 실패해도 정상입니다(중계를 쓰므로)"))
 
-          for m in results:
-              print("  " + m)
-              print(f"::notice::[VWorld] {m}")
-
-          if ok_real or ok_dom:
-              which = "그대로" if ok_real else "domain 을 붙이면"
-              print(f"::notice::[판정] VWorld 지오코딩 {which} 됩니다")
-          else:
-              # ★ '키 문제'와 '아예 답이 안 오는 것'을 먼저 가른다.
-              #   VWorld 가 키를 거부할 때는 **HTTP 200 에 status=ERROR** 를 담아 준다.
-              #   즉 키 문제라면 반드시 status= 가 찍힌다.
-              #   status 가 하나도 없고 연결 실패(502·RemoteDisconnected·타임아웃)뿐이라면
-              #   요청이 API 까지 닿지도 못한 것이고, **키는 아무 상관이 없다.**
-              got_api_answer = any("status=" in m for m in results)
-              if got_api_answer:
-                  print("::error::[판정] VWorld 가 답은 하는데 거절합니다 "
-                        "= 키·권한 문제입니다. 서비스URL 과 활용API(지오코더) 설정을 확인할 것")
+          # ② 중계 경유 — 이게 실제로 쓰는 길이다
+          if not relay or not rkey:
+              print("::error::[VWorld·중계] 중계 Secret 이 없어 시험하지 못했습니다")
+              raise SystemExit(0)
+          req = urllib.request.Request(relay, data=b"", method="POST", headers={
+              "x-relay-key": rkey,
+              "x-relay-url": TARGET,
+              "x-relay-method": "GET",
+              "x-region": "ap-northeast-2",
+          })
+          try:
+              with urllib.request.urlopen(req, timeout=60) as r:
+                  body = r.read().decode("utf-8", "replace")
+                  up = r.headers.get("x-upstream-status")
+                  region = r.headers.get("x-sb-edge-region")
+              if up is None:
+                  ok_relay, msg2 = False, f"중계가 거절 — {body[:120]}"
               else:
-                  print("::error::[판정] VWorld 가 **아예 답을 하지 않습니다** "
-                        "(502 / 연결 끊김). 틀린 키도 똑같이 끊기므로 키 문제가 아닙니다 "
-                        "— EIASS 와 같은 모양입니다. → VWorld 도 서울 중계를 태울 것 (docs/HANDOFF.md §2)")
+                  ok_relay, msg2 = read(body)
+                  msg2 = f"{msg2} (VWorld 쪽 HTTP {up}, 지역 {region})"
+          except Exception as e:
+              ok_relay, msg2 = False, f"중계 호출 실패 {type(e).__name__} {str(e)[:60]}"
+              region = None
+          print(f"  중계: {msg2}")
+          print(f"::notice::[VWorld·중계] {msg2}")
+
+          if ok_relay and region == "ap-northeast-2":
+              print("::notice::[판정] VWorld 지오코딩이 서울 중계로 됩니다 — 새 사업 좌표가 채워집니다")
+          elif ok_relay:
+              print(f"::error::[판정] 되긴 하는데 서울이 아닙니다(지역 {region}). "
+                    "x-region 헤더가 먹지 않으면 미국에서 도는 것이라 곧 다시 막힙니다")
+          else:
+              print("::error::[판정] VWorld 지오코딩이 중계로도 안 됩니다. "
+                    "확인 순서: ① 중계 함수에 api.vworld.kr 이 허용 목록에 있나 "
+                    "(tools/relay/index.ts 의 ALLOW_PREFIXES — 함수를 다시 배포했나) "
+                    "② VWORLD_KEY 가 맞나")
           PY

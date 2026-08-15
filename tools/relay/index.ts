@@ -66,9 +66,19 @@ yOGBQMkKW+ESPMFgKuOXwIlCypTPRpgSabuY0MLTDXJLR27lk8QyKGOHQ+SwMj4K
 00u/I5sUKUErmgQfky3xxzlIPK1aEn8=
 -----END CERTIFICATE-----`;
 
-// **이 주소로만 대신 걸어 준다.** 이 줄이 없으면 아무나 우리 함수로
+// **이 주소들로만 대신 걸어 준다.** 이 줄이 없으면 아무나 우리 함수로
 // 아무 사이트나 긁을 수 있는 '열린 대리 서버'가 된다.
-const ALLOW_PREFIX = "https://www.eiass.go.kr/";
+//
+//  · eiass.go.kr  — 목록·상세·요약문 PDF
+//  · api.vworld.kr — 주소→좌표(지오코더), 하천 도형
+//      2026-08-15 에 추가했다. GitHub 러너에서 VWorld 가 **아예 답을 하지 않아**
+//      (502 / 연결 끊김, 틀린 키도 똑같음 = 키 문제가 아님) 새로 들어온 사업의
+//      좌표가 하나도 안 채워졌다. EIASS 와 같은 모양이라 같은 방법으로 푼다.
+//      VWorld 는 인증서를 온전히 보내므로(3장, 검증 통과) 아래 인증서와는 무관하다.
+const ALLOW_PREFIXES = [
+  "https://www.eiass.go.kr/",
+  "https://api.vworld.kr/",
+];
 
 const DEFAULT_UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
@@ -92,10 +102,11 @@ Deno.serve(async (req) => {
   if (!RELAY_KEY) return fail(500, "no-relay-key", "RELAY_KEY 환경변수가 설정되지 않았습니다");
   if (req.headers.get("x-relay-key") !== RELAY_KEY) return fail(401, "bad-key", "x-relay-key 가 맞지 않습니다");
 
-  // ② 주소 확인 — EIASS 외에는 대신 걸어 주지 않는다
+  // ② 주소 확인 — 허용 목록에 없는 곳은 대신 걸어 주지 않는다
   const url = req.headers.get("x-relay-url") ?? "";
-  if (!url.startsWith(ALLOW_PREFIX)) {
-    return fail(403, "not-allowed", `이 중계는 ${ALLOW_PREFIX} 주소만 처리합니다`);
+  if (!ALLOW_PREFIXES.some((p) => url.startsWith(p))) {
+    return fail(403, "not-allowed",
+      `이 중계는 다음 주소만 처리합니다: ${ALLOW_PREFIXES.join(" , ")}`);
   }
 
   const method = (req.headers.get("x-relay-method") ?? "GET").toUpperCase();
@@ -126,13 +137,13 @@ Deno.serve(async (req) => {
     const buf = new Uint8Array(await up.arrayBuffer());
 
     // 원래 응답을 그대로 돌려준다.
-    // 함수 자체는 늘 200 이고, EIASS 가 준 상태 코드는 x-upstream-status 에 담는다.
-    // (그래야 부르는 쪽이 '중계가 실패한 것'과 'EIASS 가 404 를 준 것'을 구분할 수 있다)
+    // 함수 자체는 늘 200 이고, 상대가 준 상태 코드는 x-upstream-status 에 담는다.
+    // (그래야 부르는 쪽이 '중계가 실패한 것'과 '상대가 404 를 준 것'을 구분할 수 있다)
     const h = new Headers({
       "content-type": "application/octet-stream",
-      // 글자 인코딩이 여기 실려 간다. EIASS 는 charset=UTF-8 을 명시하므로
-      // 그대로 넘기면 부르는 쪽에서 한글이 안 깨진다.
       "x-upstream-status": String(up.status),
+      // ★ 글자 인코딩이 이 헤더에 실려 간다. EIASS 는 charset=UTF-8 을 명시하므로
+      //   그대로 넘기면 부르는 쪽에서 한글이 안 깨진다. 지우면 안 된다.
       "x-upstream-content-type": up.headers.get("content-type") ?? "",
       "x-upstream-ms": String(Date.now() - t0),
     });
@@ -141,8 +152,8 @@ Deno.serve(async (req) => {
     const msg = String(e);
     // 인증서 문제는 원인이 뚜렷하므로 따로 짚어 준다 (2027-03-29 갱신 때 겪을 수 있다)
     const hint = msg.includes("UnknownIssuer") || msg.includes("certificate")
-      ? " ← EIASS 인증서가 바뀐 것 같습니다. 이 파일 맨 위 주석의 방법으로 중간 인증서를 새로 받아 넣으세요."
+      ? " ← 상대 인증서가 바뀐 것 같습니다. 이 파일 맨 위 주석의 방법으로 중간 인증서를 새로 받아 넣으세요."
       : "";
-    return fail(502, "upstream-failed", `EIASS 호출 실패: ${msg}${hint}`);
+    return fail(502, "upstream-failed", `중계 호출 실패: ${msg}${hint}`);
   }
 });
