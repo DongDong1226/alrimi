@@ -103,6 +103,13 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg>
       <span id="hood-pill-label">전국</span>
     </button>
+    <!-- 담은 사업으로 가는 입구. 아래 탭이 이미 5개로 꽉 차서(애플 권장도 5개) 머리말에 둔다.
+         즐겨찾기를 머리말에 두는 것은 앱들의 흔한 방식이다.
+         data-nav="saved" 는 app.js 가 두 화면 공용으로 처리한다. -->
+    <button class="m-star-btn" type="button" data-nav="saved" aria-label="내가 담은 사업">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="m12 3.6 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.7l5.8-.8z"></path></svg>
+      <span class="m-star-cnt" id="savedCount" hidden>0</span>
+    </button>
   </header>
 
   <main id="main" class="m-main">
@@ -169,6 +176,8 @@
 
     <!-- 사업 목록 -->
     <section class="m-sec" id="projects">
+      <!-- 새로 올라온 사업 알림 줄. index.html 과 같은 칸 이름을 쓴다 (app.js 공용) -->
+      <div class="new-banner" id="newBanner" role="status" hidden></div>
       <div class="m-sec-hd">
         <span class="kicker"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg><span id="projKicker">우리 동네 사업</span></span>
         <h2 class="h-l" id="projHead"></h2>
@@ -316,6 +325,40 @@
 
 <!-- ══════════════════ 아래쪽 탭 막대 ══════════════════
      엄지로 닿는 자리에 둔다. 화면 1(동네 설정)에서는 감춘다. -->
+<!-- ══════════════════ 화면 4 · 내가 담은 사업 ══════════════════
+     ★ 칸 이름(id)을 index.html 과 똑같이 맞춘다. 그래야 app.js 의 renderSaved() 가
+     두 화면을 그대로 함께 쓴다. 여기에 따로 코드를 만들면 두 화면이 갈라진다.
+     기간 규칙도 그대로다 — 기한이 지난 사업은 아래에 따로 모으고,
+     환경영향분석은 eiaSection() 이 공람 기간으로 잠근다. -->
+<div class="screen m-scr" id="scr-saved">
+  <div class="gis-top m-gistop">
+    <button class="gis-back" type="button" id="btn-saved-back" aria-label="돌아가기">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"></path></svg>
+    </button>
+    <span class="gis-ttl">내가 담은 사업</span>
+  </div>
+
+  <div class="m-saved-body">
+    <h2 class="m-sec-t" id="savedHead">담아 둔 사업</h2>
+    <p class="saved-note" id="savedNote"></p>
+
+    <!-- 담은 사업 마감일을 한 번에 캘린더로. index.html 과 같은 칸 이름 (app.js 공용) -->
+    <div class="cal-box" id="savedCal" hidden></div>
+
+    <div class="m-cards" id="savedGrid"></div>
+
+    <!-- 기한이 지난 사업은 따로 모은다. 일부러 담아 둔 것이 말없이 사라지면 고장으로 여긴다. -->
+    <div id="savedClosedWrap" hidden>
+      <div class="saved-div">
+        <h3 class="saved-div-t">기한이 지난 사업</h3>
+        <button class="btn btn--ghost btn--sm btn--pill" type="button" id="btn-saved-clear-closed">모두 비우기</button>
+      </div>
+      <p class="saved-div-h">의견 제출 기한이 끝났습니다. 기록으로 남겨 둔 것이며, 평가서 초안 해석은 표시되지 않습니다.</p>
+      <div class="m-cards" id="savedClosedGrid"></div>
+    </div>
+  </div>
+</div>
+
 <nav class="m-tabs" id="mTabs" aria-label="주요 메뉴" hidden>
   <button type="button" data-tab="home" class="on">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V20H4z"></path></svg>

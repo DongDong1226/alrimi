@@ -364,5 +364,25 @@ body.m .modal-ft .btn{width:100%}
    그래서 휴대폰에서는 담기 단추를 아예 감춘다.
    **휴대폰용 담은 사업 화면을 만들 때 이 규칙을 지운다.**
    ============================================================ */
-.star,[data-save]{display:none!important}
+/* ── 담은 사업 (2026-08-16 추가) ──
+   예전에는 여기서 별표를 통째로 감췄다. 휴대폰에 담은 사업을 볼 화면이 없어서
+   "담기만 되고 볼 곳이 없는" 상태였기 때문이다. 이제 #scr-saved 가 생겨 감출 이유가 없다. */
+
+/* 머리말 별표 단추 — 아래 탭이 5개로 꽉 차서 입구를 여기에 둔다 */
+.m-star-btn{flex:none;position:relative;width:38px;height:38px;display:inline-flex;
+  align-items:center;justify-content:center;border-radius:var(--r-xs);
+  background:none;border:1px solid var(--line-2);color:var(--ink-2);margin-left:6px}
+.m-star-btn svg{width:19px;height:19px}
+.m-star-cnt{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;
+  border-radius:999px;background:var(--live);color:#fff;font-size:10.5px;font-weight:800;
+  line-height:17px;text-align:center}
+
+.m-saved-body{padding:14px 16px calc(var(--m-tabh) + var(--m-safe) + 20px);overflow-y:auto;flex:1}
+.m-sec-t{font-size:var(--fs-h-s);margin:0 0 6px}
+.m-saved-body .saved-note{font-size:var(--fs-body-xs);color:var(--ink-3);line-height:1.7;margin:0 0 14px}
+.m-saved-body .m-cards{display:flex;flex-direction:column;gap:12px}
+.m-saved-body .saved-div{display:flex;align-items:center;justify-content:space-between;
+  gap:10px;margin:22px 0 6px;flex-wrap:wrap}
+.m-saved-body .saved-div-t{font-size:var(--fs-body-m);margin:0}
+.m-saved-body .saved-div-h{font-size:var(--fs-body-xs);color:var(--ink-3);margin:0 0 12px;line-height:1.6}
 .proj .badges{padding-right:0}   /* 별표가 없으니 그 자리를 비워 둘 필요도 없다 */

@@ -56,6 +56,187 @@ function lsSet(k, v){
    (내용까지 저장해 두면 기간이 연장돼도 옛 날짜를 계속 보여주게 된다). */
 let SAVED_IDS = lsGet(LSSAVED, []).map(String);
 
+/* ============================================================
+   마감일을 캘린더에 넣기 (.ics / 구글 캘린더)
+
+   ■ 왜 캘린더인가
+     이 서비스의 존재 이유가 "의견을 낼 수 있는 동안 알려 주는 것"인데,
+     정작 **알림을 보낼 수단이 없다**. 웹 푸시는 서버가 필요하고,
+     아이폰은 홈 화면에 추가까지 해야 한다 — 서버 0원·개인정보 0건이 깨진다.
+     캘린더에 넣어 두면 **폰이 알아서 알려 준다.** 우리는 아무것도 안 해도 된다.
+
+   ■ 두 가지 길을 다 준다 (기기마다 편한 쪽이 다르다)
+     · .ics 파일 내려받기 — 아이폰·PC 에서 매끄럽다. **미리 알림도 넣을 수 있다**
+     · 구글 캘린더 링크  — **갤럭시(안드로이드)에서 이쪽이 훨씬 편하다.**
+       파일을 받아 '어떤 앱으로 열까' 고를 필요 없이 바로 일정 추가 화면이 뜬다
+   ============================================================ */
+
+/* 캘린더 파일에서 쉼표·세미콜론·줄바꿈은 뜻이 있는 글자라 지워 준다 */
+function icsEsc(s){
+  return String(s == null ? "" : s)
+    .replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,")
+    .replace(/\r?\n/g, "\\n");
+}
+/* "2026-08-19" → "20260819" */
+function icsDate(iso){ return String(iso || "").replace(/-/g, ""); }
+/* 하루 뒤 (온종일 일정은 끝날짜를 하루 뒤로 적는 규칙이다) */
+function nextDay(iso){
+  const d = new Date(iso + "T00:00:00");
+  d.setDate(d.getDate() + 1);
+  const p = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}`;
+}
+
+/* 캘린더에 넣을 날짜 — 의견 제출 마감일. 없으면 공람 종료일을 대신 쓴다. */
+function calDeadline(p){
+  if(p.opinionEnd) return p.opinionEnd;
+  const m = /~\s*(\d{4})-(\d{2})-(\d{2})/.exec(p.period || "");
+  return m ? `${m[1]}-${m[2]}-${m[3]}` : null;
+}
+
+function calText(p){
+  return [
+    `사업: ${p.name}`,
+    `유형: ${p.typeLabel}`,
+    `위치: ${p.where}`,
+    `기관: ${p.org}`,
+    `공람기간: ${p.period}`,
+    p.opinionEnd ? `의견 제출 마감: ${p.opinionEnd}` : "",
+    "",
+    "의견은 EIASS(환경영향평가 정보지원시스템)에서 본인인증 후 제출합니다.",
+    "https://www.eiass.go.kr/",
+    "",
+    "우리동네 개발사업 알리미에서 담은 일정입니다."
+  ].filter(Boolean).join("\n");
+}
+
+/* 여러 사업을 한 파일에 담는다 (담은 사업을 한 번에 넣을 때 쓴다) */
+function buildIcs(list){
+  const lines = [
+    "BEGIN:VCALENDAR", "VERSION:2.0",
+    "PRODID:-//우리동네 개발사업 알리미//KO", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+    "X-WR-CALNAME:우리동네 개발사업 의견 마감"
+  ];
+  list.forEach(p => {
+    const day = calDeadline(p);
+    if(!day) return;
+    lines.push(
+      "BEGIN:VEVENT",
+      `UID:${icsEsc(p.id)}@alrimi`,
+      `DTSTAMP:${icsDate(todayStr())}T000000Z`,
+      `DTSTART;VALUE=DATE:${icsDate(day)}`,
+      `DTEND;VALUE=DATE:${nextDay(day)}`,     // 온종일 일정은 끝날짜가 하루 뒤다
+      `SUMMARY:[의견 마감] ${icsEsc(p.name)}`,
+      `DESCRIPTION:${icsEsc(calText(p))}`,
+      `LOCATION:${icsEsc(p.where)}`,
+      // 미리 알림 — 사흘 전 아침 9시, 그리고 당일 아침 9시
+      "BEGIN:VALARM", "ACTION:DISPLAY", "TRIGGER:-P3DT15H",
+      `DESCRIPTION:${icsEsc(p.name)} 의견 제출 마감 3일 전`, "END:VALARM",
+      "BEGIN:VALARM", "ACTION:DISPLAY", "TRIGGER:-PT15H",
+      `DESCRIPTION:${icsEsc(p.name)} 의견 제출 오늘 마감`, "END:VALARM",
+      "END:VEVENT"
+    );
+  });
+  lines.push("END:VCALENDAR");
+  // 캘린더 파일은 줄바꿈이 CRLF 여야 한다 (일부 앱이 LF 만 있으면 못 읽는다)
+  return lines.map(icsFold).join("\r\n") + "\r\n";
+}
+
+/* 한 줄이 75바이트를 넘으면 접어야 한다 (iCalendar 규격).
+   사업명이 길고 한글은 한 글자가 3바이트라 대부분 넘는다 —
+   접지 않으면 까다로운 캘린더 앱이 파일을 통째로 못 읽는다.
+   이어지는 줄은 **맨 앞에 공백 한 칸**을 넣어 표시하고,
+   한글이 중간에 잘리지 않도록 글자 단위로 센다. */
+function icsFold(line){
+  const enc = new TextEncoder();
+  if(enc.encode(line).length <= 75) return line;
+  const out = [];
+  let cur = "", curBytes = 0, limit = 75;
+  for(const ch of line){
+    const n = enc.encode(ch).length;
+    if(curBytes + n > limit){
+      out.push(cur);
+      cur = " " + ch;            // 이어지는 줄은 공백으로 시작한다
+      curBytes = 1 + n;
+      limit = 75;
+    }else{
+      cur += ch; curBytes += n;
+    }
+  }
+  if(cur) out.push(cur);
+  return out.join("\r\n");
+}
+
+function downloadIcs(name, list){
+  const rows = list.filter(p => calDeadline(p));
+  if(!rows.length) return false;
+  const blob = new Blob([buildIcs(rows)], { type:"text/calendar;charset=utf-8" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  return true;
+}
+
+/* 구글 캘린더 '일정 추가' 화면을 바로 연다.
+   갤럭시에서는 파일을 받아 여는 것보다 이쪽이 훨씬 매끄럽다. */
+function googleCalUrl(p){
+  const day = calDeadline(p);
+  if(!day) return null;
+  const q = new URLSearchParams({
+    action: "TEMPLATE",
+    text: `[의견 마감] ${p.name}`,
+    dates: `${icsDate(day)}/${nextDay(day)}`,   // 온종일
+    details: calText(p),
+    location: p.where || "",
+    ctz: "Asia/Seoul"
+  });
+  return `https://calendar.google.com/calendar/render?${q}`;
+}
+
+/* ---------- 새로 올라온 사업 ----------
+   "의견을 낼 수 있는 동안 알려 주는 것"이 이 서비스의 존재 이유인데,
+   주민이 다시 들어왔을 때 **그 사이에 새로 뜬 사업**을 못 보고 지나치면 소용이 없다.
+
+   서버도 계정도 알림 권한도 쓰지 않는다 — **마지막으로 본 날짜만 이 브라우저에 적어 두고**,
+   그보다 늦게 공람이 시작된 사업을 '새것'으로 본다.
+
+   기준은 **공람 시작일(periodStart)** 이다. 자료에 이미 있는 값이라 수집기를 안 고쳐도 된다.
+   (한계: 공람이 이미 시작된 뒤에 EIASS 목록에 늦게 올라오는 사업은 '새것'으로 안 잡힌다.
+    정확히 하려면 '우리가 처음 발견한 날'을 수집기가 따로 적어야 한다 — 아직 안 함)
+
+   ★ 처음 온 사람에게는 아무것도 새것으로 표시하지 않는다.
+     41건이 전부 NEW 면 아무 뜻이 없다. 그래서 첫 방문에는 오늘 날짜를 적어 두기만 한다. */
+const LSSEEN = "wdn.lastSeen";
+let LAST_SEEN = lsGet(LSSEEN, null);
+
+function todayStr(){
+  const d = new Date();
+  const p = n => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+/* 날짜는 YYYY-MM-DD 라 글자 그대로 견주면 된다 (앞자리부터 커지는 형식) */
+function isNewProject(p){
+  return Boolean(LAST_SEEN && p.periodStart && p.periodStart > LAST_SEEN);
+}
+
+/* 지금 보고 있는 범위 안에서 새로 올라온 사업 */
+function newProjects(){
+  return scopedProjects().filter(isNewProject);
+}
+
+/* 새 사업을 확인한 것으로 치고 표시를 지운다 */
+function markSeen(){
+  LAST_SEEN = todayStr();
+  lsSet(LSSEEN, LAST_SEEN);
+  renderNewBanner();
+  if(dataReady) render();
+}
+
 function isSaved(id){ return SAVED_IDS.includes(String(id)); }
 
 function toggleSaved(id){
@@ -236,6 +417,7 @@ function normalizeProject(p){
     viewOpen,                   // 공람 기간 안인가 (환경영향분석은 이때만 보여준다)
     opinionEnd: oEndStr,        // 의견 제출 마감일 (없으면 null)
     dist: null,                 // 우리 집 좌표가 정해진 뒤 계산한다
+    periodStart: p.periodStart || null,   // '새로 올라온 사업' 판단에 쓴다
     period: (p.periodStart && p.periodEnd) ? `${p.periodStart} ~ ${p.periodEnd}` : "정보 없음",
     where: p.address || "위치 정보 없음",
     org: p.org || "기관 정보 없음",
@@ -352,6 +534,14 @@ async function loadProjects(){
   }
 
   dataReady = true;
+
+  // 처음 온 사람에게는 아무것도 새것으로 표시하지 않는다 — 오늘 날짜만 적어 둔다.
+  // (41건이 전부 NEW 로 뜨면 아무 뜻이 없다)
+  if(!LAST_SEEN){
+    LAST_SEEN = todayStr();
+    lsSet(LSSEEN, LAST_SEEN);
+  }
+
   applyDemoBanner();
   renderNation();          // 첫 화면 숫자는 자료를 읽은 뒤에야 채울 수 있다
   recomputeDistances();
@@ -383,6 +573,7 @@ function refreshAll(){
   renderGisList();
   renderGisMarkers();
   syncSavedUi();      // 별표 상태와 머리쪽 숫자는 자료를 읽은 뒤에 맞춘다
+  renderNewBanner();  // 새로 올라온 사업 알림 줄 (범위가 바뀌면 건수도 달라진다)
 }
 
 /* EIASS 원문 상세페이지는 GET 링크가 아니라 POST 로만 열려서,
@@ -1870,6 +2061,30 @@ function bindPager(pagerSel, perSel, key, redraw, scrollTo){
   });
 }
 
+/* "새 사업이 올라왔습니다" 알림 줄.
+   두 화면이 같은 칸(#newBanner)을 쓴다. 없는 화면에서는 $() 가 알아서 넘어간다. */
+function renderNewBanner(){
+  const box = $("#newBanner");
+  if(!box || !box.classList) return;
+  const rows = dataReady ? newProjects() : [];
+  box.hidden = !rows.length;
+  if(!rows.length) return;
+  const where = isNation(currentHood) ? "전국에" : `${esc(hoodShort(currentHood))}에`;
+  box.innerHTML = `
+    <span class="nb-ic" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8Z"></path><path d="M13.7 21a2 2 0 0 1-3.4 0" stroke-linecap="round"></path></svg>
+    </span>
+    <span class="nb-t">${where} <b>새 사업 ${rows.length}건</b>이 올라왔습니다</span>
+    <button class="btn btn--primary btn--sm btn--pill" type="button" id="btnNewGo">보기</button>
+    <button class="nb-x" type="button" id="btnNewClose" aria-label="닫기">✕</button>`;
+  $("#btnNewGo").addEventListener("click", () => {
+    // 새 사업만 보여 주는 게 아니라, 목록으로 데려가고 NEW 딱지로 짚어 준다
+    const el = document.getElementById("projects");
+    if(el) el.scrollIntoView({ behavior:"smooth", block:"start" });
+  });
+  $("#btnNewClose").addEventListener("click", markSeen);
+}
+
 function render(){
   const rows = visibleProjects();
   const grid = $("#projGrid");
@@ -1928,6 +2143,7 @@ function projCardHtml(p, opts = {}){
         <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="m12 3.6 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.7l5.8-.8z"></path></svg>
       </button>
       <div class="badges">
+        ${!closed && isNewProject(p) ? `<span class="badge badge--new">NEW</span>` : ``}
         <span class="badge ${p.badge} badge--dot">${esc(p.typeLabel)}</span>
         ${locTagHtml(p)}
         ${p.dday !== null
@@ -1963,6 +2179,13 @@ function bindProjectActions(rootSel, opts = {}){
     }
     const d = e.target.closest("[data-detail]");
     if(d){ openDetail(d.dataset.detail); return; }
+    // 마감일을 캘린더 파일로 받기 (구글 캘린더는 그냥 링크라 여기서 처리할 것이 없다)
+    const c = e.target.closest("[data-cal-ics]");
+    if(c){
+      const p = findProject(c.dataset.calIcs);
+      if(p) downloadIcs(`알리미-의견마감-${p.id}.ics`, [p]);
+      return;
+    }
     const m = e.target.closest("[data-onmap]");
     if(m){
       if(opts.closeModal) closeModal($(opts.closeModal));
@@ -2064,6 +2287,26 @@ bindPager("#projPager", "#projPerPage", "proj", render, "#projects");
 bindPager("#openPager", "#openPerPage", "open", renderOpenList, "#participate");
 
 /* 사업 상세 모달 */
+/* 마감일을 캘린더에 넣는 칸. 기기마다 편한 길이 달라 **두 가지를 다** 준다. */
+function calSectionHtml(p){
+  const day = calDeadline(p);
+  if(!day || p.dday === null) return "";     // 이미 기한이 지났으면 넣을 것이 없다
+  const g = googleCalUrl(p);
+  return `
+    <div class="cal-box">
+      <p class="cal-t">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M4 11h16"></path></svg>
+        마감일을 캘린더에 넣어 두기
+      </p>
+      <p class="cal-h">${esc(day)}(의견 제출 마감)로 넣습니다. 사흘 전과 당일 아침에 폰이 알려 줍니다.</p>
+      <div class="cal-btns">
+        <button class="btn btn--primary btn--sm btn--pill" type="button" data-cal-ics="${esc(p.id)}">캘린더 파일 받기</button>
+        ${g ? `<a class="btn btn--line btn--sm btn--pill" href="${esc(g)}" target="_blank" rel="noopener">구글 캘린더에 넣기 ↗</a>` : ""}
+      </div>
+      <p class="cal-h cal-h--sub">아이폰은 <b>캘린더 파일</b>, 갤럭시는 <b>구글 캘린더</b>가 편합니다.</p>
+    </div>`;
+}
+
 function openDetail(id){
   // 담아 둔 사업은 기한이 지났을 수 있으므로 CLOSED_PROJECTS 까지 찾는다.
   const p = findProject(id);
@@ -2085,7 +2328,8 @@ function openDetail(id){
       </button>
       ${p.open && p.lat != null ? `<button class="btn btn--line btn--sm" type="button" data-onmap="${esc(p.id)}">지도에서 보기</button>` : ""}
       ${p.sourceBizCd ? `<button class="btn btn--line btn--sm" type="button" data-eiass="${esc(p.id)}">EIASS 원문 페이지 열기 ↗</button>` : ""}
-    </p>`;
+    </p>
+    ${calSectionHtml(p)}`;
   openModal("m-detail");
 }
 bindProjectActions("#detailBody", { closeModal:"#m-detail" });
@@ -2133,6 +2377,31 @@ function renderSaved(){
        <b>이 목록은 지금 쓰고 있는 기기(브라우저)에만 저장됩니다</b> — 다른 기기에서는 보이지 않고,
        브라우저 기록을 지우면 함께 지워집니다.${missing ? `<br>자료가 더 이상 제공되지 않는 사업 ${missing}건은 표시하지 않았습니다.` : ""}`
     : "";
+
+  // 담은 사업의 마감일을 **한 번에** 캘린더에 넣는 칸.
+  // 여기가 가장 쓸모 있는 자리다 — 담아 둔 이유가 '마감을 놓치지 않는 것'이기 때문이다.
+  const calBox = $("#savedCal");
+  if(calBox && calBox.classList){
+    const withDay = open.filter(p => calDeadline(p));
+    calBox.hidden = !withDay.length;
+    if(withDay.length){
+      calBox.innerHTML = `
+        <p class="cal-t">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M4 11h16"></path></svg>
+          담은 사업 ${withDay.length}건의 마감일을 캘린더에 넣기
+        </p>
+        <p class="cal-h">사흘 전과 당일 아침에 폰이 알려 줍니다. 서비스가 알림을 보내는 것이 아니라
+          <b>폰 캘린더가 알려 주는 것</b>이라, 이 화면을 안 열어도 됩니다.</p>
+        <div class="cal-btns">
+          <button class="btn btn--primary btn--sm btn--pill" type="button" id="btnSavedIcs">캘린더 파일 받기 (${withDay.length}건)</button>
+        </div>
+        <p class="cal-h cal-h--sub">아이폰은 받은 파일을 열면 바로 들어갑니다.
+          갤럭시는 사업을 하나씩 열어 <b>구글 캘린더에 넣기</b>를 쓰는 편이 빠릅니다.</p>`;
+      $("#btnSavedIcs").addEventListener("click", () => {
+        downloadIcs("알리미-담은사업-마감일.ics", withDay);
+      });
+    }
+  }
 
   // 큰 제목이 이미 "아직 담아 둔 사업이 없습니다"라고 말하고 있으므로
   // 여기서 같은 문장을 되풀이하지 않는다. 상자는 **어떻게 담는지**만 알려 준다.

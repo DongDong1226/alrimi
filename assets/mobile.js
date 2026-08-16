@@ -23,9 +23,13 @@
     const onboard = q("#scr-onboard").classList.contains("on");
     tabs.hidden = onboard;
     const mapOn = q("#scr-map").classList.contains("on");
+    // 담은 사업 화면에는 해당하는 탭이 없다. 그때 '홈'에 불이 들어오면
+    // 지금 홈에 있는 것처럼 보여 헷갈린다.
+    const savedEl = q("#scr-saved");
+    const savedOn = !!savedEl && savedEl.classList.contains("on");
     qa("[data-tab]").forEach(b => {
       const on = (b.dataset.tab === "map") ? mapOn
-        : (b.dataset.tab === "home" && !mapOn && !onboard);
+        : (b.dataset.tab === "home" && !mapOn && !onboard && !savedOn);
       b.classList.toggle("on", on);
     });
   }

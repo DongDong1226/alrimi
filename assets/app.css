@@ -576,6 +576,36 @@ select:disabled{opacity:.5;cursor:not-allowed}
    ② 모양까지 다르게 준다(원 ↔ 마름모).
    색만으로 나누면 색을 구분하기 어려운 사람은 둘을 못 가른다.
    (색은 모두 tokens.css 에 있는 값이다) */
+/* ── 마감일을 캘린더에 넣기 ────────────────────────────────────────
+   서버 없이 '알림'에 가장 가까운 길이다 — 넣어 두면 폰 캘린더가 대신 알려 준다.
+   기기마다 편한 길이 달라 두 가지를 함께 둔다 (아이폰=.ics / 갤럭시=구글 캘린더). */
+.cal-box{margin-top:18px;padding:14px;border-radius:var(--r-m);
+  background:var(--eco-soft);border:1px solid rgba(31,138,91,.25)}
+.cal-t{display:flex;align-items:center;gap:7px;margin:0 0 6px;
+  font-weight:700;font-size:var(--fs-body-s);color:var(--eco)}
+.cal-t svg{width:17px;height:17px;flex:none}
+.cal-h{margin:0;font-size:var(--fs-body-xs);color:var(--ink-2);line-height:1.65}
+.cal-h--sub{margin-top:8px;color:var(--ink-3)}
+.cal-btns{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 0}
+.cal-btns .btn{text-decoration:none}
+
+/* ── 새로 올라온 사업 알림 줄 ──────────────────────────────────────
+   지난번 본 뒤로 공람이 시작된 사업이 있을 때만 나온다.
+   두 화면(index.html·m.html)이 같은 칸(#newBanner)을 쓴다. */
+.new-banner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  margin:0 0 18px;padding:12px 14px;border-radius:var(--r-m);
+  background:var(--primary-tint);border:1px solid var(--p20)}
+.new-banner .nb-ic{flex:none;display:inline-flex;color:var(--primary)}
+.new-banner .nb-ic svg{width:20px;height:20px}
+.new-banner .nb-t{flex:1;min-width:0;font-size:var(--fs-body-s);color:var(--ink)}
+.new-banner .nb-t b{color:var(--primary-deep)}
+.new-banner .nb-x{flex:none;width:28px;height:28px;border:0;background:none;
+  color:var(--ink-3);font-size:14px;border-radius:50%}
+.new-banner .nb-x:hover{background:rgba(0,0,0,.06);color:var(--ink)}
+
+/* 새로 올라온 사업 카드에 붙는 딱지 */
+.badge--new{background:var(--live);color:#fff;font-weight:800;letter-spacing:.3px}
+
 /* ── 사업 마커 = 핀 ────────────────────────────────────────────────
    원·마름모로 그렸을 때는 지도에 '칠해진 것'처럼 보여 배경에 묻혔다.
    핀은 뾰족한 끝이 자리를 가리키고 흰 테두리·그림자로 떠 있어
