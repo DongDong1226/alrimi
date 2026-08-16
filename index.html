@@ -398,10 +398,9 @@
       </div>
       <p class="adm-err" id="admErr"></p>
       <button class="btn btn--primary btn--block" type="button" id="admGo" style="margin-top:6px">확인</button>
-      <!-- 이 잠금은 보안장치가 아니다. 영영 못 들어가는 편이 더 나쁘므로 되돌릴 길을 둔다.
-           두 번 틀렸을 때만 보인다 (app.js 의 unlock 참고). -->
-      <button class="btn btn--ghost btn--block btn--sm" type="button" id="admPwReset"
-              style="margin-top:8px" hidden>기본값으로 되돌리기</button>
+      <!-- '기본값으로 되돌리기' 단추는 두었다가 뺐다 (2026-08-16) —
+           두 번만 틀리면 누구나 눌러 초기화할 수 있어 잠금이 아예 뜻을 잃는다.
+           잊었을 때 되살리는 방법은 docs/HANDOFF.md §1 에 적어 두었다. -->
     </div>
   </div>
 
