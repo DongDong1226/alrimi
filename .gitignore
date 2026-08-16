@@ -21,3 +21,4 @@ data/build_log.txt
 Thumbs.db
 # 윈도우에서 "> nul" 로 출력을 버릴 때 git-bash 가 진짜 파일로 만들어 버린 찌꺼기
 nul
+tools/_shots/

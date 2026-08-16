@@ -118,6 +118,7 @@ data/cal/*.ics                 지역별 캘린더 (전국1 + 시도16 + 시군�
                                build_data.py 가 만든다. 주민이 구독하면 새 사업이 저절로 들어온다
 tools/build_data.py            EIASS 수집 → projects.json 생성
 tools/relay/index.ts           EIASS 중계 함수 원본 (Supabase Edge Function, 서울)
+tools/shot.py                  화면을 그림으로 찍는 개발 보조 도구 (아래 참고)
 tools/build_regions.py         VWorld → regions.json 생성
 tools/build_boundaries.py      VWorld → sido.json 생성 (행정구역 개편 때만 다시 돌린다)
 tools/run_daily.bat            손으로 급히 수집할 때 (반드시 CRLF). 평소 수집은 collect.yml 이 한다
@@ -433,6 +434,26 @@ python tools/build_boundaries.py      # 시·도 경계 도형 (한 번만)
 ```bash
 python -m http.server 8000
 ```
+
+### ★ 화면을 그림으로 찍어 보기 (`tools/shot.py`)
+
+**치수를 재는 것만으로는 "답답한지 넉넉한지"를 알 수 없다. 눈으로 봐야 한다.**
+브라우저 창을 안 띄우면 캡처가 막히므로, 창 없이 찍는 길을 둔다.
+
+```bash
+python tools/shot.py                                          # 휴대폰 첫 화면
+python tools/shot.py --click "#setForm button[type=submit]"   # 눌러 본 뒤 찍기
+python tools/shot.py --scroll bottom                          # 아래까지 내려서
+python tools/shot.py --pc                                     # 넓은 화면
+```
+
+- **playwright 가 있으면 그것을 쓴다** — 진짜 휴대폰 흉내가 된다
+  (viewport meta 를 따르고 배율 3배, 손가락 기기로 인식 → `m.html` 판정이 맞게 돈다)
+- 없으면 크롬/엣지를 headless 로 부른다(설치 불필요). 단 **데스크톱 취급**이라
+  viewport meta 를 무시해 **좁은 화면이 잘린 것처럼 찍힌다** — 2026-08-16 에 그걸 보고
+  없는 버그를 찾을 뻔했다. 휴대폰 화면을 볼 때는 playwright 쪽을 쓸 것
+- 가로로 삐져나간 것이 있으면 찍은 뒤 `⚠` 로 알려 준다 (그림만 보면 잘린 줄 모른다)
+- 결과는 `tools/_shots/` 에 쌓이고 `.gitignore` 에 넣어 두었다
 
 ---
 

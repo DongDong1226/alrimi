@@ -97,7 +97,11 @@ body.m .wrap{width:calc(100% - 28px)}
 .m-hood-pill svg{width:14px;height:14px;flex:none;color:var(--primary)}
 .m-hood-pill span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
-.m-main{padding-bottom:calc(var(--m-tabh) + var(--m-safe) + 12px)}
+/* ★ 아래 여백을 main 이 아니라 **푸터가** 갖는다.
+   main 이 가지고 있으면 남색 푸터가 끝난 뒤 탭 막대까지 **흰 띠**가 남아
+   화면이 덜 마감된 것처럼 보인다 (2026-08-16 캡처로 확인).
+   푸터가 그 몫까지 가지면 남색이 탭 막대까지 이어진다. */
+.m-main{padding-bottom:0}
 
 /* 홈 화면 위쪽 띠 — 데스크톱의 히어로에 해당한다. 같은 사진을 쓴다.
    여기는 띠가 얇아 사진이 조금만 보이므로 덮개를 조금 더 진하게 해 글자를 확실히 살린다. */
@@ -127,7 +131,7 @@ body.m .wrap{width:calc(100% - 28px)}
    스크롤 스냅으로 카드 사이에서 어중간하게 멈추지 않게 한다. 몇 번째인지는 아래 점으로 안다. */
 /* 두 칸이 한 화면에 딱 들어간다. **옆으로 밀지 않는다** —
    밀 수 있다는 걸 모르면 안 보이는 칸이 생기고, 첫 칸도 잘려 보인다. */
-.m-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px}
+.m-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 14px 6px}
 .m-stat{min-width:0;background:#fff;border:1px solid var(--line);border-radius:var(--r-md);
   padding:13px 14px;display:flex;flex-direction:column;gap:3px;box-shadow:var(--sh-sm)}
 .m-stat.feat{border-color:var(--primary);background:var(--primary-tint)}
@@ -136,6 +140,9 @@ body.m .wrap{width:calc(100% - 28px)}
 .m-stat .num small{font-size:14px;font-weight:700;color:var(--ink-3);margin-left:2px}
 .m-stat .delta{font-size:11.5px;font-weight:600;color:var(--ink-3);line-height:1.5}
 .m-stat .delta.hot{color:var(--danger)}
+/* '반경 밖에 N건 더 있음'은 휴대폰에서 숨긴다 — 지금 보는 것 말고 다른 것까지
+   알려 주면 좁은 칸이 글자로 빽빽해진다. (데스크톱은 자리가 넉넉해 그대로 둔다) */
+.m-stat .stat-outside{display:none}
 
 
 .m-tick{padding:0 14px}
@@ -143,10 +150,10 @@ body.m .wrap{width:calc(100% - 28px)}
   padding:11px 13px;margin-bottom:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 
 /* 내 동네 카드 */
-.m-hoodcard{margin:6px 14px 0;background:#fff;border:1px solid var(--line);
+.m-hoodcard{margin:4px 14px 0;background:#fff;border:1px solid var(--line);
   border-radius:var(--r-md);overflow:hidden;box-shadow:var(--sh-sm)}
 .m-hoodcard-hd{display:flex;align-items:flex-start;justify-content:space-between;
-  gap:10px;padding:14px 16px 10px}
+  gap:10px;padding:12px 16px 8px}
 .m-hoodcard-hd .lb{font-size:var(--fs-body-xs);font-weight:700;color:var(--primary)}
 .m-hoodcard-hd .nm{font-size:var(--fs-h-xs);font-weight:800;color:var(--navy);margin-top:2px}
 .m-hoodcard-hd .chg{font-size:var(--fs-body-xs);font-weight:700;color:var(--ink-3);
@@ -161,10 +168,11 @@ body.m .wrap{width:calc(100% - 28px)}
 .m-hoodfoot .v{font-size:15px}
 
 /* 목록 구역 */
-.m-sec{padding:22px 14px 8px}
-.m-sec--alt{background:var(--bg-2);border-top:1px solid var(--line);margin-top:18px}
-.m-sec-hd{margin-bottom:14px}
-.m-sec-hd h2,.m-sec-hd h3{margin-top:7px}
+/* 세로 간격 전반을 좁힌다 — 한 화면에 들어오는 내용이 그만큼 늘어난다 */
+.m-sec{padding:16px 14px 6px}
+.m-sec--alt{background:var(--bg-2);border-top:1px solid var(--line);margin-top:12px}
+.m-sec-hd{margin-bottom:10px}
+.m-sec-hd h2,.m-sec-hd h3{margin-top:5px}
 .m-note{font-size:var(--fs-body-xs);color:var(--ink-3);font-weight:600;margin-top:5px}
 
 /* 범위 단추 — 셋이 가로로 꽉 차게 */
@@ -201,10 +209,13 @@ body.m .pager{justify-content:center;flex-wrap:wrap;gap:8px}
 body.m .pager-btns{margin-left:0}
 body.m .pg{min-width:40px;min-height:40px}
 
-.m-foot{padding:24px 16px calc(24px + var(--m-safe));background:var(--navy-3);color:#c9d7f2;
-  font-size:var(--fs-body-xs);line-height:1.8}
+/* ★ 푸터를 납작하게. 예전에는 위 여백만 24px 이고 앞 구역의 아래 여백까지 더해져
+   **앞 구역 끝에서 링크줄까지 36px** 이 비어 있었다. 14px 로 줄인다. */
+.m-foot{padding:16px 16px calc(var(--m-tabh) + var(--m-safe) + 16px);
+  background:var(--navy-3);color:#c9d7f2;
+  font-size:var(--fs-body-xs);line-height:1.65}
 .m-foot strong{color:#fff;margin-right:6px}
-.m-foot-links{display:flex;gap:14px;margin:12px 0;flex-wrap:wrap}
+.m-foot-links{display:flex;gap:14px;margin:0 0 8px;flex-wrap:wrap}
 .m-foot-links button,.m-foot-links a{color:#fff;font-weight:700;background:none;border:0;
   padding:6px 0;text-decoration:underline;font-size:var(--fs-body-xs)}
 .m-copy{color:#8fa6d4;line-height:1.7}

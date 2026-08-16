@@ -2016,12 +2016,15 @@ function updateDashboardStats(){
 
   // 범위 밖 사업 수는 '전국 개발사업' 칸이 없어졌으므로 이 칸 아래에 함께 적는다.
   const outside = PROJECTS.length - rows.length;
-  const notes = [];
-  if(openRows.length) notes.push(`가장 빠른 의견 마감 D-${Math.min(...openRows.map(p => p.dday))}`);
+  let note = openRows.length
+    ? esc(`가장 빠른 의견 마감 D-${Math.min(...openRows.map(p => p.dday))}`) : "";
+  // '밖에 N건 더 있음'은 따로 감싼다 — 휴대폰에서는 이 부분만 숨긴다.
+  // 좁은 화면에서는 지금 보는 것 말고 다른 것까지 알려 주면 글자만 빽빽해진다.
   if(homeScope !== "all" && outside > 0){
-    notes.push(`${homeScope === "region" ? "이 동네" : "반경"} 밖에 ${outside}건 더 있음`);
+    note += `<span class="stat-outside">${note ? " · " : ""}` +
+      esc(`${homeScope === "region" ? "이 동네" : "반경"} 밖에 ${outside}건 더 있음`) + `</span>`;
   }
-  $("#stat-open-note").textContent = notes.join(" · ");
+  $("#stat-open-note").innerHTML = note;
 
   // 협의 진행 중 — EIASS 사업조회에서 세어 온 전국 건수 (우리 동네 범위와 무관)
   const ur = UNDER_REVIEW;
