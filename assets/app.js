@@ -3588,7 +3588,7 @@ function renderAdminFeed(){
       <td class="admfeed-n">${list.length}건</td>
       <td>${list.map(p => `<span class="admfeed-item${p.open ? "" : " is-closed"}">
             <b>${esc(p.typeLabel || "")}</b> ${esc(p.name)}
-            <i>${esc(p.address ? p.address.split(" ").slice(0, 2).join(" ") : "")}</i>
+            <i>${esc(p.where ? p.where.split(" ").slice(0, 2).join(" ") : "")}</i>
             ${p.open ? "" : "<em>기한 지남</em>"}
           </span>`).join("")}</td>
     </tr>`;
@@ -3609,8 +3609,67 @@ function renderAdminFeed(){
     ${restCount ? `<p class="hint">그 이전 ${restDays.length}일치 ${restCount}건은 줄여서 표시하지 않았습니다.</p>` : ``}`;
 }
 
+/* ---------- 관리자 · 노선을 그려야 할 사업 ----------
+   ■ 왜 필요한가
+     노선을 그려야 할 사업을 찾는 기준이 EIASS 의 `선형` 표시였는데,
+     **환경영향평가에는 그 표시가 아예 없다** (EIASS 상세 페이지에 사업위치 칸이 없다.
+     2026-08-17 에 원문을 직접 받아 확인했다 — 전략 31건은 전부 있고 환경 10건은 전부 없다).
+     그래서 '345kV 신해남~신장성 송전선로' 같은 **명백한 선형 사업이 후보에서 통째로 빠졌다.**
+
+   ■ 그렇다고 자료를 추측으로 채우지는 않는다
+     이름에 '도로'가 들어가도 실제로는 면형인 사업이 있다. `locationTypes` 는 **그대로 비워 둔다.**
+     대신 **관리자에게만** '이름으로 보면 선형일 수 있다'고 짚어 주고, 판단은 사람이 한다.
+     주민 화면에는 이 짐작이 절대 나가지 않는다. */
+const LINEAR_HINTS = ["송전선로", "전선로", "송전", "도로", "철도", "전철", "지하철", "궤도",
+  "관로", "수도", "송유관", "가스관", "터널", "노선", "우회", "교량", "제방", "연결도로"];
+
+function linearByName(p){
+  const n = p.name || "";
+  return LINEAR_HINTS.filter(w => n.includes(w));
+}
+
+function renderAdminRoutes(){
+  const box = $("#admRoutes");
+  if(!box || !box.classList) return;
+
+  const all = PROJECTS.concat(CLOSED_PROJECTS);
+  const todo = [];      // EIASS 가 '선형'이라고 밝혔는데 노선이 없는 것
+  const maybe = [];     // 위치유형이 없어서 이름으로만 짐작되는 것
+  all.forEach(p => {
+    if(routeOf(p)) return;                       // 이미 그려졌거나 자동으로 찾은 것
+    const types = p.locationTypes || [];
+    if(types.includes("선형")) todo.push(p);
+    else if(!types.length && linearByName(p).length) maybe.push({ p, hits:linearByName(p) });
+  });
+
+  const row = (p, note) => `<li>
+      <button type="button" class="admrt-go" data-id="${esc(p.id)}">${esc(p.name)}</button>
+      <span class="admrt-sub">${esc((p.where || "").split(" ").slice(0, 2).join(" "))}
+        · ${esc(p.typeLabel || "")}${note ? ` · <b>${esc(note)}</b>` : ""}</span>
+    </li>`;
+
+  box.innerHTML = `
+    ${todo.length ? `<p class="admrt-h">EIASS 가 <b>선형</b>이라고 밝힌 사업 중 노선이 없는 것 — ${todo.length}건</p>
+      <ul class="admrt">${todo.map(p => row(p)).join("")}</ul>` : ``}
+
+    ${maybe.length ? `<p class="admrt-h">이름으로 보면 <b>선형일 수 있는</b> 사업 — ${maybe.length}건</p>
+      <p class="hint hint--warn">환경영향평가는 EIASS 가 위치유형을 주지 않습니다.
+        아래는 <b>사업명만 보고 짐작한 것</b>이라 틀릴 수 있습니다 —
+        원문을 확인하고 판단하세요. <b>자료에는 넣지 않았고 주민 화면에도 나오지 않습니다.</b></p>
+      <ul class="admrt">${maybe.map(m => row(m.p, m.hits.join("·"))).join("")}</ul>` : ``}
+
+    ${(!todo.length && !maybe.length)
+      ? `<p class="hint">노선을 그려야 할 사업이 지금은 없습니다.</p>` : ``}`;
+
+  box.querySelectorAll(".admrt-go").forEach(b => b.addEventListener("click", () => {
+    openMapScreen(b.dataset.id);     // 그 사업으로 지도를 열고
+    setRouteArmed(true);             // 바로 그리기를 켠다
+  }));
+}
+
 function fillAdmin(){
   renderAdminFeed();
+  renderAdminRoutes();
   $("#a-vworld").value      = S.vworldKey;
   $("#a-service-url").value = S.serviceUrl;
   $("#a-lon").value         = S.centerLon;
