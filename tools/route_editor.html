@@ -1,0 +1,1232 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>노선 그리기 도구 — 우리동네 개발사업 알리미</title>
+
+<!--
+  ============================================================================
+  도로·철도 선형 사업의 노선을 직접 그려 넣는 도구 (담당자 전용)
+
+  ■ 왜 따로 만들었나
+    하천 사업은 요약문에서 하천 이름을 뽑아 VWorld 하천망도에서 도형을 받아 온다.
+    그런데 도로·철도는 그렇게 못 한다 —
+      · 아직 없는 길이라 어떤 지도에도 도형이 없다 (계획 단계 사업이다)
+      · 도면(그림)에는 노선이 그려져 있지만 좌표 격자가 없어 픽셀을 위경도로 못 바꾼다
+    그래서 사람이 사업개요(시점·종점·연장)를 보고 지도에 직접 그리는 수밖에 없다.
+    이 화면은 주민에게 보일 것이 아니므로 index.html/m.html 과 완전히 분리했다.
+
+  ■ 배포되지 않는다
+    deploy.yml 은 *.html(맨 위) · assets/ · data/ 만 올린다. tools/ 는 안 올린다.
+    그래서 이 파일은 저장소에는 있지만 공개 사이트에는 절대 나타나지 않는다.
+
+  ■ 쓰는 법
+    1) 저장소 폴더에서   python -m http.server 8000
+    2) http://localhost:8000/tools/route_editor.html
+       (file:// 로 열면 data/*.json 을 못 읽는다)
+    3) 맨 위에 VWorld 키를 넣는다 — 이 브라우저에만 저장된다.
+       ★ 키를 파일에 적어 커밋하지 말 것. 2026-08-07 에 그렇게 하다 공개 저장소에 키가 남았다.
+    4) 왼쪽에서 사업을 고르고 → 지도에 점을 찍어 노선을 그린다 (또는 GeoJSON/KML 붙여넣기)
+    5) [routes.json 내려받기] → 받은 파일을 data/routes.json 에 덮어쓰고 커밋
+
+  ■ 결과가 화면에 적용되는 길 (이미 만들어져 있다)
+    data/routes.json → app.js 의 loadRoutes() → manualRoutes → routeOf()
+    routeOf() 의 우선순위는 **직접 그린 것 > 수집한 하천 도형** 이라,
+    파일에 넣는 순간 지도·반경 판정·상세 화면에 한꺼번에 반영된다.
+  ============================================================================
+-->
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="../assets/tokens.css">
+<style>
+  /* 담당자용 도구라 꾸미지 않는다. 색·글꼴은 tokens.css 의 변수만 쓴다. */
+  :root{ color-scheme:light }
+  *{ box-sizing:border-box }
+  body{ margin:0; font-family:var(--font); color:var(--ink); background:var(--bg);
+        font-size:var(--fs-body-s); height:100vh; height:100dvh; display:flex; flex-direction:column }
+  header{ background:var(--navy); color:#fff; padding:10px 14px; display:flex;
+          gap:10px; align-items:center; flex-wrap:wrap; flex:none }
+  header h1{ font-size:var(--fs-h-xs); margin:0 12px 0 0 }
+  header .warn{ color:var(--orange); font-weight:700 }
+  input, select, textarea, button{ font-family:var(--font); font-size:var(--fs-body-s) }
+  input[type=password], input[type=text]{ padding:6px 8px; border:1px solid var(--line);
+          border-radius:var(--r-s, 6px); min-width:260px }
+  button{ padding:7px 12px; border:1px solid var(--line-strong); background:#fff;
+          border-radius:var(--r-s, 6px); cursor:pointer; color:var(--ink) }
+  button:hover{ border-color:var(--primary); color:var(--primary) }
+  button.primary{ background:var(--primary); border-color:var(--primary); color:#fff }
+  button.danger{ color:var(--danger); border-color:var(--danger) }
+  button:disabled{ opacity:.45; cursor:default }
+
+  main{ flex:1; display:grid; grid-template-columns:minmax(0,380px) minmax(0,1fr); min-height:0 }
+  aside{ border-right:1px solid var(--line); overflow:auto; padding:12px; min-width:0 }
+
+  /* 도면을 켜면 [도면 | 지도] 두 쪽으로 나눈다. 기준점을 양쪽에서 짝지어야 하기 때문이다. */
+  #stage{ display:grid; grid-template-columns:minmax(0,1fr); min-height:0 }
+  #stage.split{ grid-template-columns:minmax(0,1fr) minmax(0,1fr) }
+  #map{ min-height:0 }
+  #imgPane{ display:flex; flex-direction:column; min-width:0; border-right:1px solid var(--line) }
+  .ptools{ flex:none; display:flex; gap:6px; align-items:center; flex-wrap:wrap;
+           padding:6px 8px; border-bottom:1px solid var(--line); background:var(--bg-2) }
+  .ptools button{ padding:5px 9px; font-size:var(--fs-body-xs) }
+  .ptools button.on{ background:var(--primary); border-color:var(--primary); color:#fff }
+  #imgCanvas{ flex:1; min-height:0; width:100%; display:block; background:var(--bg-2) }
+
+  .gcplist{ list-style:none; margin:6px 0 0; padding:0; font-size:var(--fs-body-xs) }
+  .gcplist li{ display:flex; gap:6px; align-items:center; padding:2px 0 }
+  .gcplist b{ display:inline-block; width:16px; color:var(--danger) }
+  .gcplist button{ padding:1px 6px; font-size:var(--fs-body-xs) }
+  .swatch{ display:inline-block; width:15px; height:15px; border-radius:3px;
+           border:1px solid var(--line-strong); vertical-align:-3px }
+  input[type=range]{ width:140px; vertical-align:middle }
+
+  .box{ border:1px solid var(--line); border-radius:var(--r-m, 10px); padding:10px; margin-bottom:12px }
+  .box h2{ font-size:var(--fs-body-m); margin:0 0 8px }
+  .muted{ color:var(--ink-3) }
+  .row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center }
+  .row + .row{ margin-top:8px }
+
+  .plist{ list-style:none; margin:0; padding:0 }
+  .plist li{ border-bottom:1px solid var(--line) }
+  .plist button{ width:100%; text-align:left; border:0; border-radius:0; padding:9px 6px;
+                 background:none; line-height:1.5 }
+  .plist button:hover{ background:var(--bg-2) }
+  .plist button.on{ background:var(--primary-tint); color:var(--ink) }
+  .plist .nm{ font-weight:700; display:block; overflow-wrap:anywhere; word-break:keep-all }
+  .plist .sub{ color:var(--ink-3); font-size:var(--fs-body-xs) }
+  .tag{ display:inline-block; padding:1px 6px; border-radius:999px; font-size:var(--fs-body-xs);
+        border:1px solid var(--line-strong); margin-right:4px }
+  .tag.done{ border-color:var(--eco); color:var(--eco) }
+
+  table.seg{ width:100%; border-collapse:collapse; font-size:var(--fs-body-xs) }
+  table.seg th{ text-align:left; width:52px; color:var(--ink-3); vertical-align:top; padding:3px 0 }
+  table.seg td{ padding:3px 0; overflow-wrap:anywhere }
+
+  .len{ font-size:var(--fs-body-m); font-weight:700 }
+  .len.ok{ color:var(--eco) }
+  .len.warn{ color:var(--orange) }
+  textarea{ width:100%; height:96px; border:1px solid var(--line); border-radius:var(--r-s, 6px);
+            padding:8px; font-family:ui-monospace, Consolas, monospace; font-size:var(--fs-body-xs) }
+  #msg{ min-height:1.6em; color:var(--primary-deep); font-weight:700 }
+  .leaflet-container{ cursor:crosshair }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>노선 그리기 도구</h1>
+  <label for="key" style="font-size:var(--fs-body-xs)">VWorld 키</label>
+  <input id="key" type="password" placeholder="지도 타일용 키 (이 브라우저에만 저장됩니다)" autocomplete="off">
+  <button id="keySave">적용</button>
+  <span class="warn">키를 파일에 적어 커밋하지 마세요</span>
+  <span class="muted" style="margin-left:auto;color:#c9d7f2">담당자 전용 · 배포되지 않습니다</span>
+</header>
+
+<main>
+  <aside>
+    <div class="box">
+      <h2>1. 사업 고르기</h2>
+      <div class="row">
+        <label><input type="checkbox" id="onlyTodo" checked> 노선 없는 것만</label>
+        <span class="muted" id="listCount"></span>
+      </div>
+      <ul class="plist" id="plist"></ul>
+    </div>
+
+    <div class="box" id="detailBox" hidden>
+      <h2>2. 사업개요 — 여기를 보고 그립니다</h2>
+      <p id="dName" style="font-weight:700;margin:0 0 6px;overflow-wrap:anywhere"></p>
+      <p class="muted" id="dMeta" style="margin:0 0 8px"></p>
+      <div id="dSegs"></div>
+      <div class="row">
+        <button id="btnGuide">시점·종점 지도에 표시</button>
+        <span class="muted" id="guideMsg"></span>
+      </div>
+    </div>
+
+    <div class="box" id="drawBox" hidden>
+      <h2>3. 그리기</h2>
+      <p class="muted" style="margin:0 0 8px">지도를 눌러 점을 찍습니다. 점은 끌어서 옮길 수 있습니다.</p>
+      <div class="row">
+        <button id="btnUndo">되돌리기</button>
+        <button id="btnClear" class="danger">모두 지우기</button>
+      </div>
+      <div class="row">
+        <span>그린 길이 <span class="len" id="lenNow">0.00 km</span></span>
+        <span class="muted" id="lenCmp"></span>
+      </div>
+      <div class="row">
+        <button id="btnSave" class="primary">이 사업에 저장</button>
+        <button id="btnDelete" class="danger">이 사업 노선 지우기</button>
+      </div>
+      <p id="msg"></p>
+    </div>
+
+    <div class="box" id="planBox" hidden>
+      <h2>4. 도면에서 자동으로 따기 (반자동)</h2>
+      <p class="muted" style="margin:0 0 8px">
+        도면은 그냥 그림이라 "이 점이 위도 몇"인지가 안 적혀 있습니다.
+        그래서 <b>알아볼 수 있는 곳 3~4군데만 사람이 짝지어 주면</b>,
+        나머지(선 따기·좌표 변환)는 전부 자동입니다.</p>
+
+      <div class="row">
+        <input type="file" id="planFile" accept="image/*">
+      </div>
+      <p class="muted" style="margin:6px 0 0">캡처한 그림을 <b>Ctrl+V</b> 로 바로 붙여넣어도 됩니다.</p>
+
+      <div id="planSteps" hidden>
+        <hr style="border:0;border-top:1px solid var(--line);margin:10px 0">
+
+        <p style="margin:0 0 4px"><b>① 기준점 짝짓기</b>
+          <span class="muted">(3개=기울기까지, 4개 이상=찌그러짐까지 보정)</span></p>
+        <div class="row">
+          <button id="btnGcpAdd">기준점 추가</button>
+          <span class="muted" id="gcpMsg">도면 → 지도 순서로 같은 곳을 누릅니다.</span>
+        </div>
+        <ul class="gcplist" id="gcpList"></ul>
+        <p class="muted" id="fitMsg" style="margin:6px 0 0"></p>
+
+        <hr style="border:0;border-top:1px solid var(--line);margin:10px 0">
+
+        <p style="margin:0 0 4px"><b>② 노선 색 고르기</b></p>
+        <div class="row">
+          <button id="btnPick">도면에서 선 위를 누르기</button>
+          <span id="swatches"></span>
+          <button id="btnPickClear" class="danger">색 지우기</button>
+        </div>
+        <div class="row">
+          <label for="tol">색 허용범위</label>
+          <input type="range" id="tol" min="20" max="160" step="5" value="70">
+          <span class="muted" id="tolVal">70</span>
+        </div>
+        <div class="row">
+          <button id="btnRoi">범위 지정(끌기)</button>
+          <button id="btnRoiClear">범위 해제</button>
+          <span class="muted" id="roiMsg">범례·글자가 같은 색이면 범위를 좁히세요.</span>
+        </div>
+
+        <hr style="border:0;border-top:1px solid var(--line);margin:10px 0">
+
+        <p style="margin:0 0 4px"><b>③ 따오기</b></p>
+        <div class="row">
+          <button id="btnTrace" class="primary">노선 자동 추출</button>
+          <button id="btnPreviewOff">미리보기 지우기</button>
+        </div>
+        <p class="muted" id="traceMsg" style="margin:6px 0 0"></p>
+        <p class="muted" style="margin:6px 0 0">
+          추출하면 위 <b>3. 그리기</b> 로 들어갑니다. 길이 검산을 꼭 확인하고,
+          어긋난 점은 끌어서 고친 뒤 저장하세요.</p>
+      </div>
+    </div>
+
+    <div class="box" id="importBox" hidden>
+      <h2>5. 다른 데서 그린 것 가져오기 (선택)</h2>
+      <p class="muted" style="margin:0 0 6px">
+        geojson.io · Google 내 지도(KML) · QGIS 에서 그린 선을 그대로 붙여넣으면 됩니다.
+        선(LineString)만 읽고 점·면은 무시합니다.</p>
+      <textarea id="imp" placeholder="GeoJSON 또는 KML 을 붙여넣으세요"></textarea>
+      <div class="row"><button id="btnImport">읽어들이기</button>
+        <span class="muted" id="impMsg"></span></div>
+    </div>
+
+    <div class="box">
+      <h2>6. 내보내기</h2>
+      <p class="muted" style="margin:0 0 8px">
+        받은 파일을 <b>data/routes.json</b> 에 덮어쓰고 커밋하면 모두에게 보입니다.</p>
+      <div class="row">
+        <button id="btnDownload" class="primary">routes.json 내려받기</button>
+        <button id="btnCopy">클립보드로 복사</button>
+      </div>
+      <p class="muted" id="expMsg" style="margin:8px 0 0"></p>
+    </div>
+  </aside>
+
+  <div id="stage">
+    <section id="imgPane" hidden>
+      <div class="ptools">
+        <strong style="font-size:var(--fs-body-xs)">도면</strong>
+        <button id="btnFit">전체 보기</button>
+        <button id="btnImgClose" class="danger">닫기</button>
+        <span class="muted" id="imgHint">끌면 이동 · 휠로 확대</span>
+      </div>
+      <canvas id="imgCanvas"></canvas>
+    </section>
+    <div id="map"></div>
+  </div>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+/* ============================================================
+   상태
+   ============================================================ */
+const LSKEY_TOOL = "wdn.routeTool.key";   // 이 도구에서 쓰는 VWorld 키 (브라우저에만)
+let PROJECTS = [];      // data/projects.json 의 사업들
+let ROUTES = {};        // data/routes.json 의 routes (사업번호 -> GeoJSON)
+let current = null;     // 지금 고른 사업
+let pts = [];           // 그리는 중인 점 [[위도,경도], ...]
+
+let map, tileLayer = null;
+let ptLayers = [], lineLayer = null, guideLayers = [], otherLayer = null;
+
+const $ = sel => document.querySelector(sel);   // 부를 때 "#아이디" 로 쓴다
+const esc = s => String(s == null ? "" : s)
+  .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+
+/* ============================================================
+   지도
+   ★ VWorld 배경지도는 줌 6 미만을 지원하지 않는다.
+     그 아래로 내려가면 타일 대신 오류 XML 이 와서 바탕이 통째로 빈 것처럼 보인다.
+   ============================================================ */
+function tileUrl(key){
+  return `https://api.vworld.kr/req/wmts/1.0.0/${key}/Base/{z}/{y}/{x}.png`;
+}
+
+function initMap(){
+  map = L.map("map", { minZoom:6, maxZoom:19 }).setView([36.3, 127.8], 7);
+  map.on("click", e => {
+    // 기준점을 짝짓는 중이면 이 클릭은 '도면의 그 점이 여기'라는 뜻이다.
+    // (노선 점 찍기로 새면 안 된다)
+    if(gcpPending){
+      gcps.push({ img:gcpPending, ll:[e.latlng.lat, e.latlng.lng] });
+      gcpPending = null;
+      $("#gcpMsg").textContent = "짝지었습니다. 3~4개까지 더 찍으면 정확해집니다.";
+      setImgMode("gcp");
+      refreshGcpUi();
+      return;
+    }
+    if(!current) return;
+    pts.push([e.latlng.lat, e.latlng.lng]);
+    redraw();
+  });
+  applyKey(localStorage.getItem(LSKEY_TOOL) || "");
+}
+
+function applyKey(raw){
+  // 키 앞뒤 공백 한 칸이면 VWorld 가 거부한다. 세 곳에서 걷어내는 것과 같은 처리다.
+  const key = String(raw || "").trim();
+  $("#key") && ($("#key").value = key);
+  if(tileLayer){ map.removeLayer(tileLayer); tileLayer = null; }
+  if(!key) return;
+  tileLayer = L.tileLayer(tileUrl(key), {
+    minZoom:6, maxZoom:19, attribution:"ⓒ VWorld"
+  }).addTo(map);
+}
+
+/* ============================================================
+   자료 읽기
+   ============================================================ */
+async function loadAll(){
+  const pj = await fetch("../data/projects.json", { cache:"no-store" }).then(r => r.json());
+  PROJECTS = pj.projects || [];
+  try{
+    const rj = await fetch("../data/routes.json", { cache:"no-store" }).then(r => r.json());
+    ROUTES = rj.routes || {};
+  }catch(e){
+    ROUTES = {};   // 파일이 없는 것이 정상이다 (아직 아무도 안 그린 상태)
+  }
+  renderList();
+}
+
+/* 이 사업에 노선이 있는가 — 직접 그린 것이 먼저, 없으면 수집한 하천 도형.
+   (app.js 의 routeOf() 와 같은 우선순위여야 한다) */
+function hasRoute(p){
+  return Boolean(ROUTES[String(p.id)] || (p.routeGeom && p.routeGeom.length));
+}
+
+/* 노선을 그려야 할 만한 사업인가.
+   · 위치유형에 '선형'이 있거나
+   · 구간(시점·종점) 표가 있으면 선형으로 본다
+   ※ 환경영향평가는 EIASS 에 위치유형 표시가 아예 없다. 그래서 구간 표도 같이 본다. */
+function isLinear(p){
+  return (p.locationTypes || []).includes("선형") || (p.segments || []).length > 0;
+}
+
+/* ============================================================
+   왼쪽 목록
+   ============================================================ */
+function renderList(){
+  const onlyTodo = $("#onlyTodo").checked;
+  const rows = PROJECTS
+    .filter(isLinear)
+    .filter(p => !onlyTodo || !hasRoute(p))
+    .sort((a, b) => String(a.name).localeCompare(String(b.name), "ko"));
+
+  $("#listCount").textContent = `${rows.length}건`;
+  $("#plist").innerHTML = rows.map(p => {
+    const mine = ROUTES[String(p.id)];
+    const auto = p.routeGeom && p.routeGeom.length;
+    const tag = mine ? `<span class="tag done">직접 그림</span>`
+      : auto ? `<span class="tag">하천 자동</span>` : "";
+    const on = current && String(current.id) === String(p.id) ? " on" : "";
+    return `<li><button type="button" class="pbtn${on}" data-id="${esc(p.id)}">
+      <span class="nm">${esc(p.name)}</span>
+      <span class="sub">${tag}${esc(p.bizType || p.categoryLabel || "")}</span>
+    </button></li>`;
+  }).join("") || `<li class="muted" style="padding:10px 0">해당하는 사업이 없습니다.</li>`;
+
+  document.querySelectorAll(".pbtn").forEach(b =>
+    b.addEventListener("click", () => select(b.dataset.id)));
+}
+
+/* ============================================================
+   사업 하나 고르기
+   ============================================================ */
+function select(id){
+  current = PROJECTS.find(p => String(p.id) === String(id)) || null;
+  pts = [];
+  clearGuides();
+  if(!current) return;
+
+  // 이미 그려 둔 것이 있으면 이어서 고칠 수 있게 불러온다.
+  const saved = ROUTES[String(current.id)];
+  if(saved) pts = flatLatLngs(saved.coordinates);
+
+  $("#detailBox").hidden = false;
+  $("#drawBox").hidden = false;
+  $("#planBox").hidden = false;
+  $("#importBox").hidden = false;
+  $("#dName").textContent = current.name;
+  $("#dMeta").textContent =
+    [current.categoryLabel, current.bizType, current.address].filter(Boolean).join(" · ");
+
+  const segs = current.segments || [];
+  $("#dSegs").innerHTML = segs.length
+    ? segs.map((s, i) => `<table class="seg">
+        ${segs.length > 1 ? `<tr><th>구간</th><td><b>${i + 1}</b></td></tr>` : ""}
+        <tr><th>시점</th><td>${esc(s.from)}</td></tr>
+        <tr><th>종점</th><td>${esc(s.to)}</td></tr>
+        <tr><th>연장</th><td><b>${esc(s.length || "적혀 있지 않음")}</b></td></tr>
+      </table>`).join("<hr style='border:0;border-top:1px solid var(--line);margin:8px 0'>")
+    : `<p class="muted">구간 표가 없습니다. EIASS 원문의 사업개요를 직접 보고 그려야 합니다.</p>`;
+
+  $("#msg").textContent = "";
+  $("#impMsg").textContent = "";
+  renderList();
+  redraw();
+  fitToWork();
+}
+
+/* 지금 사업이 있는 자리로 지도를 옮긴다. */
+function fitToWork(){
+  if(pts.length >= 2){ map.fitBounds(L.latLngBounds(pts).pad(0.2)); return; }
+  if(current && current.lat != null && current.lon != null){
+    map.setView([current.lat, current.lon], 13);
+  }
+}
+
+/* ============================================================
+   그리기
+   ============================================================ */
+function redraw(){
+  ptLayers.forEach(l => map.removeLayer(l));
+  ptLayers = [];
+  if(lineLayer){ map.removeLayer(lineLayer); lineLayer = null; }
+
+  if(pts.length >= 2){
+    lineLayer = L.polyline(pts, { color:"#de3412", weight:4, opacity:.9 }).addTo(map);
+  }
+  pts.forEach((pt, i) => {
+    // 점은 끌어서 옮길 수 있어야 한다. 한 번에 정확히 찍기는 어렵다.
+    const m = L.marker(pt, {
+      draggable:true,
+      title:`${i + 1}번째 점 — 끌어서 옮기고, 눌러서 지웁니다`,
+      icon:L.divIcon({
+        className:"", iconSize:[12, 12], iconAnchor:[6, 6],
+        html:`<div style="width:12px;height:12px;border-radius:50%;background:#fff;
+               border:2px solid #de3412"></div>`
+      })
+    }).addTo(map);
+    m.on("dragend", ev => {
+      const ll = ev.target.getLatLng();
+      pts[i] = [ll.lat, ll.lng];
+      redraw();
+    });
+    m.on("click", ev => {
+      L.DomEvent.stopPropagation(ev);   // 지도 클릭(점 추가)으로 번지지 않게
+      pts.splice(i, 1);
+      redraw();
+    });
+    ptLayers.push(m);
+  });
+
+  updateLength();
+}
+
+/* 두 점 사이 거리(km). app.js 의 haversineKm 과 같은 식이다. */
+function haversineKm(la1, lo1, la2, lo2){
+  const R = 6371, rad = d => d * Math.PI / 180;
+  const dLa = rad(la2 - la1), dLo = rad(lo2 - lo1);
+  const a = Math.sin(dLa / 2) ** 2 +
+    Math.cos(rad(la1)) * Math.cos(rad(la2)) * Math.sin(dLo / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(a));
+}
+
+function drawnKm(){
+  let s = 0;
+  for(let i = 1; i < pts.length; i++){
+    s += haversineKm(pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1]);
+  }
+  return s;
+}
+
+/* 고시된 연장(예: "9.36km")을 숫자로 읽는다. 못 읽으면 null. */
+function officialKm(){
+  for(const s of (current && current.segments) || []){
+    const m = /([\d.]+)\s*(km|킬로|m)?/i.exec(s.length || "");
+    if(!m) continue;
+    const v = parseFloat(m[1]);
+    if(!isFinite(v)) continue;
+    return (m[2] || "").toLowerCase() === "m" ? v / 1000 : v;
+  }
+  return null;
+}
+
+/* ★ 이 도구의 핵심 — 그린 길이와 고시된 연장을 견줘 본다.
+   손으로 그린 노선이 맞는지 기계가 알 수 있는 유일한 단서다.
+   (엉뚱한 곳을 찍었거나 한 구간을 통째로 빠뜨리면 길이가 확 어긋난다) */
+function updateLength(){
+  const km = drawnKm();
+  const el = $("#lenNow");
+  el.textContent = km.toFixed(2) + " km";
+  el.className = "len";
+
+  const off = officialKm();
+  if(off == null || pts.length < 2){
+    $("#lenCmp").textContent = off == null ? "(고시 연장이 적혀 있지 않아 비교할 수 없습니다)" : "";
+    return;
+  }
+  const diff = (km - off) / off * 100;
+  const near = Math.abs(diff) <= 15;
+  el.classList.add(near ? "ok" : "warn");
+  $("#lenCmp").textContent =
+    `고시 ${off.toFixed(2)} km 대비 ${diff >= 0 ? "+" : ""}${diff.toFixed(0)}% ` +
+    (near ? "— 비슷합니다" : "— 많이 다릅니다. 빠뜨린 구간이 없는지 보세요");
+}
+
+/* ============================================================
+   시점·종점 안내 표시 (VWorld 지오코더, JSONP)
+   ============================================================ */
+let jsonpSeq = 0;
+function jsonp(base, params, timeoutMs = 8000){
+  return new Promise(resolve => {
+    const cb = "rtCb" + (++jsonpSeq) + Date.now().toString(36);
+    const sc = document.createElement("script");
+    let done = false;
+    const cleanup = () => { if(done) return; done = true; delete window[cb]; sc.remove(); };
+    window[cb] = d => { cleanup(); resolve(d); };
+    sc.src = `${base}?${new URLSearchParams(Object.assign({}, params, { callback:cb }))}`;
+    sc.onerror = () => { cleanup(); resolve(null); };
+    document.head.appendChild(sc);
+    setTimeout(() => { if(!done){ cleanup(); resolve(null); } }, timeoutMs);
+  });
+}
+
+async function geocode(addr, key){
+  // "… (왕산로 205) 청량리역" 처럼 뒤에 장소 이름이 붙어 있다. 괄호까지만 잘라 쓴다.
+  const cut = String(addr || "").replace(/\)[^)]*$/, ")").trim();
+  for(const [type, q] of [["ROAD", cut], ["PARCEL", cut]]){
+    const r = await jsonp("https://api.vworld.kr/req/address", {
+      service:"address", request:"getCoord", version:"2.0", crs:"EPSG:4326",
+      type, address:q, key, format:"json"
+    });
+    const pt = r && r.response && r.response.status === "OK" && r.response.result &&
+      r.response.result.point;
+    if(pt) return [parseFloat(pt.y), parseFloat(pt.x)];
+  }
+  return null;
+}
+
+function clearGuides(){
+  guideLayers.forEach(l => map.removeLayer(l));
+  guideLayers = [];
+  $("#guideMsg").textContent = "";
+}
+
+async function showGuides(){
+  const key = ($("#key").value || "").trim();
+  if(!key){ $("#guideMsg").textContent = "VWorld 키가 필요합니다."; return; }
+  if(!current) return;
+  clearGuides();
+  $("#guideMsg").textContent = "찾는 중…";
+
+  const found = [];
+  for(const s of current.segments || []){
+    for(const [label, addr, color] of [["시점", s.from, "#1f8a5b"], ["종점", s.to, "#0b3d91"]]){
+      if(!addr) continue;
+      const pt = await geocode(addr, key);
+      if(!pt) continue;
+      const m = L.circleMarker(pt, {
+        radius:9, color, fillColor:"#fff", fillOpacity:1, weight:3
+      }).addTo(map).bindTooltip(`${label} · ${addr}`, { permanent:false });
+      guideLayers.push(m);
+      found.push(pt);
+    }
+  }
+  if(found.length){
+    map.fitBounds(L.latLngBounds(found).pad(0.35));
+    $("#guideMsg").textContent = `${found.length}곳 표시했습니다 (초록=시점 / 남색=종점)`;
+  }else{
+    $("#guideMsg").textContent = "주소를 찾지 못했습니다. 원문을 보고 직접 찾아 그리세요.";
+  }
+}
+
+/* ============================================================
+   가져오기 — GeoJSON / KML 에서 선만 뽑는다
+   ============================================================ */
+function linesFromGeoJson(obj){
+  const out = [];
+  const walk = g => {
+    if(!g) return;
+    if(Array.isArray(g)){ g.forEach(walk); return; }
+    if(g.type === "FeatureCollection"){ (g.features || []).forEach(walk); return; }
+    if(g.type === "Feature"){ walk(g.geometry); return; }
+    if(g.type === "GeometryCollection"){ (g.geometries || []).forEach(walk); return; }
+    if(g.type === "LineString"){ out.push(g.coordinates); return; }
+    if(g.type === "MultiLineString"){ (g.coordinates || []).forEach(c => out.push(c)); return; }
+  };
+  walk(obj);
+  return out;
+}
+
+function linesFromKml(text){
+  const doc = new DOMParser().parseFromString(text, "text/xml");
+  if(doc.querySelector("parsererror")) return [];
+  return [...doc.getElementsByTagName("LineString")].map(ls => {
+    const raw = (ls.getElementsByTagName("coordinates")[0] || {}).textContent || "";
+    return raw.trim().split(/\s+/).map(t => {
+      const [lon, lat] = t.split(",").map(Number);
+      return [lon, lat];
+    }).filter(c => isFinite(c[0]) && isFinite(c[1]));
+  }).filter(c => c.length >= 2);
+}
+
+function doImport(){
+  const raw = $("#imp").value.trim();
+  if(!raw){ $("#impMsg").textContent = "붙여넣은 내용이 없습니다."; return; }
+  let lines = [];
+  try{
+    lines = linesFromGeoJson(JSON.parse(raw));
+  }catch(e){
+    lines = linesFromKml(raw);
+  }
+  if(!lines.length){ $("#impMsg").textContent = "선(LineString)을 찾지 못했습니다."; return; }
+  // 여러 선이 있으면 가장 긴 것 하나를 쓴다 (배경으로 딸려온 짧은 선을 피한다)
+  lines.sort((a, b) => b.length - a.length);
+  pts = lines[0].map(([lon, lat]) => [lat, lon]);
+  $("#impMsg").textContent = `선 ${lines.length}개 중 가장 긴 것(점 ${pts.length}개)을 읽었습니다.`;
+  redraw();
+  fitToWork();
+}
+
+/* ============================================================
+   저장 · 내보내기
+   ============================================================ */
+/* 화면은 [위도,경도]로 다루지만 저장은 GeoJSON 규칙(경도,위도)에 맞춘다.
+   app.js 의 manualGeoJson() 과 똑같은 형식이어야 한다. */
+function toGeoJson(){
+  return {
+    type:"LineString",
+    coordinates: pts.map(([lat, lon]) => [+lon.toFixed(5), +lat.toFixed(5)])
+  };
+}
+
+/* 저장된 좌표를 [[위도,경도], ...] 한 줄로 편다 (LineString·MultiLineString 둘 다) */
+function flatLatLngs(coords){
+  const out = [];
+  const walk = c => {
+    if(!Array.isArray(c)) return;
+    if(typeof c[0] === "number"){ out.push([c[1], c[0]]); return; }
+    c.forEach(walk);
+  };
+  walk(coords);
+  return out;
+}
+
+function exportText(){
+  return JSON.stringify({ routes:ROUTES }, null, 1);
+}
+
+/* ============================================================
+   ★ 도면에서 노선 따기 (반자동)
+
+   ■ 왜 반자동인가
+     도면은 그냥 그림이라 **어떤 픽셀이 위도·경도 몇인지가 어디에도 없다.**
+     좌표 격자(모눈)가 찍혀 있으면 읽어낼 수 있는데 EIASS 도면에는 없다.
+     그래서 '알아볼 수 있는 곳'을 사람이 몇 군데 짝지어 주는 수밖에 없다.
+     그 다음은 전부 수학이라 자동이고, 결과가 항상 같다.
+
+   ■ AI 로 이 단계를 대신하지 않는 이유
+     비전 모델은 정확한 픽셀 좌표를 못 낸다. 그런데 **모른다고 하지 않고
+     그럴듯한 숫자를 낸다.** 지도에서는 그 오차가 수백 m~km 다.
+     정부 서비스 지도에 틀린 노선이 그려지는 것은 노선이 없는 것보다 나쁘다.
+
+   ■ 순서
+     ① 기준점 3~4쌍 (도면 ↔ 지도)  → 변환식을 세운다  … 사람
+     ② 선 색 고르기                → 그 색 픽셀만 골라낸다 … 자동
+     ③ 픽셀 덩어리에서 가장 긴 경로 → 순서 있는 선으로   … 자동
+     ④ 변환식으로 위경도로 바꾼다   → 3.그리기 로 넘긴다 … 자동
+   ============================================================ */
+
+/* 위경도를 바로 선형변환하면 위도 방향이 찌그러진다.
+   Leaflet 의 투영(웹 메르카토르)으로 평면 좌표를 만든 뒤 계산하고 되돌린다.
+   줌 20 에서 1픽셀은 약 0.11m 라 정밀도는 충분하다. */
+const PROJ_Z = 20;
+const toXY = ll => { const p = map.project(L.latLng(ll[0], ll[1]), PROJ_Z); return [p.x, p.y]; };
+const toLL = xy => { const c = map.unproject(L.point(xy[0], xy[1]), PROJ_Z); return [c.lat, c.lng]; };
+
+let plan = null;        // { canvas, w, h }  도면 (긴 변 2400px 로 줄여 둔 것)
+let view = { scale:1, ox:0, oy:0 };
+let gcps = [];          // [{ img:[x,y], ll:[lat,lon] }]
+let gcpPending = null;  // 도면을 먼저 눌렀을 때 그 점
+let imgMode = "pan";    // pan | gcp | color | roi
+let samples = [];       // 고른 선 색 [[r,g,b], ...]
+let roi = null;         // [x0,y0,x1,y1] 도면 좌표
+let roiDrag = null;
+let trace = null;       // 추출한 경로 (도면 좌표)
+let gcpMarkers = [];
+let fitFn = null, fitRms = null;
+
+const cv = $("#imgCanvas");
+const ctx = cv.getContext("2d");
+
+/* ---------- 도면 읽어들이기 ---------- */
+function loadPlanImage(src){
+  const im = new Image();
+  im.onload = () => {
+    // 큰 그림은 줄여서 다룬다. 화면 표시·픽셀 훑기 모두 이 크기를 기준으로 한다.
+    const MAX = 2400;
+    const s = Math.min(1, MAX / Math.max(im.width, im.height));
+    const w = Math.max(1, Math.round(im.width * s));
+    const h = Math.max(1, Math.round(im.height * s));
+    const c = document.createElement("canvas");
+    c.width = w; c.height = h;
+    c.getContext("2d").drawImage(im, 0, 0, w, h);
+    plan = { canvas:c, w, h };
+    gcps = []; gcpPending = null; samples = []; roi = null; trace = null;
+    fitFn = null; fitRms = null;
+    $("#imgPane").hidden = false;
+    $("#stage").classList.add("split");
+    $("#planSteps").hidden = false;
+    map.invalidateSize();     // 지도 칸이 반으로 줄었으니 Leaflet 에 알려 준다
+    syncCanvasSize();
+    setImgMode("pan");
+    fitView();
+    refreshGcpUi();
+    renderSwatches();
+    $("#traceMsg").textContent = "";
+  };
+  im.onerror = () => alert("그림을 읽지 못했습니다.");
+  im.src = src;
+}
+
+$("#planFile").addEventListener("change", e => {
+  const f = e.target.files && e.target.files[0];
+  if(f) loadPlanImage(URL.createObjectURL(f));
+});
+
+/* 캡처한 그림을 Ctrl+V 로 바로 붙여넣는 길. EIASS 첨부를 캡처해 쓰는 흐름에 맞다. */
+document.addEventListener("paste", e => {
+  const items = (e.clipboardData || {}).items || [];
+  for(const it of items){
+    if(it.type && it.type.indexOf("image") === 0){
+      const f = it.getAsFile();
+      if(f){ loadPlanImage(URL.createObjectURL(f)); e.preventDefault(); return; }
+    }
+  }
+});
+
+$("#btnImgClose").addEventListener("click", () => {
+  plan = null; trace = null;
+  clearGcpMarkers();
+  $("#imgPane").hidden = true;
+  $("#stage").classList.remove("split");
+  $("#planSteps").hidden = true;
+  map.invalidateSize();
+});
+
+/* ---------- 도면 그리기 ---------- */
+function syncCanvasSize(){
+  const r = cv.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  cv.width = Math.max(1, Math.round(r.width * dpr));
+  cv.height = Math.max(1, Math.round(r.height * dpr));
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  drawPlan();
+}
+addEventListener("resize", () => { if(plan) syncCanvasSize(); map.invalidateSize(); });
+
+function fitView(){
+  if(!plan) return;
+  const r = cv.getBoundingClientRect();
+  const s = Math.min(r.width / plan.w, r.height / plan.h) * 0.96;
+  view.scale = s;
+  view.ox = (r.width - plan.w * s) / 2;
+  view.oy = (r.height - plan.h * s) / 2;
+  drawPlan();
+}
+$("#btnFit").addEventListener("click", fitView);
+
+function drawPlan(){
+  if(!plan) return;
+  const r = cv.getBoundingClientRect();
+  ctx.clearRect(0, 0, r.width, r.height);
+  ctx.save();
+  ctx.translate(view.ox, view.oy);
+  ctx.scale(view.scale, view.scale);
+  ctx.drawImage(plan.canvas, 0, 0);
+
+  const px = 1 / view.scale;   // 확대해도 선 굵기가 그대로 보이게
+
+  if(roi){
+    ctx.strokeStyle = "#0b3d91"; ctx.lineWidth = 2 * px; ctx.setLineDash([8 * px, 5 * px]);
+    ctx.strokeRect(roi[0], roi[1], roi[2] - roi[0], roi[3] - roi[1]);
+    ctx.setLineDash([]);
+  }
+  if(trace && trace.length >= 2){
+    ctx.strokeStyle = "#00b0ff"; ctx.lineWidth = 3 * px; ctx.beginPath();
+    trace.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y));
+    ctx.stroke();
+  }
+  gcps.forEach((g, i) => markPoint(g.img, i + 1, "#de3412", px));
+  if(gcpPending) markPoint(gcpPending, "?", "#f5a623", px);
+  ctx.restore();
+}
+
+function markPoint(pt, label, color, px){
+  ctx.beginPath();
+  ctx.arc(pt[0], pt[1], 6 * px, 0, Math.PI * 2);
+  ctx.fillStyle = "#fff"; ctx.fill();
+  ctx.lineWidth = 2.5 * px; ctx.strokeStyle = color; ctx.stroke();
+  ctx.fillStyle = color;
+  ctx.font = `${13 * px}px sans-serif`;
+  ctx.fillText(String(label), pt[0] + 9 * px, pt[1] - 8 * px);
+}
+
+/* ---------- 도면 위 조작 (끌면 이동 · 휠 확대 · 누르면 지금 모드) ---------- */
+function evToImg(e){
+  const r = cv.getBoundingClientRect();
+  return [ (e.clientX - r.left - view.ox) / view.scale,
+           (e.clientY - r.top  - view.oy) / view.scale ];
+}
+
+let drag = null;
+cv.addEventListener("mousedown", e => {
+  if(!plan) return;
+  const p = evToImg(e);
+  if(imgMode === "roi"){ roiDrag = [p[0], p[1], p[0], p[1]]; return; }
+  drag = { x:e.clientX, y:e.clientY, ox:view.ox, oy:view.oy, moved:false };
+});
+addEventListener("mousemove", e => {
+  if(roiDrag){
+    const p = evToImg(e);
+    roiDrag[2] = p[0]; roiDrag[3] = p[1];
+    roi = normRect(roiDrag);
+    drawPlan();
+    return;
+  }
+  if(!drag) return;
+  const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+  if(Math.abs(dx) + Math.abs(dy) > 3) drag.moved = true;
+  view.ox = drag.ox + dx; view.oy = drag.oy + dy;
+  drawPlan();
+});
+addEventListener("mouseup", e => {
+  if(roiDrag){
+    roiDrag = null;
+    $("#roiMsg").textContent = roi ? "범위를 정했습니다." : "";
+    setImgMode("pan");
+    return;
+  }
+  if(!drag) return;
+  const moved = drag.moved;
+  drag = null;
+  if(moved || !plan) return;
+  if(!cv.contains(e.target)) return;
+  onPlanClick(evToImg(e));
+});
+cv.addEventListener("wheel", e => {
+  if(!plan) return;
+  e.preventDefault();
+  const r = cv.getBoundingClientRect();
+  const mx = e.clientX - r.left, my = e.clientY - r.top;
+  const k = e.deltaY < 0 ? 1.2 : 1 / 1.2;
+  const ns = Math.min(40, Math.max(0.05, view.scale * k));
+  // 마우스 밑의 점이 제자리에 있도록 이동량을 보정한다
+  view.ox = mx - (mx - view.ox) * (ns / view.scale);
+  view.oy = my - (my - view.oy) * (ns / view.scale);
+  view.scale = ns;
+  drawPlan();
+}, { passive:false });
+
+function normRect(r){
+  return [Math.min(r[0], r[2]), Math.min(r[1], r[3]),
+          Math.max(r[0], r[2]), Math.max(r[1], r[3])];
+}
+
+function onPlanClick(p){
+  if(p[0] < 0 || p[1] < 0 || p[0] > plan.w || p[1] > plan.h) return;
+  if(imgMode === "gcp"){
+    gcpPending = p;
+    $("#gcpMsg").textContent = "이제 지도에서 같은 곳을 누르세요.";
+    $("#imgHint").textContent = "지도에서 같은 지점을 누르세요";
+    drawPlan();
+    return;
+  }
+  if(imgMode === "color"){
+    const d = plan.canvas.getContext("2d")
+      .getImageData(Math.round(p[0]), Math.round(p[1]), 1, 1).data;
+    samples.push([d[0], d[1], d[2]]);
+    renderSwatches();
+    setImgMode("pan");
+    return;
+  }
+}
+
+function setImgMode(m){
+  imgMode = m;
+  $("#btnGcpAdd").classList.toggle("on", m === "gcp");
+  $("#btnPick").classList.toggle("on", m === "color");
+  $("#btnRoi").classList.toggle("on", m === "roi");
+  $("#imgHint").textContent =
+    m === "gcp" ? "도면에서 알아볼 수 있는 곳을 누르세요" :
+    m === "color" ? "도면에서 노선(선) 위를 누르세요" :
+    m === "roi" ? "노선이 있는 범위를 끌어서 감싸세요" : "끌면 이동 · 휠로 확대";
+  cv.style.cursor = m === "pan" ? "grab" : "crosshair";
+}
+
+/* ---------- 기준점 ---------- */
+$("#btnGcpAdd").addEventListener("click", () => setImgMode(imgMode === "gcp" ? "pan" : "gcp"));
+$("#btnPick").addEventListener("click", () => setImgMode(imgMode === "color" ? "pan" : "color"));
+$("#btnRoi").addEventListener("click", () => setImgMode(imgMode === "roi" ? "pan" : "roi"));
+$("#btnRoiClear").addEventListener("click", () => { roi = null; $("#roiMsg").textContent = ""; drawPlan(); });
+$("#btnPickClear").addEventListener("click", () => { samples = []; renderSwatches(); });
+$("#tol").addEventListener("input", e => { $("#tolVal").textContent = e.target.value; });
+
+function renderSwatches(){
+  $("#swatches").innerHTML = samples.map(c =>
+    `<span class="swatch" style="background:rgb(${c[0]},${c[1]},${c[2]})"></span>`).join(" ")
+    || `<span class="muted">아직 없음 (안 고르면 빨간 계열로 봅니다)</span>`;
+}
+
+function clearGcpMarkers(){
+  gcpMarkers.forEach(m => map.removeLayer(m));
+  gcpMarkers = [];
+}
+
+function refreshGcpUi(){
+  clearGcpMarkers();
+  gcps.forEach((g, i) => {
+    gcpMarkers.push(L.circleMarker(g.ll, {
+      radius:7, color:"#de3412", fillColor:"#fff", fillOpacity:1, weight:3
+    }).addTo(map).bindTooltip("기준점 " + (i + 1)));
+  });
+  $("#gcpList").innerHTML = gcps.map((g, i) =>
+    `<li><b>${i + 1}</b><span class="muted">${g.ll[0].toFixed(5)}, ${g.ll[1].toFixed(5)}</span>
+     <button type="button" data-gcp="${i}">지움</button></li>`).join("");
+  document.querySelectorAll("[data-gcp]").forEach(b => b.addEventListener("click", () => {
+    gcps.splice(+b.dataset.gcp, 1);
+    refreshGcpUi();
+  }));
+  computeFit();
+  drawPlan();
+}
+
+/* ---------- 변환식 세우기 ----------
+   기준점 수에 따라 쓰는 식이 달라진다.
+     2개 = 닮음(회전·축척·이동)   3개 = 어파인(기울기까지)
+     4개 이상 = 투영(사진처럼 찌그러진 것까지)
+   ★ 남는 오차(RMS)를 미터로 보여 준다 — 기준점을 잘못 짚었는지 여기서 바로 드러난다. */
+function solve(A, b, n){
+  // 정규방정식을 가우스 소거로 푼다 (부분 피벗)
+  const M = Array.from({ length:n }, (_, i) => {
+    const row = new Array(n + 1).fill(0);
+    for(let k = 0; k < A.length; k++){
+      for(let j = 0; j < n; j++) row[j] += A[k][i] * A[k][j];
+      row[n] += A[k][i] * b[k];
+    }
+    return row;
+  });
+  for(let c = 0; c < n; c++){
+    let piv = c;
+    for(let r = c + 1; r < n; r++) if(Math.abs(M[r][c]) > Math.abs(M[piv][c])) piv = r;
+    if(Math.abs(M[piv][c]) < 1e-12) return null;
+    [M[c], M[piv]] = [M[piv], M[c]];
+    for(let r = 0; r < n; r++){
+      if(r === c) continue;
+      const f = M[r][c] / M[c][c];
+      for(let j = c; j <= n; j++) M[r][j] -= f * M[c][j];
+    }
+  }
+  return M.map((row, i) => row[n] / M[i][i]);
+}
+
+function buildFit(pairs){
+  const n = pairs.length;
+  const P = pairs.map(g => g.img);
+  const Q = pairs.map(g => toXY(g.ll));
+  const A = [], b = [];
+
+  if(n >= 4){
+    // 투영변환 (h9 = 1 로 고정한 8개 미지수)
+    pairs.forEach((_, i) => {
+      const [x, y] = P[i], [X, Y] = Q[i];
+      A.push([x, y, 1, 0, 0, 0, -x * X, -y * X]); b.push(X);
+      A.push([0, 0, 0, x, y, 1, -x * Y, -y * Y]); b.push(Y);
+    });
+    const h = solve(A, b, 8);
+    if(!h) return null;
+    return (x, y) => {
+      const w = h[6] * x + h[7] * y + 1;
+      return [(h[0] * x + h[1] * y + h[2]) / w, (h[3] * x + h[4] * y + h[5]) / w];
+    };
+  }
+  if(n === 3){
+    pairs.forEach((_, i) => {
+      const [x, y] = P[i], [X, Y] = Q[i];
+      A.push([x, y, 1, 0, 0, 0]); b.push(X);
+      A.push([0, 0, 0, x, y, 1]); b.push(Y);
+    });
+    const a = solve(A, b, 6);
+    if(!a) return null;
+    return (x, y) => [a[0] * x + a[1] * y + a[2], a[3] * x + a[4] * y + a[5]];
+  }
+  if(n === 2){
+    pairs.forEach((_, i) => {
+      const [x, y] = P[i], [X, Y] = Q[i];
+      A.push([x, -y, 1, 0]); b.push(X);
+      A.push([y,  x, 0, 1]); b.push(Y);
+    });
+    const s = solve(A, b, 4);
+    if(!s) return null;
+    return (x, y) => [s[0] * x - s[1] * y + s[2], s[1] * x + s[0] * y + s[3]];
+  }
+  return null;
+}
+
+function computeFit(){
+  fitFn = null; fitRms = null;
+  const el = $("#fitMsg");
+  if(gcps.length < 2){
+    el.textContent = `기준점 ${gcps.length}개 — 최소 2개, 3~4개를 권합니다.`;
+    return;
+  }
+  const f = buildFit(gcps);
+  if(!f){ el.textContent = "기준점이 한 줄에 몰려 있어 계산할 수 없습니다. 흩어서 찍으세요."; return; }
+  fitFn = f;
+
+  // 남는 오차를 미터로 환산해 보여 준다
+  let sum = 0;
+  gcps.forEach(g => {
+    const [X, Y] = f(g.img[0], g.img[1]);
+    const [tx, ty] = toXY(g.ll);
+    sum += (X - tx) ** 2 + (Y - ty) ** 2;
+  });
+  const latMid = gcps.reduce((s, g) => s + g.ll[0], 0) / gcps.length;
+  const mPerPx = 156543.03392 * Math.cos(latMid * Math.PI / 180) / Math.pow(2, PROJ_Z);
+  fitRms = Math.sqrt(sum / gcps.length) * mPerPx;
+
+  const kind = gcps.length >= 4 ? "투영" : gcps.length === 3 ? "어파인" : "닮음";
+  const judge = gcps.length <= 3 ? "(기준점 수만큼만 맞춘 것이라 오차가 0으로 나옵니다)"
+    : fitRms < 50 ? "— 좋습니다" : "— 큽니다. 잘못 짚은 기준점이 없는지 보세요";
+  el.textContent = `기준점 ${gcps.length}개 · ${kind} 변환 · 남는 오차 ${fitRms.toFixed(0)}m ${judge}`;
+}
+
+/* ---------- 선 픽셀 골라내기 → 가장 긴 경로 ---------- */
+function traceRoute(){
+  if(!plan){ return; }
+  if(!fitFn){ $("#traceMsg").textContent = "기준점을 먼저 2개 이상(권장 3~4개) 짝지어 주세요."; return; }
+
+  const { w, h } = plan;
+  const data = plan.canvas.getContext("2d").getImageData(0, 0, w, h).data;
+  const tol = +$("#tol").value;
+  const x0 = roi ? Math.max(0, Math.floor(roi[0])) : 0;
+  const y0 = roi ? Math.max(0, Math.floor(roi[1])) : 0;
+  const x1 = roi ? Math.min(w, Math.ceil(roi[2])) : w;
+  const y1 = roi ? Math.min(h, Math.ceil(roi[3])) : h;
+
+  // 색 맞추기. 고른 색이 없으면 '빨간 계열'을 기본으로 본다.
+  const match = samples.length
+    ? (r, g, b) => samples.some(s =>
+        Math.abs(r - s[0]) + Math.abs(g - s[1]) + Math.abs(b - s[2]) <= tol * 1.6)
+    : (r, g, b) => r - Math.max(g, b) > 40 && r > 90;
+
+  // 픽셀을 그대로 다루면 너무 많다. 작은 칸으로 묶어 대표점을 만든다.
+  const cell = Math.max(2, Math.round(Math.max(w, h) / 500));
+  const gw = Math.ceil(w / cell), gh = Math.ceil(h / cell);
+  const cnt = new Int32Array(gw * gh), sx = new Float64Array(gw * gh), sy = new Float64Array(gw * gh);
+  let hits = 0;
+  for(let y = y0; y < y1; y++){
+    for(let x = x0; x < x1; x++){
+      const i = (y * w + x) * 4;
+      if(data[i + 3] < 128) continue;
+      if(!match(data[i], data[i + 1], data[i + 2])) continue;
+      const k = Math.floor(y / cell) * gw + Math.floor(x / cell);
+      cnt[k]++; sx[k] += x; sy[k] += y; hits++;
+    }
+  }
+  if(hits < 30){
+    $("#traceMsg").textContent = "그 색 픽셀을 거의 못 찾았습니다. 선 위를 다시 누르거나 허용범위를 넓혀 보세요.";
+    return;
+  }
+
+  // 가장 큰 덩어리를 고른다 (범례·글자처럼 떨어져 있는 것은 버린다)
+  const seen = new Int32Array(gw * gh).fill(0);
+  const nbr = [-1, 1, -gw, gw, -gw - 1, -gw + 1, gw - 1, gw + 1];
+  let best = [], id = 0;
+  for(let k = 0; k < cnt.length; k++){
+    if(!cnt[k] || seen[k]) continue;
+    id++;
+    const comp = [], q = [k];
+    seen[k] = id;
+    while(q.length){
+      const c = q.pop(); comp.push(c);
+      const cx = c % gw;
+      for(const d of nbr){
+        const nx = c + d;
+        if(nx < 0 || nx >= cnt.length || !cnt[nx] || seen[nx]) continue;
+        if(Math.abs((nx % gw) - cx) > 1) continue;   // 줄 넘어가는 이웃 제외
+        seen[nx] = id; q.push(nx);
+      }
+    }
+    if(comp.length > best.length) best = comp;
+  }
+  if(best.length < 3){ $("#traceMsg").textContent = "선으로 볼 만한 덩어리가 없습니다."; return; }
+
+  // 덩어리 안에서 가장 먼 두 끝을 찾아(너비우선 두 번) 그 사이 경로를 뽑는다 = 선의 몸통
+  const inComp = new Set(best);
+  const bfs = start => {
+    const prev = new Map([[start, -1]]);
+    let last = start, q = [start];
+    while(q.length){
+      const nq = [];
+      for(const c of q){
+        last = c;
+        const cx = c % gw;
+        for(const d of nbr){
+          const nx = c + d;
+          if(!inComp.has(nx) || prev.has(nx)) continue;
+          if(Math.abs((nx % gw) - cx) > 1) continue;
+          prev.set(nx, c); nq.push(nx);
+        }
+      }
+      q = nq;
+    }
+    return { last, prev };
+  };
+  const a = bfs(best[0]);
+  const bb = bfs(a.last);
+  const path = [];
+  for(let c = bb.last; c !== -1 && c !== undefined; c = bb.prev.get(c)) path.push(c);
+
+  let pix = path.reverse().map(k => [sx[k] / cnt[k], sy[k] / cnt[k]]);
+  pix = simplify(pix, cell * 1.2);
+  if(pix.length < 2){ $("#traceMsg").textContent = "경로가 너무 짧습니다."; return; }
+
+  trace = pix;
+  pts = pix.map(([x, y]) => toLL(fitFn(x, y)));
+  redraw();
+  fitToWork();
+  drawPlan();
+
+  const km = drawnKm();
+  $("#traceMsg").textContent =
+    `점 ${pts.length}개 · 길이 ${km.toFixed(2)}km 를 따왔습니다. ` +
+    (fitRms != null ? `기준점 오차 ${fitRms.toFixed(0)}m. ` : "") +
+    `위 3.그리기 의 길이 검산을 꼭 확인하세요.`;
+}
+
+/* 점이 너무 많으면 줄인다 (Douglas-Peucker, build_data.py 의 것과 같은 방식) */
+function simplify(pointsIn, tol){
+  if(pointsIn.length < 3) return pointsIn;
+  const keep = new Array(pointsIn.length).fill(false);
+  keep[0] = keep[pointsIn.length - 1] = true;
+  const stack = [[0, pointsIn.length - 1]];
+  while(stack.length){
+    const [s, e] = stack.pop();
+    const [x1, y1] = pointsIn[s], [x2, y2] = pointsIn[e];
+    let far = -1, fd = tol;
+    for(let i = s + 1; i < e; i++){
+      const [x, y] = pointsIn[i];
+      const dx = x2 - x1, dy = y2 - y1;
+      const len = Math.hypot(dx, dy);
+      const d = len < 1e-9 ? Math.hypot(x - x1, y - y1)
+        : Math.abs(dy * x - dx * y + x2 * y1 - y2 * x1) / len;
+      if(d > fd){ fd = d; far = i; }
+    }
+    if(far > 0){ keep[far] = true; stack.push([s, far], [far, e]); }
+  }
+  return pointsIn.filter((_, i) => keep[i]);
+}
+
+$("#btnTrace").addEventListener("click", traceRoute);
+$("#btnPreviewOff").addEventListener("click", () => { trace = null; drawPlan(); });
+
+/* ============================================================
+   단추 연결
+   ============================================================ */
+$("#keySave").addEventListener("click", () => {
+  const key = ($("#key").value || "").trim();
+  localStorage.setItem(LSKEY_TOOL, key);
+  applyKey(key);
+});
+$("#onlyTodo").addEventListener("change", renderList);
+$("#btnGuide").addEventListener("click", showGuides);
+$("#btnUndo").addEventListener("click", () => { pts.pop(); redraw(); });
+$("#btnClear").addEventListener("click", () => { pts = []; redraw(); });
+$("#btnImport").addEventListener("click", doImport);
+
+$("#btnSave").addEventListener("click", () => {
+  if(!current) return;
+  if(pts.length < 2){ $("#msg").textContent = "점이 2개 이상이어야 저장됩니다."; return; }
+  ROUTES[String(current.id)] = toGeoJson();
+  $("#msg").textContent =
+    "저장했습니다(아직 파일에는 안 들어갔습니다). 5번에서 내려받아 data/routes.json 에 넣으세요.";
+  renderList();
+});
+
+$("#btnDelete").addEventListener("click", () => {
+  if(!current) return;
+  delete ROUTES[String(current.id)];
+  pts = [];
+  redraw();
+  $("#msg").textContent = "이 사업의 노선을 지웠습니다. 내려받아 파일에 반영하세요.";
+  renderList();
+});
+
+$("#btnDownload").addEventListener("click", () => {
+  const blob = new Blob([exportText()], { type:"application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "routes.json";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  $("#expMsg").textContent =
+    `노선 ${Object.keys(ROUTES).length}건을 담았습니다. data/routes.json 에 덮어쓰고 커밋하세요.`;
+});
+
+$("#btnCopy").addEventListener("click", async () => {
+  try{
+    await navigator.clipboard.writeText(exportText());
+    $("#expMsg").textContent = "복사했습니다. data/routes.json 에 붙여넣으세요.";
+  }catch(e){
+    $("#expMsg").textContent = "복사가 막혔습니다. 개발자도구 콘솔에 출력했습니다.";
+    console.log(exportText());
+  }
+});
+
+/* ============================================================
+   시작
+   ============================================================ */
+initMap();
+loadAll().catch(e => {
+  $("#plist").innerHTML =
+    `<li class="muted" style="padding:10px 0">자료를 읽지 못했습니다 (${esc(e.message)}).<br>
+     저장소 폴더에서 <b>python -m http.server 8000</b> 을 켜고
+     <b>/tools/route_editor.html</b> 로 여세요.</li>`;
+});
+</script>
+</body>
+</html>
