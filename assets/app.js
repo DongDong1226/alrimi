@@ -2278,10 +2278,10 @@ function boundStyle(){
     : BOUND_STYLE;
 }
 function radiusStyle(){
-  // 위성에서는 파랑 점선이 물·그늘에 묻힌다. 팔레트에서 가장 밝은 남색 계열을 쓴다.
+  // 위성에서도 옅게 가지 않는다 (안개처럼 보인다). 같은 파랑 계열의 **채도 높은** 색을 쓴다.
   return isSat()
-    ? { color:cssVar("--p10"), weight:2.2, dashArray:"5 5",
-        fillColor:cssVar("--p10"), fillOpacity:.04 }
+    ? { color:cssVar("--accent"), weight:2.4, dashArray:"6 5",
+        fillColor:cssVar("--accent"), fillOpacity:.05 }
     : { color:"#1c47d4", weight:1.4, dashArray:"5 5", fillColor:"#1c47d4", fillOpacity:.05 };
 }
 /* dot = 작은 점 모양. 전국을 작은 미리보기 지도에 담을 때만 쓴다. */
@@ -2434,20 +2434,19 @@ function drawRoutes(){
         weight: on ? 4 : 2.5,
         opacity: on ? 0.95 : 0.6
       };
-      // 위성 위에서는 초록·청록 선이 숲·물에 그대로 묻힌다
-      // (실측 대비: 고른 것 1.02 / 안 고른 것 1.30 — 배경과 거의 같다).
+      // 위성 위에서는 초록·청록 선이 숲·물에 그대로 묻힌다.
       //
-      // 그래서 ① 선을 팔레트의 **밝은 쪽**으로 바꾸고
-      //        ② 그 밑에 **어두운 테두리**를 한 겹 깐다.
-      // 밝은 땅(도시·갯벌)에서는 어두운 테두리가, 어두운 땅에서는 밝은 선이 보인다.
-      // 처음에는 흰 테두리를 깔았는데, 그러면 선보다 테두리가 굵어 보여 흐릿했다.
+      // ★ 여기서도 한 번 잘못 갔다 — 선을 **옅은 색(--p10)** 으로 바꿨더니
+      //   위성 사진 위에서 안개처럼 보였다. 지도 서비스들이 하는 방식은 반대다:
+      //   **짙은 테두리 + 채도 높은 선** (구글 경로 = 선명한 파랑 + 짙은 파랑 테두리).
+      //   옅게가 아니라 **선명하게** 가야 한다.
       if(isSat()){
         const casing = L.polyline(latlngs, {
-          color:cssVar("--p90"), weight:style.weight + 4, opacity:.85, interactive:false
+          color:cssVar("--p90"), weight:style.weight + 4, opacity:.9, interactive:false
         }).addTo(gisMap);
         routeLayers.push(casing);
-        style.color = on ? "#fff" : cssVar("--p10");
-        style.weight = on ? 4.5 : 3;
+        style.color = on ? cssVar("--live") : cssVar("--accent");
+        style.weight = on ? 5 : 3.5;
         style.opacity = 1;
       }
       const layer = (g.type || "").includes("Polygon")
