@@ -67,7 +67,8 @@
         <span class="m-field-lb">시 · 군 · 구</span>
         <select id="f-sgg"></select>
       </label>
-      <label class="m-field">
+      <!-- 읍·면·동은 이름이 길어서(예: 오창읍 장대리) 한 줄을 다 쓴다 -->
+      <label class="m-field m-field--wide">
         <span class="m-field-lb">읍 · 면 · 동</span>
         <select id="f-dong"></select>
       </label>
@@ -129,7 +130,11 @@
       </div>
     </section>
 
-    <!-- 숫자 세 칸 — 좁으니 옆으로 밀어 본다. 아래 점 3개로 몇 번째인지 알려준다. -->
+    <!-- ★ 숫자는 **두 칸만, 한 화면에 딱** 보여준다.
+         예전에는 세 칸을 옆으로 밀어 보게 했는데(점 3개로 위치 표시),
+         밀 수 있다는 것을 모르면 세 번째는 영영 안 보이고 첫 칸도 잘려 보였다.
+         '전국 협의 진행 중'은 우리 동네 이야기가 아니라 전국 통계라 여기서 뺐다
+         (그 숫자는 첫 화면 아래 nation 줄에 그대로 있다). -->
     <div class="m-stats" id="mStats">
       <div class="m-stat feat">
         <span class="lab" id="stat-open-lab">의견 낼 수 있는 사업</span>
@@ -141,14 +146,6 @@
         <span class="num"><span data-count="0" id="stat-events">0</span><small>회</small></span>
         <span class="delta" id="stat-events-note"></span>
       </div>
-      <div class="m-stat">
-        <span class="lab">전국 협의 진행 중</span>
-        <span class="num"><span data-count="0" id="stat-nego">0</span><small>건</small></span>
-        <span class="delta" id="stat-nego-note"></span>
-      </div>
-    </div>
-    <div class="m-stats-dots" id="mStatsDots" aria-hidden="true">
-      <span class="on"></span><span></span><span></span>
     </div>
 
     <div class="m-tick" id="dashTick"></div>
@@ -229,22 +226,22 @@
       <nav class="pager" id="openPager" aria-label="설명회 목록 페이지"></nav>
     </section>
 
+    <!-- ★ 푸터는 짧게 간다. 긴 설명은 전부 이용안내 모달에 있다.
+         운영기관·전화는 '문의'에, 자료 출처 전문은 '이용안내'의 「자료 출처와 이용 조건」에 있다.
+
+         다만 **출처 표기를 아주 없앨 수는 없다** — 공공누리 제4유형은 출처표시가
+         이용 조건이고, 온라인은 출처 사이트로 가는 링크가 함께 있어야 한다.
+         그래서 한 줄로 줄이되 EIASS·공공누리 두 링크는 남긴다. -->
     <footer class="m-foot">
-      <p><strong>운영</strong> <span id="f-org"></span></p>
-      <p><strong>문의</strong> <span id="f-tel"></span> (평일 09:00–18:00)</p>
       <p class="m-foot-links">
         <button type="button" data-modal="m-guide">이용안내</button>
         <button type="button" data-modal="m-contact">문의</button>
         <a href="index.html?pc=1">넓은 화면(PC)</a>
       </p>
       <p class="m-copy">© 2026 기후에너지환경부. EIASS에 공개된 자료를 정리해 보여드립니다. 원문과 다르면 원문이 우선합니다.</p>
-      <!-- 자료 출처 표기 — 공공누리 제4유형은 '출처표시'가 의무다. index.html 과 같은 내용 -->
-      <p class="m-copy m-src">
-        <b>자료 출처</b> 기후에너지환경부 국립환경과학원이
-        <a href="https://www.eiass.go.kr/" target="_blank" rel="noopener">EIASS</a>에
-        공공누리 제4유형(출처표시·상업적 이용금지·변경금지)으로 개방한 공람 공고 자료를 이용하였습니다.
-        비영리 공공 안내 목적으로만 제공하며, 화면의 요약·해석은 원문이 아닙니다.
-        <a href="https://www.kogl.or.kr/info/license.do" target="_blank" rel="noopener">공공누리 이용조건</a>
+      <p class="m-copy m-src">자료 출처
+        <a href="https://www.eiass.go.kr/" target="_blank" rel="noopener">EIASS</a> ·
+        <a href="https://www.kogl.or.kr/info/license.do" target="_blank" rel="noopener">공공누리 제4유형</a>
       </p>
     </footer>
   </main>

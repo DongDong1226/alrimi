@@ -58,18 +58,23 @@ body.m .wrap{width:calc(100% - 28px)}
 .modal .m-or::before,.modal .m-or::after{background:var(--line)}
 
 /* 드롭다운 세 칸 — 한 줄에 하나씩, 손가락으로 누를 수 있게 */
-.m-setbar{display:flex;flex-direction:column;gap:10px}
-.m-field{display:block;background:#fff;border-radius:var(--r-md);padding:9px 14px 11px}
-.m-field-lb{display:block;font-size:12px;font-weight:700;color:var(--ink-3);margin-bottom:2px}
-.m-field select{width:100%;height:34px;border:0;background:transparent;outline:0;
+/* ★ 세 칸을 세로로 길게 쌓았더니 첫 화면의 절반을 먹었다 (칸 하나가 66px × 3).
+   시·도와 시·군·구를 **나란히** 두고 높이도 줄여, 210px 짜리를 100px 안쪽으로 줄인다.
+   읍·면·동은 이름이 길어(예: 오창읍 장대리) 한 줄을 다 준다. */
+.m-setbar{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.m-field{display:block;position:relative;background:#fff;border-radius:var(--r-md);
+  padding:6px 12px 7px;min-width:0}
+.m-field--wide{grid-column:1 / -1}
+.m-field-lb{display:block;font-size:11px;font-weight:700;color:var(--ink-3);margin-bottom:0}
+.m-field select{width:100%;height:28px;border:0;background:transparent;outline:0;
   /* 16px 미만이면 아이폰이 입력할 때 화면을 확대해 버린다 */
   font-size:16px;font-weight:700;color:var(--ink);appearance:none;-webkit-appearance:none;
-  padding-right:22px}
-.m-field{position:relative}
-.m-field::after{content:"";position:absolute;right:18px;bottom:22px;width:8px;height:8px;
+  padding-right:18px;text-overflow:ellipsis}
+.m-field::after{content:"";position:absolute;right:14px;bottom:18px;width:7px;height:7px;
   border-right:2px solid var(--ink-3);border-bottom:2px solid var(--ink-3);
   transform:rotate(45deg);pointer-events:none}
 .m-field select:disabled{opacity:.45}
+.m-setbar .m-go{grid-column:1 / -1}
 .m-go{min-height:52px;font-size:var(--fs-body-m);gap:8px}
 .m-go svg{width:18px;height:18px}
 
@@ -120,12 +125,11 @@ body.m .wrap{width:calc(100% - 28px)}
 /* 카드 3개를 옆으로 밀어 보는 칸.
    너비를 딱 62%가 아니라 살짝 더 좁혀서(58%) 다음 카드가 확실히 삐져나와 보이게 하고,
    스크롤 스냅으로 카드 사이에서 어중간하게 멈추지 않게 한다. 몇 번째인지는 아래 점으로 안다. */
-.m-stats{display:flex;gap:10px;padding:14px;overflow-x:auto;scrollbar-width:none;
-  scroll-snap-type:x mandatory}
-.m-stats::-webkit-scrollbar{display:none}
-.m-stat{flex:0 0 58%;background:#fff;border:1px solid var(--line);border-radius:var(--r-md);
-  padding:14px 16px;display:flex;flex-direction:column;gap:3px;box-shadow:var(--sh-sm);
-  scroll-snap-align:start}
+/* 두 칸이 한 화면에 딱 들어간다. **옆으로 밀지 않는다** —
+   밀 수 있다는 걸 모르면 안 보이는 칸이 생기고, 첫 칸도 잘려 보인다. */
+.m-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:14px}
+.m-stat{min-width:0;background:#fff;border:1px solid var(--line);border-radius:var(--r-md);
+  padding:13px 14px;display:flex;flex-direction:column;gap:3px;box-shadow:var(--sh-sm)}
 .m-stat.feat{border-color:var(--primary);background:var(--primary-tint)}
 .m-stat .lab{font-size:var(--fs-body-xs);font-weight:700;color:var(--ink-3)}
 .m-stat .num{font-size:var(--fs-h-l);font-weight:800;color:var(--navy);letter-spacing:-.03em}
@@ -133,11 +137,6 @@ body.m .wrap{width:calc(100% - 28px)}
 .m-stat .delta{font-size:11.5px;font-weight:600;color:var(--ink-3);line-height:1.5}
 .m-stat .delta.hot{color:var(--danger)}
 
-/* 지금 몇 번째 카드를 보고 있는지 알려주는 점 3개. mobile.js 가 스크롤을 보고 켠다. */
-.m-stats-dots{display:flex;justify-content:center;gap:6px;margin:-4px 0 4px}
-.m-stats-dots span{width:6px;height:6px;border-radius:50%;background:var(--line-strong);
-  transition:.15s var(--ease)}
-.m-stats-dots span.on{width:16px;border-radius:3px;background:var(--primary)}
 
 .m-tick{padding:0 14px}
 .m-tick .tick{border:0;border-left:3px solid var(--danger);background:#fff;border-radius:var(--r-sm);
@@ -345,8 +344,9 @@ body.m .modal-ft .btn{width:100%}
 
 /* 동네 변경 모달 — 첫 화면(동네 설정)과 달리 자주 열었다 닫는 빠른 수정 창이다.
    세 칸을 세로로 쌓으면(첫 화면 방식) 그만큼 모달이 길어지므로 한 줄로 눕히고 줄인다. */
-#m-hood .m-setbar--row{flex-direction:row;gap:6px;margin-top:2px}
-#m-hood .m-setbar--row .m-field{flex:1;min-width:0;padding:6px 8px 7px}
+/* 첫 화면은 2칸 격자인데, 이 모달은 세 칸을 **한 줄**로 눕힌다 (모달을 짧게 유지) */
+#m-hood .m-setbar--row{grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:2px}
+#m-hood .m-setbar--row .m-field{min-width:0;padding:6px 8px 7px}
 #m-hood .m-setbar--row .m-field-lb{font-size:10px;margin-bottom:1px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 #m-hood .m-setbar--row .m-field select{height:30px;font-size:12.5px;padding-right:16px}
