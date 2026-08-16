@@ -251,6 +251,12 @@
       <button type="button" data-mapscope="near"><b id="gis-radius">5</b>km</button>
       <button type="button" data-mapscope="all" class="on">전국</button>
     </div>
+    <!-- 배경지도 바꾸기. 위쪽 띠는 반드시 한 줄이어야 하므로(그래야 지도가 안 줄어든다)
+         글자 없이 아이콘만 둔다. 눌린 상태는 aria-pressed 로 알린다. -->
+    <button class="m-gis-addr-btn" type="button" id="btnMapLayer"
+            aria-pressed="false" aria-label="위성지도로 바꾸기">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="M12 3 2 8l10 5 10-5-10-5Z"></path><path d="m2 16 10 5 10-5"></path><path d="m2 12 10 5 10-5"></path></svg>
+    </button>
     <button class="m-gis-addr-btn" type="button" id="btn-map-addrbar" aria-label="주소 바꾸기">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg>
     </button>

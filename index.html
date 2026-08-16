@@ -510,6 +510,11 @@
         <button type="button" data-mapscope="near">반경 <b id="gis-radius">3</b>km</button>
         <button type="button" data-mapscope="all" class="on">전국</button>
       </div>
+      <!-- 배경지도 바꾸기. 기본은 일반지도다 —
+           주민은 지명·도로명 '글자'로 위치를 알아보기 때문이다.
+           위성은 "저기가 지금 논밭인지 산인지"를 보여줄 때만 잠깐 쓰는 것이라 단추 하나로 둔다. -->
+      <button class="btn btn--line btn--sm gis-layer" type="button" id="btnMapLayer"
+              aria-pressed="false" aria-label="위성지도로 바꾸기">위성지도</button>
     </div>
   </div>
 

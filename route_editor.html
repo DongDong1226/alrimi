@@ -144,6 +144,8 @@
   <label for="key" style="font-size:var(--fs-body-xs)">VWorld 키</label>
   <input id="key" type="password" placeholder="지도 타일용 키 (이 브라우저에만 저장됩니다)" autocomplete="off">
   <button id="keySave">적용</button>
+  <!-- 위성으로 두면 건물 모서리·교차로를 기준점으로 잡을 수 있어 좌표 맞추기가 정확해진다 -->
+  <button id="btnLayer" aria-pressed="false">위성지도</button>
   <span class="warn">키를 파일에 적어 커밋하지 마세요</span>
   <span class="muted" style="color:#c9d7f2;font-size:var(--fs-body-xs)">여기 넣으면 알리미 화면에도 적용됩니다</span>
   <span class="muted" style="margin-left:auto;color:#c9d7f2">담당자 전용 · 배포되지 않습니다</span>
@@ -384,8 +386,21 @@ const esc = s => String(s == null ? "" : s)
    ★ VWorld 배경지도는 줌 6 미만을 지원하지 않는다.
      그 아래로 내려가면 타일 대신 오류 XML 이 와서 바탕이 통째로 빈 것처럼 보인다.
    ============================================================ */
-function tileUrl(key){
-  return `https://api.vworld.kr/req/wmts/1.0.0/${key}/Base/{z}/{y}/{x}.png`;
+/* 배경지도 종류 — 일반 / 위성.
+   ★ 이 도구에서는 위성이 특히 값어치 있다 — 건물 모서리·교차로를 기준점으로 잡을 수 있어
+   좌표 맞추기가 훨씬 정확해진다. 위성은 지명이 없으므로 Hybrid 를 한 장 더 올린다.
+   알리미 화면(app.js)과 **같은 칸**을 써서 고른 것이 서로 통한다. */
+const LSMAPLAYER = "wdn.maplayer";
+let mapKind = "base";
+try{ mapKind = JSON.parse(localStorage.getItem(LSMAPLAYER) || '"base"') === "sat" ? "sat" : "base"; }catch(e){}
+
+function tileUrl(key, kind){
+  const layer = (kind || mapKind) === "sat" ? "Satellite" : "Base";
+  const ext = (kind || mapKind) === "sat" ? "jpeg" : "png";   // 위성만 jpeg 다
+  return `https://api.vworld.kr/req/wmts/1.0.0/${key}/${layer}/{z}/{y}/{x}.${ext}`;
+}
+function hybridUrl(key){
+  return `https://api.vworld.kr/req/wmts/1.0.0/${key}/Hybrid/{z}/{y}/{x}.png`;
 }
 
 function initMap(){
@@ -412,15 +427,31 @@ function initMap(){
   if(built) $("#key").placeholder = "배포된 키를 쓰는 중입니다 (바꾸려면 여기에 입력)";
 }
 
+let labelLayer = null;
+let curKey = "";
+
 function applyKey(raw){
   // 키 앞뒤 공백 한 칸이면 VWorld 가 거부한다. 세 곳에서 걷어내는 것과 같은 처리다.
-  const key = String(raw || "").trim();
-  $("#key") && ($("#key").value = key);
+  curKey = String(raw || "").trim();
+  $("#key") && ($("#key").value = curKey);
+  drawBaseLayer();
+}
+
+function drawBaseLayer(){
   if(tileLayer){ map.removeLayer(tileLayer); tileLayer = null; }
-  if(!key) return;
-  tileLayer = L.tileLayer(tileUrl(key), {
+  if(labelLayer){ map.removeLayer(labelLayer); labelLayer = null; }
+  const btn = $("#btnLayer");
+  if(btn){
+    btn.textContent = mapKind === "sat" ? "일반지도" : "위성지도";
+    btn.setAttribute("aria-pressed", String(mapKind === "sat"));
+  }
+  if(!curKey) return;
+  tileLayer = L.tileLayer(tileUrl(curKey), {
     minZoom:6, maxZoom:19, attribution:"ⓒ VWorld"
   }).addTo(map);
+  if(mapKind === "sat"){
+    labelLayer = L.tileLayer(hybridUrl(curKey), { minZoom:6, maxZoom:19 }).addTo(map);
+  }
 }
 
 /* ============================================================
@@ -1368,6 +1399,11 @@ $("#keySave").addEventListener("click", () => {
   $("#imgHint").textContent = key
     ? "키를 저장했습니다. 알리미 화면(index.html)에서도 지도가 나옵니다."
     : "키를 비웠습니다.";
+});
+$("#btnLayer").addEventListener("click", () => {
+  mapKind = mapKind === "sat" ? "base" : "sat";
+  try{ localStorage.setItem(LSMAPLAYER, JSON.stringify(mapKind)); }catch(e){}
+  drawBaseLayer();
 });
 $("#onlyTodo").addEventListener("change", renderList);
 $("#btnGuide").addEventListener("click", showGuides);

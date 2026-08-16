@@ -228,6 +228,8 @@ body.m .pg{min-width:40px;min-height:40px}
   justify-content:center;border-radius:var(--r-xs);background:rgba(255,255,255,.12);
   border:1px solid rgba(255,255,255,.22);color:#fff}
 .m-gis-addr-btn svg{width:18px;height:18px}
+/* 위성지도를 보고 있으면 단추가 눌린 것으로 보이게 한다 (글자를 못 넣는 자리라 색으로 알린다) */
+.m-gis-addr-btn[aria-pressed="true"]{background:#fff;color:var(--navy);border-color:#fff}
 
 .m-gisbody{flex:1;min-height:0;position:relative;display:block}
 .m-gismap{position:absolute;inset:0;height:auto;width:auto}

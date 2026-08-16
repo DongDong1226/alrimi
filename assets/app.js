@@ -2235,8 +2235,46 @@ $$("[data-kw]").forEach(b => b.addEventListener("click", () => { $("#q").value =
 /* ============================================================
    지도 — 공통
    ============================================================ */
-function vworldTileUrl(){
-  return `https://api.vworld.kr/req/wmts/1.0.0/${S.vworldKey}/Base/{z}/{y}/{x}.png`;
+/* ============================================================
+   배경지도 종류 — 일반 / 위성
+
+   **기본은 일반지도다.** 주민은 지명·도로명 '글자'로 위치를 알아본다.
+   위성만 켜면 글자가 없어 "여기가 어디지"가 되므로, 위성은 반드시
+   Hybrid(지명·도로 겹치기)와 **두 장 세트**로 올린다.
+
+   그런데도 위성을 두는 이유는 일반지도가 못 하는 것을 하기 때문이다 —
+   **"지금 저기가 어떤 땅인가"**(논밭인지 산인지 이미 개발된 곳인지).
+   개발사업 알리미에서는 그것이 장식이 아니라 정보다.
+
+   실측(2026-08-16, 타일 한 장): 일반 4~38KB / 위성 13~41KB + Hybrid 42~83KB.
+   위성 쪽이 3배 넘게 무거워서 **기본으로 켜 둘 물건은 아니다.**
+   VWorld 는 Base·Satellite·Hybrid·midnight 만 준다 (gray 는 안 됨). 모두 줌 6~19.
+   ============================================================ */
+const LSMAPLAYER = "wdn.maplayer";
+let mapLayerKind = (lsGet(LSMAPLAYER, "base") === "sat") ? "sat" : "base";
+
+function vworldTileUrl(kind){
+  const layer = kind === "sat" ? "Satellite" : "Base";
+  const ext = kind === "sat" ? "jpeg" : "png";   // 위성만 jpeg 다. 헷갈리기 쉽다
+  return `https://api.vworld.kr/req/wmts/1.0.0/${S.vworldKey}/${layer}/{z}/{y}/{x}.${ext}`;
+}
+function vworldHybridUrl(){
+  return `https://api.vworld.kr/req/wmts/1.0.0/${S.vworldKey}/Hybrid/{z}/{y}/{x}.png`;
+}
+function isSat(){ return mapLayerKind === "sat"; }
+
+/* 위성 위에서는 선 색을 바꿔야 한다.
+   초록 점선 동네 경계가 **초록 산 위에서 그냥 사라진다.** 색 문제라 CSS 로는 못 막는다. */
+function boundStyle(){
+  return isSat()
+    ? { color:"#ffffff", weight:2.6, dashArray:"6 4", opacity:1,
+        fillColor:"#ffffff", fillOpacity:.06, interactive:false }
+    : BOUND_STYLE;
+}
+function radiusStyle(){
+  return isSat()
+    ? { color:"#ffe066", weight:2, dashArray:"5 5", fillColor:"#ffe066", fillOpacity:.05 }
+    : { color:"#1c47d4", weight:1.4, dashArray:"5 5", fillColor:"#1c47d4", fillOpacity:.05 };
 }
 /* dot = 작은 점 모양. 전국을 작은 미리보기 지도에 담을 때만 쓴다. */
 function markerIcon(type, on, dot){
@@ -2292,9 +2330,40 @@ function ensureGisMap(){
   // 오류 응답이 와서 지도가 빈 채로 보인다. minZoom 을 걸어 fitBounds 가
   // 절대 그 아래로 내려가지 않게 막는다 (2026-08-06 전국 미니지도에서 겪음).
   gisMap = L.map("gisMap", { zoomControl:true, attributionControl:true, minZoom:6 });
-  L.tileLayer(vworldTileUrl(), { minZoom:6, maxZoom:19, attribution:"ⓒ VWorld" }).addTo(gisMap);
+  applyMapLayer();
   gisMap.setView([HOME.lat, HOME.lon], 12);
   return gisMap;
+}
+
+/* 배경지도를 지금 고른 종류로 갈아 끼운다.
+   위성은 Hybrid(지명·도로)를 **위에 한 장 더** 올린다 — 없으면 글자가 하나도 없다. */
+let gisBaseLayer = null, gisLabelLayer = null;
+function applyMapLayer(){
+  if(!gisMap) return;
+  if(gisBaseLayer){ gisMap.removeLayer(gisBaseLayer); gisBaseLayer = null; }
+  if(gisLabelLayer){ gisMap.removeLayer(gisLabelLayer); gisLabelLayer = null; }
+  gisBaseLayer = L.tileLayer(vworldTileUrl(mapLayerKind),
+    { minZoom:6, maxZoom:19, attribution:"ⓒ VWorld" }).addTo(gisMap);
+  if(isSat()){
+    gisLabelLayer = L.tileLayer(vworldHybridUrl(), { minZoom:6, maxZoom:19 }).addTo(gisMap);
+  }
+  const box = document.getElementById("gisMap");
+  if(box) box.classList.toggle("gis-map--sat", isSat());
+  const btn = $("#btnMapLayer");
+  if(btn){
+    btn.textContent = isSat() ? "일반지도" : "위성지도";
+    btn.setAttribute("aria-label", isSat() ? "일반지도로 바꾸기" : "위성지도로 바꾸기");
+    btn.setAttribute("aria-pressed", String(isSat()));
+  }
+}
+
+function toggleMapLayer(){
+  mapLayerKind = isSat() ? "base" : "sat";
+  lsSet(LSMAPLAYER, mapLayerKind);
+  applyMapLayer();
+  // 선 색이 배경에 따라 달라지므로 이미 그려 둔 것을 다시 그린다
+  renderGisMarkers(false);
+  drawRoutes();
 }
 
 /* ============================================================
@@ -2356,6 +2425,15 @@ function drawRoutes(){
         weight: on ? 4 : 2.5,
         opacity: on ? 0.95 : 0.6
       };
+      // 위성 위에서는 초록·청록 선이 숲·물에 묻힌다.
+      // 색을 새로 만드는 대신 **흰 테두리를 밑에 한 겹 깔아** 어떤 배경에서도 보이게 한다.
+      if(isSat()){
+        const casing = L.polyline(latlngs, {
+          color:"#fff", weight:style.weight + 3, opacity:.9, interactive:false
+        }).addTo(gisMap);
+        routeLayers.push(casing);
+        style.opacity = 1;
+      }
       const layer = (g.type || "").includes("Polygon")
         ? L.polygon(latlngs, Object.assign({ fillOpacity:on ? 0.25 : 0.12 }, style))
         : L.polyline(latlngs, style);
@@ -2394,8 +2472,9 @@ function drawBoundary(){
   if(gisMap){
     if(boundLayer){ gisMap.removeLayer(boundLayer); boundLayer = null; }
     if(HOOD_BOUNDARY){
-      boundLayer = L.geoJSON(HOOD_BOUNDARY.geom, { style:BOUND_STYLE }).addTo(gisMap);
-      boundLayer.bringToBack();
+      // 위성일 때는 흰 점선으로 바꾼다 (초록 선이 초록 산 위에서 사라진다)
+      boundLayer = L.geoJSON(HOOD_BOUNDARY.geom, { style:boundStyle() }).addTo(gisMap);
+      if(!isSat()) boundLayer.bringToBack();   // 위성에서는 뒤로 보내면 위성 타일에 묻힌다
     }
   }
   if(miniMap){
@@ -2421,10 +2500,8 @@ function renderGisMarkers(fit = true){
       .addTo(gisMap).bindTooltip(HOME.label || "우리 집");
     nameMarker(gisHomeMarker, `우리 집 · ${HOME.label || "기준 위치"}`);
     if(showRadiusCircle(mapScope)){
-      gisCircle = L.circle([HOME.lat, HOME.lon], {
-        radius: S.radiusKm * 1000, color:"#1c47d4", weight:1.4,
-        dashArray:"5 5", fillColor:"#1c47d4", fillOpacity:.05
-      }).addTo(gisMap);
+      gisCircle = L.circle([HOME.lat, HOME.lon],
+        Object.assign({ radius: S.radiusKm * 1000 }, radiusStyle())).addTo(gisMap);
     }
   }
 
@@ -2808,6 +2885,9 @@ $("#btn-draw-copy").addEventListener("click", async () => {
     console.log(payload);
   }
 });
+
+/* 배경지도 바꾸기 (일반 ↔ 위성). 두 화면이 같은 id 를 쓴다. */
+$("#btnMapLayer").addEventListener("click", toggleMapLayer);
 
 /* 지도 화면에서 주소를 바꾸면 그 주소로 지도를 옮기고 목록을 다시 계산한다. */
 $("#btn-map-addr").addEventListener("click", async () => {

@@ -574,6 +574,10 @@ select:disabled{opacity:.5;cursor:not-allowed}
    ② 모양까지 다르게 준다(원 ↔ 마름모).
    색만으로 나누면 색을 구분하기 어려운 사람은 둘을 못 가른다.
    (색은 모두 tokens.css 에 있는 값이다) */
+/* 배경지도 바꾸기 단추 — 지도 화면 위쪽 띠. 눌리면 지금 위성을 보고 있다는 뜻이다. */
+.gis-layer{white-space:nowrap}
+.gis-layer[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:#fff}
+
 .mk{width:16px;height:16px;border-radius:50%;border:3px solid #fff;
   box-shadow:0 2px 6px rgba(16,28,54,.5)}
 .mk--home{background:var(--eco)}
