@@ -62,11 +62,13 @@ jobs:
     timeout-minutes: 120
 
     steps:
+      # 액션 판 번호는 2026-08-16 에 최신으로 올렸다 (Node 20 지원 종료 경고 때문).
+      # v7 은 남의 저장소에서 온 PR 을 받아 오는 경우만 막는데, 우리는 그 방식을 안 쓴다.
       - name: 저장소 내려받기
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: 파이썬 준비
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip

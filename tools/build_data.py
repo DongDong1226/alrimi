@@ -955,6 +955,44 @@ def load_existing(path):
     return {p["id"]: p for p in rows if isinstance(p, dict) and p.get("id")}
 
 
+def stamp_first_seen(projects, day, path):
+    """'우리가 그 사업을 처음 본 날'(firstSeen)을 적는다.
+
+    ■ 왜 필요한가
+      화면의 '새로 올라온 사업'은 원래 **공람 시작일**로 판정했다. 그런데 그 날짜는
+      EIASS 쪽 사정이지 우리 화면에 나타난 날이 아니다. 둘이 어긋나면 알림이 통째로 샌다:
+        · EIASS 가 공람 시작 뒤에 목록에 늦게 올리는 경우
+          (실측: 현경 수양저수지 사업 — 공람 8/3 시작, 우리가 처음 본 날 8/14)
+        · **우리 수집이 하루라도 실패한 경우** (8/7~8/14 에 7일 구멍이 있었다)
+      늦게 나타난 사업일수록 남은 기간이 짧다. 지금 규칙은 **가장 급한 사업을 가장 조용히**
+      들여보낸다. 그래서 우리가 처음 본 날을 따로 적어 둔다.
+
+    ■ 규칙은 하나뿐이다 — **한 번 적힌 날짜는 절대 덮지 않는다.**
+      매번 오늘로 덮으면 모든 사업이 날마다 '새것'이 되어 표시가 뜻을 잃는다.
+
+    ■ 저장 직전 한 곳에서만 찍는 이유
+      증분 수집과 --full 이 서로 다른 길을 타는데, --full 은 캐시(existing)를 비운다.
+      거기에 기대면 --full 한 번에 firstSeen 이 전부 날아가 **다시 온 주민에게 전부 NEW** 로
+      보인다. 그래서 existing 이 아니라 **파일을 따로 다시 읽는다.**
+    """
+    prev = load_existing(path)          # ★ existing 이 아니라 파일에서 직접 (--full 이어도 안전)
+    today = day.isoformat()
+    fresh = 0
+    for p in projects:
+        old = prev.get(p.get("id"))
+        if old and old.get("firstSeen"):
+            p["firstSeen"] = old["firstSeen"]
+        elif old:
+            # 지난 파일에 있던 사업인데 firstSeen 이 없다 = 이 기능을 넣기 전부터 있던 사업.
+            # 오늘로 적으면 **이미 다녀간 주민에게 41건이 전부 새 사업으로 보인다.**
+            # 그래서 예전 화면이 쓰던 값(공람 시작일)을 그대로 물려준다 — 동작이 안 바뀐다.
+            p["firstSeen"] = p.get("periodStart") or today
+        else:
+            p["firstSeen"] = today      # 우리가 오늘 처음 본 사업
+            fresh += 1
+    return fresh
+
+
 # 재사용하는 사업에서도 매번 다시 받아 덮어쓰는 항목.
 # 상세 페이지 조회 한 번(0.2초, 무료)이면 되고, 돈이 드는 PDF·AI 는 건드리지 않는다.
 # 이 값들은 공람 도중에 실제로 바뀐다 — 특히 설명회 일시가 "미정"에서 날짜로 정해진다.
@@ -1439,6 +1477,12 @@ def build(args):
                     log("  [협의 진행 중] 이번엔 못 읽어서 지난 값을 그대로 씁니다")
             except (FileNotFoundError, ValueError, OSError):
                 stats = {}
+
+    # '우리가 처음 본 날'을 적는다. 반드시 **파일을 덮어쓰기 전에** 해야 한다
+    # (지난 파일의 firstSeen 을 읽어 물려받는 것이라, 덮어쓴 뒤에는 읽을 것이 없다).
+    fresh = stamp_first_seen(kept, end_day, OUT_PATH)
+    if fresh:
+        log(f"[새 사업] 오늘 처음 본 사업 {fresh}건에 발견일을 적었습니다.")
 
     os.makedirs(os.path.dirname(OUT_PATH), exist_ok=True)
     with open(OUT_PATH, "w", encoding="utf-8") as f:
