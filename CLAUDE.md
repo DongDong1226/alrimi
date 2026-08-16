@@ -101,6 +101,8 @@
 ```
 index.html                     데스크톱 화면 5개(동네 설정 / 홈 / 관리자 / 지도 / 담은 사업) + 모달 5개
 m.html                         휴대폰 전용 화면 (아래 "화면 파일이 두 개다" 참고)
+route_editor.html              ★ 담당자용 노선 그리기 도구 (관리자 화면에서 링크로 연다)
+                               **반드시 맨 위 폴더에 둔다** — deploy.yml 이 맨 위 *.html 만 올린다
 assets/tokens.css              디자인 토큰 (EIASS 원본, --dscale 만 0.7로 조정)
 assets/app.css                 컴포넌트 스타일 (두 화면 공용)
 assets/mobile.css              휴대폰 전용 배치 (m.html 에서만 읽는다)
@@ -114,8 +116,6 @@ data/sido.json                 시·도 경계 도형, 미리 단순화 (git 포
 data/routes.json               관리자가 직접 그린 노선 (git 포함, 없어도 정상)
 tools/build_data.py            EIASS 수집 → projects.json 생성
 tools/relay/index.ts           EIASS 중계 함수 원본 (Supabase Edge Function, 서울)
-tools/route_editor.html        ★ 도로·철도 노선을 손으로 그려 routes.json 을 만드는 담당자용 도구
-                               (배포 안 됨 — deploy.yml 이 tools/ 를 안 올린다)
 tools/build_regions.py         VWorld → regions.json 생성
 tools/build_boundaries.py      VWorld → sido.json 생성 (행정구역 개편 때만 다시 돌린다)
 tools/run_daily.bat            손으로 급히 수집할 때 (반드시 CRLF). 평소 수집은 collect.yml 이 한다
@@ -274,9 +274,19 @@ AI는 **번역만** 한다. 분석·판단·보충을 하지 않는다.
   그냥 "지나가는 하천"이라 노선으로 그리면 틀린 그림이 된다.
   이런 사업은 사람이 직접 그린다 — **`tools/route_editor.html`** (아래 참고).
 
-### 도로·철도 노선은 사람이 넣는다 (`tools/route_editor.html`)
+### 도로·철도 노선은 사람이 넣는다 (`route_editor.html`)
 
 **아직 없는 길**이라 어떤 지도에도 도형이 없다. 그래서 세 가지 길을 둔다.
+
+> **어디에 있나** — 저장소 **맨 위**다. `deploy.yml` 이 맨 위 `*.html` 만 올리므로
+> `tools/` 로 옮기면 배포에서 빠져 관리자 화면의 단추가 404 가 된다.
+> 관리자 화면(비밀번호) → **노선 그리기 도구 열기** 로 들어간다.
+> VWorld 키는 배포 때 `assets/config.js` 에 심어지므로 배포 사이트에서는 따로 안 넣어도 된다.
+>
+> **★ 저장은 반드시 사람이 한다.** GitHub Pages 는 정적 파일을 올려두는 곳이라
+> 브라우저에서 서버 파일을 못 쓴다. 쓰려면 GitHub 토큰이 필요한데 그것을 브라우저에 두면
+> **저장소 쓰기 권한을 공개하는 셈**이라 절대 안 된다 (VWorld 키와 달리 도메인 제한도 안 걸린다).
+> 흐름: 도구에서 그림 → `routes.json` 내려받기 → `data/routes.json` 에 덮어쓰기 → 커밋.
 
 **① 도면에서 반자동으로 따기 (2026-08-16 추가, 가장 빠르다)**
 

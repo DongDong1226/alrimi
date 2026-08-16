@@ -469,6 +469,17 @@
             그린 노선은 이 브라우저에 저장되고, <b>JSON 복사</b>로 받아
             <code>data/routes.json</code>에 넣으면 모두에게 보입니다.</p>
           <button class="btn btn--line" type="button" id="btn-admin-route">지도에서 노선 그리기</button>
+
+          <!-- 도면에서 반자동으로 따는 도구. 화면이 완전히 달라서(도면 칸 + 기준점 짝짓기)
+               이 페이지에 끼워 넣지 않고 별도 파일로 두고 링크만 건다.
+               route_editor.html 은 반드시 **맨 위 폴더**에 있어야 배포된다
+               (deploy.yml 이 맨 위 *.html 만 올린다). -->
+          <p class="hint" style="margin-top:14px">
+            <b>도면이 있으면 더 빠릅니다.</b> 노선이 그려진 도면 그림을 넣고
+            알아볼 수 있는 곳 3~4군데만 짝지어 주면 선을 자동으로 따 옵니다.
+            사업개요의 연장과 견주는 <b>길이 검산</b>도 함께 나옵니다.</p>
+          <a class="btn btn--line" href="route_editor.html" target="_blank" rel="noopener"
+             id="btn-admin-editor">노선 그리기 도구 열기</a>
         </div>
       </div>
 
