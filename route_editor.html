@@ -230,6 +230,15 @@
           <button id="btnRoiClear">범위 해제</button>
           <span class="muted" id="roiMsg">범례·글자가 같은 색이면 범위를 좁히세요.</span>
         </div>
+        <div class="row">
+          <label for="gap">끊긴 틈 잇기</label>
+          <!-- 기본 80px — 역 표시(원) 두 개가 겹치면 틈이 60px 가까이 된다.
+               40px 로 뒀더니 실제 도면에서 절반만 따왔다 (2026-08-16 실측) -->
+          <input type="range" id="gap" min="0" max="300" step="10" value="80">
+          <span class="muted" id="gapVal">80px</span>
+        </div>
+        <p class="muted" style="margin:2px 0 0">
+          역 표시·글자가 선을 덮으면 선이 동강 납니다. 그 틈을 이어 줍니다. 0이면 안 잇습니다.</p>
 
         <hr style="border:0;border-top:1px solid var(--line);margin:10px 0">
 
@@ -238,6 +247,11 @@
           <button id="btnTrace" class="primary">노선 자동 추출</button>
           <button id="btnPreviewOff">미리보기 지우기</button>
         </div>
+        <div class="row">
+          <label><input type="checkbox" id="appendMode"> 지금 그린 것 뒤에 <b>이어붙이기</b></label>
+        </div>
+        <p class="muted" style="margin:2px 0 0">
+          틈 잇기로도 안 되면, 범위를 나눠 두 번 추출해 이어붙이면 됩니다.</p>
         <p class="muted" id="traceMsg" style="margin:6px 0 0"></p>
         <p class="muted" style="margin:6px 0 0">
           추출하면 위 <b>3. 그리기</b> 로 들어갑니다. 길이 검산을 꼭 확인하고,
@@ -986,6 +1000,9 @@ $("#btnRoi").addEventListener("click", () => setImgMode(imgMode === "roi" ? "pan
 $("#btnRoiClear").addEventListener("click", () => { roi = null; $("#roiMsg").textContent = ""; drawPlan(); });
 $("#btnPickClear").addEventListener("click", () => { samples = []; renderSwatches(); });
 $("#tol").addEventListener("input", e => { $("#tolVal").textContent = e.target.value; });
+$("#gap").addEventListener("input", e => {
+  $("#gapVal").textContent = e.target.value === "0" ? "안 이음" : e.target.value + "px";
+});
 
 function renderSwatches(){
   $("#swatches").innerHTML = samples.map(c =>
@@ -1154,10 +1171,16 @@ function traceRoute(){
     return;
   }
 
-  // 가장 큰 덩어리를 고른다 (범례·글자처럼 떨어져 있는 것은 버린다)
+  // 덩어리(연결된 칸 묶음)를 **전부** 찾는다.
+  //
+  // ★ 예전에는 '가장 큰 덩어리' 하나만 썼는데, 실제 도면에서는 그것 때문에 선이 잘렸다.
+  //   역 표시(원)나 글자가 노선 위를 덮으면 **선이 거기서 동강 나** 두 덩어리가 되고,
+  //   큰 쪽만 남아서 나머지 절반이 통째로 빠졌다. (2026-08-16 면목선 도면에서 실제로 겪음)
+  //   그래서 덩어리를 다 찾은 뒤 **끝점이 가까운 것끼리 이어 붙인다.**
   const seen = new Int32Array(gw * gh).fill(0);
   const nbr = [-1, 1, -gw, gw, -gw - 1, -gw + 1, gw - 1, gw + 1];
-  let best = [], id = 0;
+  const comps = [];
+  let id = 0;
   for(let k = 0; k < cnt.length; k++){
     if(!cnt[k] || seen[k]) continue;
     id++;
@@ -1173,51 +1196,118 @@ function traceRoute(){
         seen[nx] = id; q.push(nx);
       }
     }
-    if(comp.length > best.length) best = comp;
+    comps.push(comp);
   }
-  if(best.length < 3){ $("#traceMsg").textContent = "선으로 볼 만한 덩어리가 없습니다."; return; }
+  if(!comps.length){ $("#traceMsg").textContent = "선으로 볼 만한 덩어리가 없습니다."; return; }
 
   // 덩어리 안에서 가장 먼 두 끝을 찾아(너비우선 두 번) 그 사이 경로를 뽑는다 = 선의 몸통
-  const inComp = new Set(best);
-  const bfs = start => {
-    const prev = new Map([[start, -1]]);
-    let last = start, q = [start];
-    while(q.length){
-      const nq = [];
-      for(const c of q){
-        last = c;
-        const cx = c % gw;
-        for(const d of nbr){
-          const nx = c + d;
-          if(!inComp.has(nx) || prev.has(nx)) continue;
-          if(Math.abs((nx % gw) - cx) > 1) continue;
-          prev.set(nx, c); nq.push(nx);
+  const diameterPath = comp => {
+    const inComp = new Set(comp);
+    const bfs = start => {
+      const prev = new Map([[start, -1]]);
+      let last = start, q = [start];
+      while(q.length){
+        const nq = [];
+        for(const c of q){
+          last = c;
+          const cx = c % gw;
+          for(const d of nbr){
+            const nx = c + d;
+            if(!inComp.has(nx) || prev.has(nx)) continue;
+            if(Math.abs((nx % gw) - cx) > 1) continue;
+            prev.set(nx, c); nq.push(nx);
+          }
         }
+        q = nq;
       }
-      q = nq;
-    }
-    return { last, prev };
+      return { last, prev };
+    };
+    const a = bfs(comp[0]);
+    const b2 = bfs(a.last);
+    const out = [];
+    for(let c = b2.last; c !== -1 && c !== undefined; c = b2.prev.get(c)) out.push(c);
+    return out.reverse();
   };
-  const a = bfs(best[0]);
-  const bb = bfs(a.last);
-  const path = [];
-  for(let c = bb.last; c !== -1 && c !== undefined; c = bb.prev.get(c)) path.push(c);
 
-  let pix = path.reverse().map(k => [sx[k] / cnt[k], sy[k] / cnt[k]]);
-  pix = simplify(pix, cell * 1.2);
+  // 덩어리마다 몸통을 뽑고, **선처럼 생긴 것만** 이어붙일 후보로 삼는다.
+  //   길쭉한 선  : 몸통길이 / 칸수 가 크다 (폭이 4칸이면 약 0.25)
+  //   '106' 같은 딱지·글자 : 뭉툭해서 0.1 아래로 떨어진다
+  const pieces = [], blobs = [];
+  comps.forEach(comp => {
+    if(comp.length < 6) return;                       // 먼지
+    const path = diameterPath(comp);
+    const pix = path.map(k => [sx[k] / cnt[k], sy[k] / cnt[k]]);
+    if(pix.length < 2) return;
+    let len = 0;
+    for(let i = 1; i < pix.length; i++) len += Math.hypot(pix[i][0] - pix[i-1][0], pix[i][1] - pix[i-1][1]);
+    (path.length / comp.length >= 0.12 ? pieces : blobs).push({ pix, len });
+  });
+  if(!pieces.length){ $("#traceMsg").textContent = "선처럼 생긴 덩어리가 없습니다. 색이나 범위를 다시 보세요."; return; }
+
+  // 가장 긴 것부터 시작해, 끝점이 가까운 조각을 앞뒤로 계속 붙인다.
+  pieces.sort((a, b) => b.len - a.len);
+  const maxGap = +$("#gap").value;
+  let chain = pieces.shift().pix;
+  const gaps = [];
+  if(maxGap > 0){
+    for(;;){
+      const dist = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1]);
+      let pick = null;
+      pieces.forEach((pc, i) => {
+        const head = chain[0], tail = chain[chain.length - 1];
+        const a = pc.pix[0], b = pc.pix[pc.pix.length - 1];
+        [ ["tail", "a", dist(tail, a)], ["tail", "b", dist(tail, b)],
+          ["head", "a", dist(head, a)], ["head", "b", dist(head, b)] ]
+          .forEach(([end, side, d]) => {
+            if(d <= maxGap && (!pick || d < pick.d)) pick = { i, end, side, d };
+          });
+      });
+      if(!pick) break;
+      const pc = pieces.splice(pick.i, 1)[0];
+      // 붙는 쪽이 조각의 끝점이면 뒤집어서 방향을 맞춘다
+      let seg = pick.side === "a" ? pc.pix : pc.pix.slice().reverse();
+      if(pick.end === "tail") chain = chain.concat(seg);
+      else                    chain = seg.slice().reverse().concat(chain);
+      gaps.push(Math.round(pick.d));
+    }
+  }
+
+  let pix = simplify(chain, cell * 1.2);
   if(pix.length < 2){ $("#traceMsg").textContent = "경로가 너무 짧습니다."; return; }
+  const leftover = pieces.length;
 
   trace = pix;
-  pts = pix.map(([x, y]) => toLL(fitFn(x, y)));
+  const got = pix.map(([x, y]) => toLL(fitFn(x, y)));
+
+  if($("#appendMode").checked && pts.length >= 2){
+    // 이미 그린 것의 가까운 쪽 끝에 이어 붙인다 (방향은 알아서 맞춘다)
+    const d = (a, b) => haversineKm(a[0], a[1], b[0], b[1]);
+    const head = pts[0], tail = pts[pts.length - 1];
+    const cand = [
+      { d:d(tail, got[0]),                 fn:() => pts.concat(got) },
+      { d:d(tail, got[got.length - 1]),    fn:() => pts.concat(got.slice().reverse()) },
+      { d:d(head, got[0]),                 fn:() => got.slice().reverse().concat(pts) },
+      { d:d(head, got[got.length - 1]),    fn:() => got.concat(pts) }
+    ].sort((a, b) => a.d - b.d)[0];
+    pts = cand.fn();
+  }else{
+    pts = got;
+  }
+
   redraw();
   fitToWork();
   drawPlan();
 
+  // ★ 무엇을 어떻게 했는지 그대로 알린다.
+  //   조용히 반쪽만 따오는 것이 이 도구에서 가장 위험하다 — 화면에는 그럴듯하게 보이기 때문이다.
   const km = drawnKm();
-  $("#traceMsg").textContent =
-    `점 ${pts.length}개 · 길이 ${km.toFixed(2)}km 를 따왔습니다. ` +
-    (fitRms != null ? `기준점 오차 ${fitRms.toFixed(0)}m. ` : "") +
-    `위 3.그리기 의 길이 검산을 꼭 확인하세요.`;
+  const bits = [`점 ${pts.length}개 · 길이 ${km.toFixed(2)}km`];
+  if(gaps.length) bits.push(`끊긴 곳 ${gaps.length}군데를 이었습니다(틈 ${gaps.join(", ")}px)`);
+  if(leftover)    bits.push(`⚠ 멀리 떨어진 조각 ${leftover}개는 못 붙였습니다 — '끊긴 틈 잇기'를 늘리거나 범위를 나눠 이어붙이세요`);
+  if(blobs.length) bits.push(`딱지·글자처럼 뭉툭한 덩어리 ${blobs.length}개는 건너뛰었습니다`);
+  if(fitRms != null) bits.push(`기준점 오차 ${fitRms.toFixed(0)}m`);
+  bits.push("위 3.그리기 의 길이 검산을 꼭 확인하세요");
+  $("#traceMsg").textContent = bits.join(" · ");
 }
 
 /* 점이 너무 많으면 줄인다 (Douglas-Peucker, build_data.py 의 것과 같은 방식) */
