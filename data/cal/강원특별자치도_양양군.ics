@@ -1,0 +1,40 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//우리동네 개발사업 알리미//KO
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:강원특별자치도 양양군 개발사업 의견 마감
+X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
+REFRESH-INTERVAL;VALUE=DURATION:PT12H
+X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:WJ20260124-104876@alrimi
+DTSTAMP:20260629T000000Z
+DTSTART;VALUE=DATE:20260821
+DTEND;VALUE=DATE:20260822
+SUMMARY:[의견 마감] 양양 군관리계획(양양 인구해안·동산
+ 해안지구 지구단위계획구역) 결정(변경)(안)
+DESCRIPTION:사업: 양양 군관리계획(양양 인구해안·동산해
+ 안지구 지구단위계획구역) 결정(변경)(안)\n유형: 전략환
+ 경영향평가\n위치: 강원특별자치도 양양군 현남면 동산
+ 리 (동산큰길 62-40)\n기관: 원주지방환경청\n공람기간: 202
+ 6-06-29 ~ 2026-08-11\n의견 제출 마감: 2026-08-21\n\n의견은 EIASS 
+ 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우
+ 리동네 개발사업 알리미
+LOCATION:강원특별자치도 양양군 현남면 동산리 (동산큰길 
+ 62-40)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:양양 군관리계획(양양 인구해안·동산해안지구 
+ 지구단위계획구역) 결정(변경)(안) 의견 제출 마감 3일 
+ 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:양양 군관리계획(양양 인구해안·동산해안지구 
+ 지구단위계획구역) 결정(변경)(안) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+END:VCALENDAR

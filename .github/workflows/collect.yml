@@ -195,6 +195,9 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/projects.json
+          # 지역별 캘린더(.ics)도 함께 올린다. 이걸 빠뜨리면 주민이 구독한 주소의
+          # 내용이 영영 안 바뀌어, 새 사업이 떠도 캘린더에 안 들어온다.
+          git add -A data/cal
           if git diff --cached --quiet; then
             echo "바뀐 내용이 없어 커밋하지 않습니다."
           else

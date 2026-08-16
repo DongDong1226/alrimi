@@ -588,6 +588,8 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .cal-h--sub{margin-top:8px;color:var(--ink-3)}
 .cal-btns{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 0}
 .cal-btns .btn{text-decoration:none}
+/* 구독 칸은 목록 아래에 놓이므로 위쪽 여백을 조금 더 준다 */
+.cal-box--sub{margin-top:26px}
 
 /* ── 새로 올라온 사업 알림 줄 ──────────────────────────────────────
    지난번 본 뒤로 공람이 시작된 사업이 있을 때만 나온다.

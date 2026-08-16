@@ -197,6 +197,64 @@ function googleCalUrl(p){
   return `https://calendar.google.com/calendar/render?${q}`;
 }
 
+/* ============================================================
+   지역 캘린더 구독 — 새 사업이 뜨면 저절로 들어온다
+
+   앞의 '캘린더에 넣기'는 **한 번 받으면 끝**이다. 구독은 다르다 —
+   폰 캘린더가 주소를 기억해 두고 주기적으로 다시 받아 오므로,
+   그 지역에 **새 사업이 뜨면 일정이 저절로 들어오고 알림도 온다.**
+   우리는 파일만 올려 두면 된다 (build_data.py 가 지역마다 만든다).
+   ============================================================ */
+const CAL_BASE = "data/cal/";
+
+/* 지금 고른 동네에 맞는 캘린더 파일 이름.
+   시·군·구까지 골랐으면 그 단위로, 시·도만 골랐으면 시·도, 전국이면 전국. */
+function calFeedName(){
+  if(isNation(currentHood)) return { file:"all.ics", label:"전국" };
+  const sgg = hoodSgg(currentHood);
+  const slug = s => s.replace(/ /g, "-");
+  return sgg
+    ? { file:`${slug(currentHood.sido)}_${slug(sgg)}.ics`, label:`${currentHood.sido} ${sgg}` }
+    : { file:`${slug(currentHood.sido)}.ics`, label:currentHood.sido };
+}
+
+/* 구독 주소는 **절대 주소**여야 한다 — 캘린더 앱이 우리 페이지 밖에서 부르기 때문이다. */
+function calFeedUrl(){
+  const f = calFeedName();
+  return { url:new URL(CAL_BASE + encodeURIComponent(f.file), location.href).href, label:f.label };
+}
+
+function renderCalSub(){
+  const box = $("#calSub");
+  if(!box || !box.classList) return;
+  const { url, label } = calFeedUrl();
+  // 아이폰은 webcal:// 을 누르면 구독 창이 바로 뜬다. 구글 캘린더는 cid= 로 받는다.
+  const webcal = url.replace(/^https?:/, "webcal:");
+  const google = `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(webcal)}`;
+  box.innerHTML = `
+    <p class="cal-t">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3v12"></path><path d="m7 10 5 5 5-5" stroke-linecap="round"></path><path d="M4 17v3h16v-3"></path></svg>
+      ${esc(label)}에 새 사업이 뜨면 캘린더로 받기
+    </p>
+    <p class="cal-h">한 번만 등록해 두면 <b>새 사업이 생길 때마다 폰 캘린더에 저절로 들어옵니다.</b>
+      알림도 폰이 줍니다. 이 화면을 다시 안 열어도 됩니다.</p>
+    <div class="cal-btns">
+      <a class="btn btn--primary btn--sm btn--pill" href="${esc(webcal)}">아이폰 · 캘린더 구독</a>
+      <a class="btn btn--line btn--sm btn--pill" href="${esc(google)}" target="_blank" rel="noopener">구글 캘린더로 구독 ↗</a>
+      <button class="btn btn--ghost btn--sm btn--pill" type="button" id="btnCalCopy">주소 복사</button>
+    </div>
+    <p class="cal-h cal-h--sub" id="calSubMsg">갤럭시는 <b>구글 캘린더로 구독</b>을 쓰세요.
+      안 되면 주소를 복사해 구글 캘린더 → 다른 캘린더 추가 → <b>URL로 추가</b>에 붙여넣으면 됩니다.</p>`;
+  $("#btnCalCopy").addEventListener("click", async () => {
+    try{
+      await navigator.clipboard.writeText(url);
+      $("#calSubMsg").textContent = "주소를 복사했습니다. 캘린더 앱의 'URL로 추가'에 붙여넣으세요.";
+    }catch(e){
+      $("#calSubMsg").textContent = url;   // 복사가 막히면 눈으로 보고 옮길 수 있게 보여 준다
+    }
+  });
+}
+
 /* ---------- 새로 올라온 사업 ----------
    "의견을 낼 수 있는 동안 알려 주는 것"이 이 서비스의 존재 이유인데,
    주민이 다시 들어왔을 때 **그 사이에 새로 뜬 사업**을 못 보고 지나치면 소용이 없다.
@@ -574,6 +632,7 @@ function refreshAll(){
   renderGisMarkers();
   syncSavedUi();      // 별표 상태와 머리쪽 숫자는 자료를 읽은 뒤에 맞춘다
   renderNewBanner();  // 새로 올라온 사업 알림 줄 (범위가 바뀌면 건수도 달라진다)
+  renderCalSub();     // 구독 주소는 고른 동네에 따라 달라진다
 }
 
 /* EIASS 원문 상세페이지는 GET 링크가 아니라 POST 로만 열려서,

@@ -1,0 +1,143 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//우리동네 개발사업 알리미//KO
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:전북특별자치도 개발사업 의견 마감
+X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
+REFRESH-INTERVAL;VALUE=DURATION:PT12H
+X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:JJ20260145-105276@alrimi
+DTSTAMP:20260813T000000Z
+DTSTART;VALUE=DATE:20260918
+DTEND;VALUE=DATE:20260919
+SUMMARY:[의견 마감] 상두천 하천기본계획 재수립 및 실시
+ 설계
+DESCRIPTION:사업: 상두천 하천기본계획 재수립 및 실시설계
+ \n유형: 전략환경영향평가\n위치: 전북특별자치도 정읍
+ 시 산외면 상두리 (상두3길 54-8)\n기관: 전북지방환경청\n
+ 공람기간: 2026-08-13 ~ 2026-09-11\n의견 제출 마감: 2026-09-18\n\
+ n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eia
+ ss.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:전북특별자치도 정읍시 산외면 상두리 (상두3길 54
+ -8)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:상두천 하천기본계획 재수립 및 실시설계 의견 
+ 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:상두천 하천기본계획 재수립 및 실시설계 의견 
+ 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:JJ20260144-105270@alrimi
+DTSTAMP:20260811T000000Z
+DTSTART;VALUE=DATE:20260826
+DTEND;VALUE=DATE:20260827
+SUMMARY:[의견 마감] 부안 해뜰웰니스타운 조성사업
+DESCRIPTION:사업: 부안 해뜰웰니스타운 조성사업\n유형: 전
+ 략환경영향평가\n위치: 전북특별자치도 부안군 부안읍 
+ 선은리 (번영로 228-16)\n기관: 전북지방환경청\n공람기간:
+  2026-08-11 ~ 2026-08-26\n의견 제출 마감: 2026-08-26\n\n의견은 EI
+ ASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n
+ 우리동네 개발사업 알리미
+LOCATION:전북특별자치도 부안군 부안읍 선은리 (번영로 228
+ -16)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:부안 해뜰웰니스타운 조성사업 의견 제출 마감 
+ 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:부안 해뜰웰니스타운 조성사업 의견 제출 오늘 
+ 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:JJ20260141-105192@alrimi
+DTSTAMP:20260731T000000Z
+DTSTART;VALUE=DATE:20260905
+DTEND;VALUE=DATE:20260906
+SUMMARY:[의견 마감] 만인공원 조성사업
+DESCRIPTION:사업: 만인공원 조성사업\n유형: 전략환경영향
+ 평가\n위치: 전북특별자치도 남원시 동충동 (충정로 65)\n
+ 기관: 전북지방환경청\n공람기간: 2026-07-31 ~ 2026-08-28\n의
+ 견 제출 마감: 2026-09-05\n\n의견은 EIASS 에서 본인인증 후 
+ 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 
+ 알리미
+LOCATION:전북특별자치도 남원시 동충동 (충정로 65)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:만인공원 조성사업 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:만인공원 조성사업 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:JJ20260124-104937@alrimi
+DTSTAMP:20260720T000000Z
+DTSTART;VALUE=DATE:20260828
+DTEND;VALUE=DATE:20260829
+SUMMARY:[의견 마감] 고창 명사십리 관광지 지정
+DESCRIPTION:사업: 고창 명사십리 관광지 지정\n유형: 전략환
+ 경영향평가\n위치: 전북특별자치도 고창군 상하면 용정
+ 리 (명사십리로 282-7)\n기관: 전북지방환경청\n공람기간: 
+ 2026-07-20 ~ 2026-08-21\n의견 제출 마감: 2026-08-28\n\n의견은 EIA
+ SS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n
+ 우리동네 개발사업 알리미
+LOCATION:전북특별자치도 고창군 상하면 용정리 (명사십리
+ 로 282-7)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:고창 명사십리 관광지 지정 의견 제출 마감 3일 
+ 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:고창 명사십리 관광지 지정 의견 제출 오늘 마
+ 감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:JJ20260133-105019@alrimi
+DTSTAMP:20260714T000000Z
+DTSTART;VALUE=DATE:20260821
+DTEND;VALUE=DATE:20260822
+SUMMARY:[의견 마감] 전주시 문화산업진흥지구 지정
+DESCRIPTION:사업: 전주시 문화산업진흥지구 지정\n유형: 전
+ 략환경영향평가\n위치: 전북특별자치도 전주시 완산구 
+ 고사동 (전주객사2길 60)\n기관: 전북지방환경청\n공람기
+ 간: 2026-07-14 ~ 2026-08-14\n의견 제출 마감: 2026-08-21\n\n의견
+ 은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.k
+ r/\n\n우리동네 개발사업 알리미
+LOCATION:전북특별자치도 전주시 완산구 고사동 (전주객사2
+ 길 60)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:전주시 문화산업진흥지구 지정 의견 제출 마감 
+ 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:전주시 문화산업진흥지구 지정 의견 제출 오늘 
+ 마감
+END:VALARM
+END:VEVENT
+END:VCALENDAR

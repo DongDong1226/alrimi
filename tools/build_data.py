@@ -961,6 +961,166 @@ def load_existing(path):
 REFRESHABLE = ["viewPlace", "briefPlace", "briefWhen", "opinionPeriod", "deptName", "deptTel"]
 
 
+# ============================================================
+# 지역별 캘린더 파일 (.ics) — 구독하면 새 사업이 저절로 들어온다
+#
+# ■ 왜 만드나
+#   이 서비스는 알림을 보낼 수단이 없다. 웹 푸시는 서버가 필요하고
+#   아이폰은 홈 화면 추가까지 해야 해서, 서버 0원·개인정보 0건이 깨진다.
+#   대신 **지역별 캘린더 주소를 구독**하게 하면
+#     · 폰 캘린더가 알아서 주기적으로 다시 받아 오고
+#     · 그 지역에 새 사업이 뜨면 일정이 저절로 들어오고
+#     · 알림도 폰 캘린더가 준다.
+#   우리는 파일만 만들어 두면 된다. 정적 파일이라 GitHub Pages 에 그냥 올라간다.
+#
+# ■ 모든 지역 파일을 항상 만든다 (사업이 0건인 곳도)
+#   구독해 둔 지역의 파일이 사라지면 캘린더 앱이 오류를 내거나 구독을 버린다.
+#   빈 파일도 200바이트 남짓이라 부담이 없다.
+#
+# ■ 판정은 **주소 글자**로만 한다
+#   화면(app.js)의 inHood() 는 노선이 경계를 지나는 것까지 보지만, 여기서는 그렇게 못 한다.
+#   구독은 '대충 우리 동네'면 충분하고, 정확한 판정은 화면이 한다.
+# ============================================================
+CAL_DIR = os.path.join(os.path.dirname(OUT_PATH), "cal")
+
+
+def ics_fold(line):
+    """한 줄이 75바이트를 넘으면 접는다.
+
+    한글은 한 글자가 3바이트라 사업명이 대부분 넘는데, 안 접으면
+    까다로운 캘린더 앱이 **파일을 통째로 못 읽는다**.
+    이어지는 줄은 맨 앞에 공백 한 칸을 넣고, 글자가 중간에 잘리지 않게 글자 단위로 센다.
+    """
+    if len(line.encode("utf-8")) <= 75:
+        return [line]
+    out, cur, size = [], "", 0
+    for ch in line:
+        n = len(ch.encode("utf-8"))
+        if size + n > 75:
+            out.append(cur)
+            cur, size = " " + ch, 1 + n
+        else:
+            cur += ch
+            size += n
+    if cur:
+        out.append(cur)
+    return out
+
+
+def ics_esc(s):
+    s = "" if s is None else str(s)
+    return (s.replace("\\", "\\\\").replace(";", "\\;")
+             .replace(",", "\\,").replace("\r\n", "\\n").replace("\n", "\\n"))
+
+
+def cal_deadline(p):
+    """캘린더에 넣을 날짜 — 의견 제출 마감일. 없으면 공람 종료일."""
+    return p.get("opinionEnd") or p.get("periodEnd")
+
+
+def ics_body(p):
+    parts = [
+        f"사업: {p.get('name','')}",
+        f"유형: {p.get('categoryLabel','')}",
+        f"위치: {p.get('address','')}",
+        f"기관: {p.get('org','')}",
+        f"공람기간: {p.get('periodStart','')} ~ {p.get('periodEnd','')}",
+    ]
+    if p.get("opinionEnd"):
+        parts.append(f"의견 제출 마감: {p['opinionEnd']}")
+    parts += ["", "의견은 EIASS 에서 본인인증 후 제출합니다.", "https://www.eiass.go.kr/",
+              "", "우리동네 개발사업 알리미"]
+    return "\n".join(parts)
+
+
+def build_ics(title, rows):
+    lines = [
+        "BEGIN:VCALENDAR", "VERSION:2.0",
+        "PRODID:-//우리동네 개발사업 알리미//KO", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
+        f"X-WR-CALNAME:{ics_esc(title)}",
+        "X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일",
+        # 캘린더 앱에 '반나절마다 다시 받아 가라'고 알려 준다 (수집이 하루 세 번이다)
+        "REFRESH-INTERVAL;VALUE=DURATION:PT12H", "X-PUBLISHED-TTL:PT12H",
+    ]
+    for p in rows:
+        day = cal_deadline(p)
+        if not day:
+            continue
+        try:
+            end = (datetime.date.fromisoformat(day) + datetime.timedelta(days=1)).strftime("%Y%m%d")
+        except ValueError:
+            continue
+        # DTSTAMP 를 '오늘'로 하면 내용이 안 바뀌어도 파일이 매일 달라져
+        # 272개 파일이 날마다 커밋된다. 사업의 공람 시작일로 고정한다.
+        stamp = (p.get("periodStart") or day).replace("-", "")
+        lines += [
+            "BEGIN:VEVENT",
+            f"UID:{p.get('id','')}@alrimi",
+            f"DTSTAMP:{stamp}T000000Z",
+            f"DTSTART;VALUE=DATE:{day.replace('-', '')}",
+            f"DTEND;VALUE=DATE:{end}",          # 온종일 일정은 끝날짜가 하루 뒤다
+            f"SUMMARY:[의견 마감] {ics_esc(p.get('name',''))}",
+            f"DESCRIPTION:{ics_esc(ics_body(p))}",
+            f"LOCATION:{ics_esc(p.get('address',''))}",
+            "BEGIN:VALARM", "ACTION:DISPLAY", "TRIGGER:-P3DT15H",
+            f"DESCRIPTION:{ics_esc(p.get('name',''))} 의견 제출 마감 3일 전", "END:VALARM",
+            "BEGIN:VALARM", "ACTION:DISPLAY", "TRIGGER:-PT15H",
+            f"DESCRIPTION:{ics_esc(p.get('name',''))} 의견 제출 오늘 마감", "END:VALARM",
+            "END:VEVENT",
+        ]
+    lines.append("END:VCALENDAR")
+    folded = []
+    for ln in lines:
+        folded.extend(ics_fold(ln))
+    return "\r\n".join(folded) + "\r\n"          # 캘린더 파일은 줄바꿈이 CRLF 여야 한다
+
+
+def cal_slug(sido, sgg=None):
+    """파일 이름. 띄어쓰기는 '-' 로 바꾼다 ('청주시 청원구' 같은 이름이 있다)."""
+    name = sido if not sgg else f"{sido}_{sgg}"
+    return name.replace(" ", "-") + ".ics"
+
+
+def build_calendars(rows):
+    """전국 1개 + 시·도 16개 + 시·군·구 255개 를 만든다."""
+    try:
+        with open(os.path.join(os.path.dirname(OUT_PATH), "regions.json"), encoding="utf-8") as f:
+            regions = json.load(f).get("regions") or {}
+    except (OSError, ValueError) as e:
+        log(f"[캘린더] regions.json 을 못 읽어 건너뜁니다: {e}")
+        return
+
+    os.makedirs(CAL_DIR, exist_ok=True)
+    written = 0
+
+    def put(fname, title, items):
+        nonlocal written
+        text = build_ics(title, items)
+        path = os.path.join(CAL_DIR, fname)
+        # 내용이 같으면 다시 쓰지 않는다 (파일 날짜만 바뀌어 커밋이 지저분해지는 것을 막는다)
+        try:
+            with open(path, encoding="utf-8", newline="") as f:
+                if f.read() == text:
+                    return
+        except OSError:
+            pass
+        with open(path, "w", encoding="utf-8", newline="") as f:
+            f.write(text)
+        written += 1
+
+    put("all.ics", "전국 개발사업 의견 마감", rows)
+    for sido, info in regions.items():
+        in_sido = [p for p in rows if (p.get("address") or "").startswith(sido)]
+        put(cal_slug(sido), f"{sido} 개발사업 의견 마감", in_sido)
+        for sgg in (info.get("sgg") or {}):
+            head = f"{sido} {sgg}"
+            put(cal_slug(sido, sgg), f"{head} 개발사업 의견 마감",
+                [p for p in in_sido if (p.get("address") or "").startswith(head)])
+
+    total = 1 + len(regions) + sum(len(v.get("sgg") or {}) for v in regions.values())
+    log(f"[캘린더] 지역별 .ics {total}개 준비 (이번에 바뀐 파일 {written}개) → {CAL_DIR}")
+
+
 def view_closed(period_end, day):
     """공람 기간이 끝났는가.
 
@@ -1304,6 +1464,8 @@ def build(args):
             },
             "projects": kept,
         }, f, ensure_ascii=False, indent=2)
+
+    build_calendars(kept)
 
     log(f"완료: {OUT_PATH} 에 {len(kept)}건 저장 (모두 공람 기간 중)")
     log(f"      새로 받은 사업 {new_count}건 · 지난 결과 재사용 {reused_count}건")

@@ -1,0 +1,93 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//우리동네 개발사업 알리미//KO
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:강원특별자치도 개발사업 의견 마감
+X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
+REFRESH-INTERVAL;VALUE=DURATION:PT12H
+X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:WJ20260124-104876@alrimi
+DTSTAMP:20260629T000000Z
+DTSTART;VALUE=DATE:20260821
+DTEND;VALUE=DATE:20260822
+SUMMARY:[의견 마감] 양양 군관리계획(양양 인구해안·동산
+ 해안지구 지구단위계획구역) 결정(변경)(안)
+DESCRIPTION:사업: 양양 군관리계획(양양 인구해안·동산해
+ 안지구 지구단위계획구역) 결정(변경)(안)\n유형: 전략환
+ 경영향평가\n위치: 강원특별자치도 양양군 현남면 동산
+ 리 (동산큰길 62-40)\n기관: 원주지방환경청\n공람기간: 202
+ 6-06-29 ~ 2026-08-11\n의견 제출 마감: 2026-08-21\n\n의견은 EIASS 
+ 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우
+ 리동네 개발사업 알리미
+LOCATION:강원특별자치도 양양군 현남면 동산리 (동산큰길 
+ 62-40)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:양양 군관리계획(양양 인구해안·동산해안지구 
+ 지구단위계획구역) 결정(변경)(안) 의견 제출 마감 3일 
+ 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:양양 군관리계획(양양 인구해안·동산해안지구 
+ 지구단위계획구역) 결정(변경)(안) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:WJ2026D001-45783@alrimi
+DTSTAMP:20260728T000000Z
+DTSTART;VALUE=DATE:20260902
+DTEND;VALUE=DATE:20260903
+SUMMARY:[의견 마감] 동해신항 관리부두 건설공사
+DESCRIPTION:사업: 동해신항 관리부두 건설공사\n유형: 환경
+ 영향평가\n위치: 강원특별자치도 동해시 구미동 (갯목길
+  144)\n기관: 동해지방해양수산청\n공람기간: 2026-07-28 ~ 202
+ 6-08-26\n의견 제출 마감: 2026-09-02\n\n의견은 EIASS 에서 본인
+ 인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개
+ 발사업 알리미
+LOCATION:강원특별자치도 동해시 구미동 (갯목길 144)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:동해신항 관리부두 건설공사 의견 제출 마감 3
+ 일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:동해신항 관리부두 건설공사 의견 제출 오늘 마
+ 감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:GW2026B001-45781@alrimi
+DTSTAMP:20260724T000000Z
+DTSTART;VALUE=DATE:20260819
+DTEND;VALUE=DATE:20260820
+SUMMARY:[의견 마감] 영월군 첨단산업 핵심소재 일반산업단
+ 지 조성사업
+DESCRIPTION:사업: 영월군 첨단산업 핵심소재 일반산업단지 
+ 조성사업\n유형: 환경영향평가\n위치: 강원특별자치도 
+ 영월군 산솔면 (응고개길 13)\n기관: 영월군\n공람기간: 20
+ 26-07-24 ~ 2026-08-12\n의견 제출 마감: 2026-08-19\n\n의견은 EIASS
+  에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우
+ 리동네 개발사업 알리미
+LOCATION:강원특별자치도 영월군 산솔면 (응고개길 13)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:영월군 첨단산업 핵심소재 일반산업단지 조성
+ 사업 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:영월군 첨단산업 핵심소재 일반산업단지 조성
+ 사업 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+END:VCALENDAR

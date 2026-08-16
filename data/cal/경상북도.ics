@@ -1,0 +1,116 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//우리동네 개발사업 알리미//KO
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:경상북도 개발사업 의견 마감
+X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
+REFRESH-INTERVAL;VALUE=DURATION:PT12H
+X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:DG20260254-105256@alrimi
+DTSTAMP:20260811T000000Z
+DTSTART;VALUE=DATE:20260916
+DTEND;VALUE=DATE:20260917
+SUMMARY:[의견 마감] 울진군 생활폐기물 처리시설 설치사업
+DESCRIPTION:사업: 울진군 생활폐기물 처리시설 설치사업\n
+ 유형: 전략환경영향평가\n위치: 경상북도 울진군 북면 
+ 나곡리 (울진북로 2534-14)\n기관: 대구지방환경청\n공람기
+ 간: 2026-08-11 ~ 2026-09-09\n의견 제출 마감: 2026-09-16\n\n의견
+ 은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.k
+ r/\n\n우리동네 개발사업 알리미
+LOCATION:경상북도 울진군 북면 나곡리 (울진북로 2534-14)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:울진군 생활폐기물 처리시설 설치사업 의견 제
+ 출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:울진군 생활폐기물 처리시설 설치사업 의견 제
+ 출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:DG20260245-105162@alrimi
+DTSTAMP:20260803T000000Z
+DTSTART;VALUE=DATE:20260907
+DTEND;VALUE=DATE:20260908
+SUMMARY:[의견 마감] 밀양강권역(동창천 단장천) 국가 하천
+ 기본계획
+DESCRIPTION:사업: 밀양강권역(동창천 단장천) 국가 하천기
+ 본계획\n유형: 전략환경영향평가\n위치: 경상북도 청도
+ 군 운문면 방지리 (방지강변길 5)\n기관: 대구지방환경청
+ \n공람기간: 2026-08-03 ~ 2026-08-31\n의견 제출 마감: 2026-09-07\
+ n\n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.e
+ iass.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:경상북도 청도군 운문면 방지리 (방지강변길 5)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:밀양강권역(동창천 단장천) 국가 하천기본계획 
+ 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:밀양강권역(동창천 단장천) 국가 하천기본계획 
+ 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:DG20260232-105072@alrimi
+DTSTAMP:20260715T000000Z
+DTSTART;VALUE=DATE:20260819
+DTEND;VALUE=DATE:20260820
+SUMMARY:[의견 마감] 대구도시철도1호선 영천(금호) 연장사
+ 업
+DESCRIPTION:사업: 대구도시철도1호선 영천(금호) 연장사업\n
+ 유형: 전략환경영향평가\n위치: 경상북도 경산시 하양읍
+  금락리 (하양역길 1)\n기관: 대구지방환경청\n공람기간: 
+ 2026-07-15 ~ 2026-08-12\n의견 제출 마감: 2026-08-19\n\n의견은 EIA
+ SS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n
+ 우리동네 개발사업 알리미
+LOCATION:경상북도 경산시 하양읍 금락리 (하양역길 1)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:대구도시철도1호선 영천(금호) 연장사업 의견 
+ 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:대구도시철도1호선 영천(금호) 연장사업 의견 
+ 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:DG2026B003-45691@alrimi
+DTSTAMP:20260722T000000Z
+DTSTART;VALUE=DATE:20260823
+DTEND;VALUE=DATE:20260824
+SUMMARY:[의견 마감] 구미 장천 일반산업단지 개발사업
+DESCRIPTION:사업: 구미 장천 일반산업단지 개발사업\n유형: 
+ 환경영향평가\n위치: 경상북도 구미시 장천면 (강동로 30
+ 2-41)\n기관: 경상북도\n공람기간: 2026-07-22 ~ 2026-08-23\n의견
+  제출 마감: 2026-08-23\n\n의견은 EIASS 에서 본인인증 후 제
+ 출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알
+ 리미
+LOCATION:경상북도 구미시 장천면 (강동로 302-41)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:구미 장천 일반산업단지 개발사업 의견 제출 마
+ 감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:구미 장천 일반산업단지 개발사업 의견 제출 오
+ 늘 마감
+END:VALARM
+END:VEVENT
+END:VCALENDAR
