@@ -145,6 +145,7 @@
   <input id="key" type="password" placeholder="지도 타일용 키 (이 브라우저에만 저장됩니다)" autocomplete="off">
   <button id="keySave">적용</button>
   <span class="warn">키를 파일에 적어 커밋하지 마세요</span>
+  <span class="muted" style="color:#c9d7f2;font-size:var(--fs-body-xs)">여기 넣으면 알리미 화면에도 적용됩니다</span>
   <span class="muted" style="margin-left:auto;color:#c9d7f2">담당자 전용 · 배포되지 않습니다</span>
 </header>
 
@@ -312,7 +313,28 @@
 /* ============================================================
    상태
    ============================================================ */
-const LSKEY_TOOL = "wdn.routeTool.key";   // 이 도구에서 쓰는 VWorld 키 (브라우저에만)
+/* VWorld 키는 **알리미 화면(관리자 설정)과 같은 칸**에 둔다.
+   따로 두었더니 "도구에는 지도가 나오는데 알리미 화면에는 안 나오는" 일이 생겼다
+   (2026-08-16 실제로 겪음). 여기서 한 번 넣으면 두 화면 모두 지도가 나온다. */
+const LSKEY_SETTINGS = "wdn.settings";        // app.js 와 같은 칸
+const LSKEY_TOOL_OLD = "wdn.routeTool.key";   // 예전에 이 도구만 쓰던 칸 (한 번 옮겨 준다)
+
+function readSavedKey(){
+  try{
+    const s = JSON.parse(localStorage.getItem(LSKEY_SETTINGS) || "{}") || {};
+    const k = String(s.vworldKey || "").trim();
+    if(k) return k;
+  }catch(e){ /* 설정이 깨져 있어도 아래로 넘어간다 */ }
+  return String(localStorage.getItem(LSKEY_TOOL_OLD) || "").trim();
+}
+
+function writeSavedKey(key){
+  let s = {};
+  try{ s = JSON.parse(localStorage.getItem(LSKEY_SETTINGS) || "{}") || {}; }catch(e){ s = {}; }
+  s.vworldKey = key;
+  try{ localStorage.setItem(LSKEY_SETTINGS, JSON.stringify(s)); }catch(e){}
+  try{ localStorage.removeItem(LSKEY_TOOL_OLD); }catch(e){}
+}
 let PROJECTS = [];      // data/projects.json 의 사업들
 let ROUTES = {};        // 지금 작업 중인 노선 전부 (사업번호 -> GeoJSON). 내보낼 때 이게 통째로 나간다
 let fileRoutes = {};    // 서버에서 읽은 data/routes.json 의 내용 (= 이미 파일에 들어간 것)
@@ -386,7 +408,7 @@ function initMap(){
   // 배포 사이트에서는 deploy.yml 이 assets/config.js 에 키를 심어 준다 → 그대로 쓴다.
   // 내 PC 에서는 그게 비어 있으므로 맨 위 칸에 넣은 값(이 브라우저에만 저장)을 쓴다.
   const built = String((window.WDN_CONFIG || {}).vworldKey || "").trim();
-  applyKey(localStorage.getItem(LSKEY_TOOL) || built);
+  applyKey(readSavedKey() || built);
   if(built) $("#key").placeholder = "배포된 키를 쓰는 중입니다 (바꾸려면 여기에 입력)";
 }
 
@@ -1341,8 +1363,11 @@ $("#btnPreviewOff").addEventListener("click", () => { trace = null; drawPlan(); 
    ============================================================ */
 $("#keySave").addEventListener("click", () => {
   const key = ($("#key").value || "").trim();
-  localStorage.setItem(LSKEY_TOOL, key);
+  writeSavedKey(key);          // 알리미 화면(관리자 설정)과 같은 칸에 넣는다
   applyKey(key);
+  $("#imgHint").textContent = key
+    ? "키를 저장했습니다. 알리미 화면(index.html)에서도 지도가 나옵니다."
+    : "키를 비웠습니다.";
 });
 $("#onlyTodo").addEventListener("change", renderList);
 $("#btnGuide").addEventListener("click", showGuides);
