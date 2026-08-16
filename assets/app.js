@@ -2263,6 +2263,12 @@ function vworldHybridUrl(){
 }
 function isSat(){ return mapLayerKind === "sat"; }
 
+/* 지도 색은 자바스크립트에서 정하지만 **값은 tokens.css 에서 읽어 온다.**
+   여기에 hex 를 새로 적으면 디자인 토큰이 두 벌이 된다. */
+function cssVar(name){
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
 /* 위성 위에서는 선 색을 바꿔야 한다.
    초록 점선 동네 경계가 **초록 산 위에서 그냥 사라진다.** 색 문제라 CSS 로는 못 막는다. */
 function boundStyle(){
@@ -2272,8 +2278,10 @@ function boundStyle(){
     : BOUND_STYLE;
 }
 function radiusStyle(){
+  // 위성에서는 파랑 점선이 물·그늘에 묻힌다. 팔레트에서 가장 밝은 남색 계열을 쓴다.
   return isSat()
-    ? { color:"#ffe066", weight:2, dashArray:"5 5", fillColor:"#ffe066", fillOpacity:.05 }
+    ? { color:cssVar("--p10"), weight:2.2, dashArray:"5 5",
+        fillColor:cssVar("--p10"), fillOpacity:.04 }
     : { color:"#1c47d4", weight:1.4, dashArray:"5 5", fillColor:"#1c47d4", fillOpacity:.05 };
 }
 /* dot = 작은 점 모양. 전국을 작은 미리보기 지도에 담을 때만 쓴다. */
@@ -2313,6 +2321,7 @@ function mapGuideHtml(title, desc){
    지도 화면 (전체화면)
    ============================================================ */
 let gisMap = null, gisMarkers = new Map(), gisHomeMarker = null, gisCircle = null;
+let gisCircleCasing = null;   // 위성일 때 반경 원 밑에 까는 어두운 테두리
 let selectedId = null;
 
 function gisProjects(){
@@ -2425,13 +2434,20 @@ function drawRoutes(){
         weight: on ? 4 : 2.5,
         opacity: on ? 0.95 : 0.6
       };
-      // 위성 위에서는 초록·청록 선이 숲·물에 묻힌다.
-      // 색을 새로 만드는 대신 **흰 테두리를 밑에 한 겹 깔아** 어떤 배경에서도 보이게 한다.
+      // 위성 위에서는 초록·청록 선이 숲·물에 그대로 묻힌다
+      // (실측 대비: 고른 것 1.02 / 안 고른 것 1.30 — 배경과 거의 같다).
+      //
+      // 그래서 ① 선을 팔레트의 **밝은 쪽**으로 바꾸고
+      //        ② 그 밑에 **어두운 테두리**를 한 겹 깐다.
+      // 밝은 땅(도시·갯벌)에서는 어두운 테두리가, 어두운 땅에서는 밝은 선이 보인다.
+      // 처음에는 흰 테두리를 깔았는데, 그러면 선보다 테두리가 굵어 보여 흐릿했다.
       if(isSat()){
         const casing = L.polyline(latlngs, {
-          color:"#fff", weight:style.weight + 3, opacity:.9, interactive:false
+          color:cssVar("--p90"), weight:style.weight + 4, opacity:.85, interactive:false
         }).addTo(gisMap);
         routeLayers.push(casing);
+        style.color = on ? "#fff" : cssVar("--p10");
+        style.weight = on ? 4.5 : 3;
         style.opacity = 1;
       }
       const layer = (g.type || "").includes("Polygon")
@@ -2492,6 +2508,7 @@ function renderGisMarkers(fit = true){
   gisMarkers = new Map();
   if(gisHomeMarker){ gisMap.removeLayer(gisHomeMarker); gisHomeMarker = null; }
   if(gisCircle){ gisMap.removeLayer(gisCircle); gisCircle = null; }
+  if(gisCircleCasing){ gisMap.removeLayer(gisCircleCasing); gisCircleCasing = null; }
 
   // 동네를 안 정했으면(전국) '우리 집'도 반경 원도 그리지 않는다.
   // 설정 기본 좌표를 우리 집인 양 찍으면 엉뚱한 동네에 깃발이 꽂힌다.
@@ -2500,6 +2517,14 @@ function renderGisMarkers(fit = true){
       .addTo(gisMap).bindTooltip(HOME.label || "우리 집");
     nameMarker(gisHomeMarker, `우리 집 · ${HOME.label || "기준 위치"}`);
     if(showRadiusCircle(mapScope)){
+      // 위성에서는 밝은 점선만으로는 밝은 땅(도시·갯벌)에서 흐려진다(대비 2.5).
+      // 어두운 테두리를 한 겹 밑에 깔아 어느 배경에서든 한쪽이 보이게 한다.
+      if(isSat()){
+        gisCircleCasing = L.circle([HOME.lat, HOME.lon], {
+          radius: S.radiusKm * 1000, color:cssVar("--p90"), weight:4,
+          opacity:.75, fill:false, interactive:false
+        }).addTo(gisMap);
+      }
       gisCircle = L.circle([HOME.lat, HOME.lon],
         Object.assign({ radius: S.radiusKm * 1000 }, radiusStyle())).addTo(gisMap);
     }

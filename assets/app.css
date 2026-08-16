@@ -574,6 +574,24 @@ select:disabled{opacity:.5;cursor:not-allowed}
    ② 모양까지 다르게 준다(원 ↔ 마름모).
    색만으로 나누면 색을 구분하기 어려운 사람은 둘을 못 가른다.
    (색은 모두 tokens.css 에 있는 값이다) */
+/* ── 위성지도 위의 마커 ────────────────────────────────────────────
+   위성 배경은 **어둡고 편차가 크다** (2026-08-16 실측: 밝기 중앙 0.069,
+   하위5% 0.021, 상위5% 0.196 — 산·논밭·도시·물 5곳).
+   그래서 **한 가지 색으로는 절대 못 맞춘다** — 어두운 산에 맞추면 밝은 도시에서 사라진다.
+   실제로 짙은 남색 전략 마커는 산 위에서 대비 **1.10** 이라 사실상 안 보였다.
+
+   해결: ① 색을 팔레트의 **밝은 쪽**으로 바꾸고
+        ② **흰 테두리 + 어두운 테두리를 같이** 둔다.
+        어두운 땅에서는 흰 쪽이, 밝은 땅에서는 어두운 쪽이 받쳐 준다.
+   ※ 새 색을 만들지 않는다. 전부 tokens.css 에 있는 값이다. */
+.gis-map--sat .mk{
+  border-color:#fff;
+  box-shadow:0 0 0 1.5px var(--p90), 0 2px 7px rgba(0,0,0,.75);
+}
+.gis-map--sat .mk--strat{background:var(--p10)}      /* 짙은 남색 → 밝은 남색 */
+.gis-map--sat .mk--home{background:var(--eco-soft)}  /* 짙은 초록 → 아주 옅은 초록 */
+/* 환경(앰버 마름모)은 원래 밝아서 색은 그대로 두고 테두리만 얹는다 */
+
 /* 배경지도 바꾸기 단추 — 지도 화면 위쪽 띠. 눌리면 지금 위성을 보고 있다는 뜻이다. */
 .gis-layer{white-space:nowrap}
 .gis-layer[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:#fff}
