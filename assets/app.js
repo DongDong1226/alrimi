@@ -1629,6 +1629,21 @@ function eiaSection(p){
     (v ? has : missing).push(v ? { f, v } : f);
   });
 
+  // ★ 해석이 **통째로** 비었을 때는 왜 비었는지를 갈라서 말한다.
+  //   "요약문에 내용이 없습니다"는 요약문을 **읽었는데** 그 항목이 없었다는 뜻이다.
+  //   못 읽은 것을 그렇게 쓰면 읽어 보고 없다고 한 것처럼 들려 **사실과 다르다.**
+  //   (실측: 현경 수양저수지 사업 — 10쪽 요약문에서 글자가 112자밖에 안 뽑혔다. 사진 문서다)
+  //   일부라도 채워졌으면 기존 문구가 맞으므로 건드리지 않는다.
+  const readNothing = !has.length && !p.summaryEasy;
+  if(readNothing && (p.summaryState === "scanned" || p.summaryState === "none")){
+    const why = p.summaryState === "scanned"
+      ? `요약문이 글자가 아닌 <b>사진(스캔한 문서)</b>으로 되어 있어 내용을 읽지 못했습니다.`
+      : `이 사업은 <b>요약문 파일이 공개되어 있지 않아</b> 내용을 읽지 못했습니다.`;
+    return { title:"환경영향분석", hint:"읽지 못함", body:`
+      <p class="eia-src">${why}
+        <b>내용이 없다는 뜻이 아닙니다.</b> 평가서 초안은 EIASS 원문에서 직접 확인해 주세요.</p>` };
+  }
+
   const rows = has.map(({ f, v }, i) => {
     const lead = i === 0 && f.key === "overview" ? " lead" : "";
     return `<section class="eia-row${lead}">
@@ -2667,14 +2682,15 @@ function boundStyle(){
   return isSat()
     ? { color:"#ffffff", weight:2.6, dashArray:"6 4", opacity:1,
         fillColor:"#ffffff", fillOpacity:.06, interactive:false }
-    : BOUND_STYLE;
+    : boundStyleNormal();
 }
 function radiusStyle(){
   // 위성에서도 옅게 가지 않는다 (안개처럼 보인다). 같은 파랑 계열의 **채도 높은** 색을 쓴다.
   return isSat()
     ? { color:cssVar("--accent"), weight:2.4, dashArray:"6 5",
         fillColor:cssVar("--accent"), fillOpacity:.05 }
-    : { color:"#1c47d4", weight:1.4, dashArray:"5 5", fillColor:"#1c47d4", fillOpacity:.05 };
+    : { color:cssVar("--p50"), weight:1.4, dashArray:"5 5",
+        fillColor:cssVar("--p50"), fillOpacity:.05 };
 }
 /* 사업 마커는 **핀(물방울) 모양**이다.
    원·마름모로 그렸을 때는 지도에 '칠해진 것'처럼 보여서, 특히 위성 위에서 묻혔다.
@@ -2844,7 +2860,7 @@ function drawRoutes(){
     r.geoms.forEach(g => {
       const latlngs = toLatLngs(g.coordinates);
       const style = {
-        color: on ? "#1f8a5b" : "#3f9aae",
+        color: on ? cssVar("--eco") : cssVar("--teal"),
         weight: on ? 4 : 2.5,
         opacity: on ? 0.95 : 0.6
       };
@@ -2868,7 +2884,8 @@ function drawRoutes(){
       const layer = (g.type || "").includes("Polygon")
         ? L.polygon(latlngs, Object.assign({ fillOpacity:on ? 0.25 : 0.12 }, style))
         : L.polyline(latlngs, style);
-      layer.bindTooltip(`${p.name}${g.name ? " · " + g.name : ""}`, { sticky:true });
+      // Leaflet 툴팁은 HTML 로 그린다 — 자료에서 온 글자는 esc() 로 감싼다
+      layer.bindTooltip(`${esc(p.name)}${g.name ? " · " + esc(g.name) : ""}`, { sticky:true });
       layer.on("click", () => selectProject(p.id, false));
       layer.addTo(gisMap);
       routeLayers.push(layer);
@@ -2880,10 +2897,14 @@ function drawRoutes(){
    동네 경계 그리기
    반경 원은 동그라미일 뿐이지만, 경계선은 "여기까지가 우리 동네"를 그대로 보여준다.
    ============================================================ */
-const BOUND_STYLE = {
-  color:"#1f8a5b", weight:2.2, dashArray:"6 4", opacity:.95,
-  fillColor:"#1f8a5b", fillOpacity:.07, interactive:false
-};
+/* 값을 미리 굳히지 않고 **부를 때 읽는다.** 맨 위에서 const 로 굳히면
+   tokens.css 가 아직 적용되기 전이면 빈 값이 박힌 채로 남는다. */
+function boundStyleNormal(){
+  return {
+    color:cssVar("--eco"), weight:2.2, dashArray:"6 4", opacity:.95,
+    fillColor:cssVar("--eco"), fillOpacity:.07, interactive:false
+  };
+}
 let boundLayer = null, miniBoundLayer = null;
 
 /* 반경 원을 그릴 것인가 — **지금 고른 범위가 '반경'일 때만 그린다.**
@@ -2912,7 +2933,7 @@ function drawBoundary(){
     if(miniBoundLayer){ miniMap.removeLayer(miniBoundLayer); miniBoundLayer = null; }
     if(HOOD_BOUNDARY){
       miniBoundLayer = L.geoJSON(HOOD_BOUNDARY.geom,
-        { style:Object.assign({}, BOUND_STYLE, { weight:1.8 }) }).addTo(miniMap);
+        { style:Object.assign({}, boundStyleNormal(), { weight:1.8 }) }).addTo(miniMap);
     }
   }
 }
@@ -2929,7 +2950,7 @@ function renderGisMarkers(fit = true){
   // 설정 기본 좌표를 우리 집인 양 찍으면 엉뚱한 동네에 깃발이 꽂힌다.
   if(!isNation(currentHood)){
     gisHomeMarker = L.marker([HOME.lat, HOME.lon], { icon:markerIcon("home"), zIndexOffset:1000 })
-      .addTo(gisMap).bindTooltip(HOME.label || "우리 집");
+      .addTo(gisMap).bindTooltip(esc(HOME.label || "우리 집"));
     nameMarker(gisHomeMarker, `우리 집 · ${HOME.label || "기준 위치"}`);
     if(showRadiusCircle(mapScope)){
       // 위성에서는 밝은 점선만으로는 밝은 땅(도시·갯벌)에서 흐려진다(대비 2.5).
@@ -2952,7 +2973,7 @@ function renderGisMarkers(fit = true){
   rows.forEach(p => {
     const m = L.marker([p.lat, p.lon], { icon:markerIcon(p.type, p.id === selectedId) })
       .addTo(gisMap)
-      .bindTooltip(p.name, { direction:"top" });
+      .bindTooltip(esc(p.name), { direction:"top" });
     nameMarker(m, `${p.typeLabel} · ${p.name}`);
     m.on("click", () => selectProject(p.id, false));
     gisMarkers.set(String(p.id), m);
@@ -3231,12 +3252,12 @@ function redrawEdit(){
   routeEdit.layers = [];
   if(routeEdit.pts.length >= 2){
     routeEdit.layers.push(L.polyline(routeEdit.pts, {
-      color:"#de3412", weight:4, opacity:.9, dashArray:"6 4"
+      color:cssVar("--live"), weight:4, opacity:.9, dashArray:"6 4"
     }).addTo(gisMap));
   }
   routeEdit.pts.forEach(pt => {
     routeEdit.layers.push(L.circleMarker(pt, {
-      radius:4, color:"#de3412", fillColor:"#fff", fillOpacity:1, weight:2
+      radius:4, color:cssVar("--live"), fillColor:"#fff", fillOpacity:1, weight:2
     }).addTo(gisMap));
   });
   $("#drawMsg").textContent = `점 ${routeEdit.pts.length}개`;
@@ -3392,8 +3413,8 @@ function renderMiniMap(){
     // 홈 화면 미니 지도는 홈 화면의 범위를 따라간다 (showRadiusCircle 설명 참고)
     if(showRadiusCircle(homeScope)){
       miniLayers.push(L.circle([HOME.lat, HOME.lon], {
-        radius: S.radiusKm * 1000, color:"#1c47d4", weight:1.4,
-        dashArray:"5 5", fillColor:"#1c47d4", fillOpacity:.06
+        radius: S.radiusKm * 1000, color:cssVar("--p50"), weight:1.4,
+        dashArray:"5 5", fillColor:cssVar("--p50"), fillOpacity:.06
       }).addTo(miniMap));
     }
   }

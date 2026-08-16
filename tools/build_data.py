@@ -760,14 +760,37 @@ def fetch_river_routes(names, lat, lon, key, domain, max_names=8):
 # 3) PDF에서 글자만 뽑기
 # ============================================================
 def extract_pdf_text(pdf_bytes, max_pages=25):
+    """글자를 뽑아 (글자, 읽은 쪽수) 로 돌려준다.
+    쪽수를 함께 주는 이유는 '스캔본이라 못 읽었다'를 가리기 위해서다 (아래 참고)."""
     import pdfplumber
     parts = []
+    read = 0
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
         for i, page in enumerate(pdf.pages):
             if i >= max_pages:
                 break
             parts.append(page.extract_text() or "")
-    return "\n".join(parts).strip()
+            read += 1
+    return "\n".join(parts).strip(), read
+
+
+# 스캔본(글자가 아니라 사진으로 만들어진 문서)을 가려내는 기준 — **쪽당 글자 수**.
+#
+# ■ 왜 필요한가
+#   요약문을 못 읽으면 AI 가 8개 항목을 전부 비운다. 그 자체는 규칙을 지킨 것이지만,
+#   화면에 "요약문에 내용이 없습니다"로 나가면 **읽어 보고 없다고 한 것처럼** 들린다.
+#   실제로는 **읽지 못한 것**이라 사실과 다르다. 그래서 둘을 갈라 둔다.
+#
+# ■ 기준값은 실측으로 정했다 (2026-08-16, 실제 요약문 4건)
+#     현경 수양저수지(스캔본)  10쪽 1.85MB 에서  112자 → 쪽당   11자
+#                              (뽑힌 것이 쪽 번호 '- 3 -' 와 글머리표 '◾' 뿐이었다)
+#     정상 문서 3건                                    → 쪽당 744 · 828 · 882자
+#   사이가 **70배** 벌어져 있어 기준을 어디에 두든 갈린다. 넉넉히 100자로 잡았다
+#   (스캔본의 9배, 가장 적은 정상 문서의 1/7).
+#
+# ■ ★ 애매하면 '읽었다'로 본다.
+#   멀쩡한 문서를 "못 읽었다"고 말하는 쪽이 더 나쁜 실수다. 기준을 올리지 말 것.
+MIN_CHARS_PER_PAGE = 100
 
 
 # ============================================================
@@ -1188,7 +1211,8 @@ def needs_detail_refresh(cached):
 
 
 def refresh_cached(cached, item, vworld_key, skip_geocode, category_key, delay,
-                   vworld_domain=None, skip_route=False):
+                   vworld_domain=None, skip_route=False, skip_summary=False,
+                   today=None):
     """재사용하는 사업에서 '싸게 고칠 수 있는 것'만 손본다.
 
     · 공람 기간: 목록에 나온 최신 값으로 갱신한다 (기간이 연장되는 경우가 있다).
@@ -1198,6 +1222,8 @@ def refresh_cached(cached, item, vworld_key, skip_geocode, category_key, delay,
     · AI 해석: 다시 하지 않는다. 한 번 실패한 요약문은 내일도 실패할 가능성이 크고,
       매일 다시 부르면 그만큼 비용이 계속 나간다. 전부 다시 받으려면 --full 을 쓴다.
     """
+    today = today or datetime.date.today()   # 안 넘겨주면 오늘로 (날짜 비교에서 터지지 않게)
+
     if item.get("period_start"):
         cached["periodStart"] = item["period_start"]
         cached["periodEnd"] = item["period_end"]
@@ -1240,6 +1266,36 @@ def refresh_cached(cached, item, vworld_key, skip_geocode, category_key, delay,
             cached["routeGeom"] = routes
             cached["routeSource"] = "vworld-river"
             log(f"    (재사용) 비어 있던 노선 도형 {len(routes)}개를 채웠습니다")
+
+    # ★ summaryState 되받기 — 노선 도형과 **똑같은 함정**이다.
+    #
+    # 이 값(요약문을 읽었나 / 사진이라 못 읽었나 / 아예 없나)은 2026-08-16 에 생겼다.
+    # 그전에 수집된 사업은 값이 없는데, 증분 수집은 이미 받아 둔 사업을 건너뛰므로
+    # **되받는 코드가 없으면 영영 비어 있고**, 화면은 계속 "요약문에 내용이 없습니다"라고
+    # 잘못 말하게 된다 (실제로는 못 읽은 것이다).
+    #
+    # 돈은 들지 않는다 — AI 는 부르지 않고, 대부분은 내려받지도 않는다.
+    if not skip_summary and cached.get("summaryState") is None:
+        if cached.get("analysis"):
+            # 해석이 있다는 것은 그때 요약문을 잘 읽었다는 뜻이다. 받아 볼 필요가 없다.
+            cached["summaryState"] = "ok"
+        elif view_closed(cached.get("periodEnd"), today):
+            # 공람이 끝난 사업은 EIASS 가 첨부를 내려서 받아지지도 않고,
+            # 화면도 해석 자리에 '공람 종료' 안내를 내보내므로 이 값을 쓰지 않는다.
+            pass
+        elif not cached.get("summaryFileSeq"):
+            cached["summaryState"] = "none"
+            log("    (재사용) 요약문 파일이 없는 사업으로 표시했습니다")
+        else:
+            try:
+                text, pages = extract_pdf_text(download_file(cached["summaryFileSeq"]))
+                per_page = len(text) / pages if pages else 0
+                cached["summaryState"] = "ok" if per_page >= MIN_CHARS_PER_PAGE else "scanned"
+                log(f"    (재사용) 요약문을 다시 읽어 봤습니다 — {pages}쪽 {len(text)}자"
+                    f"(쪽당 {per_page:.0f}자) → {cached['summaryState']}")
+            except Exception as e:
+                # 못 받았으면 '모름'으로 둔다. 다음 수집에서 다시 시도한다.
+                log(f"    [요약문 재확인 실패 — 다음에 다시 해 봅니다] {e}")
     return cached
 
 
@@ -1302,7 +1358,10 @@ def build(args):
             #   (아래 '공람이 끝난 사업의 해석은 파일에서 지운다' 참고) 여기서 다시 받으면
             #   방금 지운 것을 되살리는 셈이 된다. 어차피 공람이 끝나면 EIASS 가 첨부를
             #   내려서 받아지지도 않는다 — 돈만 쓰고 빈손으로 끝난다.
+            #   ★ 사진으로 된 요약문(scanned)도 다시 받지 않는다. 몇 번을 받아도 글자가
+            #     없는 문서라 결과가 같은데, 1.85MB~10MB 를 매번 새로 내려받게 된다.
             if (cached and args.retry_analysis and not cached.get("analysis")
+                    and cached.get("summaryState") != "scanned"
                     and not view_closed(it["period_end"], today)):
                 log(f"  ! {it['name']} (해석이 비어 있어 다시 받습니다)")
                 cached = None
@@ -1312,7 +1371,8 @@ def build(args):
                 all_projects.append(
                     refresh_cached(cached, it, vworld_key, args.skip_geocode,
                                    category_key, args.delay,
-                                   vworld_domain, args.skip_route))
+                                   vworld_domain, args.skip_route,
+                                   args.skip_summary, today))
                 reused_count += 1
                 continue
 
@@ -1329,12 +1389,31 @@ def build(args):
 
             summary_file = find_summary_file(detail["files"])
             raw_text = None
-            if summary_file and not args.skip_summary:
-                try:
-                    pdf_bytes = download_file(summary_file["file_seq"])
-                    raw_text = extract_pdf_text(pdf_bytes)
-                except Exception as e:
-                    log(f"    [요약문 PDF 처리 실패] {e}")
+            # 요약문을 어떻게 했는지 화면에 알려 주기 위한 값.
+            #   None       모름 (--skip-summary 로 건너뛰었거나 받다 실패)
+            #   "none"     첨부 목록에 요약문이 없다
+            #   "scanned"  요약문은 있는데 사진(스캔본)이라 글자를 못 뽑았다
+            #   "ok"       읽었다
+            summary_state = None
+            if not args.skip_summary:
+                if not summary_file:
+                    summary_state = "none"
+                else:
+                    try:
+                        pdf_bytes = download_file(summary_file["file_seq"])
+                        raw_text, pages = extract_pdf_text(pdf_bytes)
+                        per_page = len(raw_text) / pages if pages else 0
+                        if per_page < MIN_CHARS_PER_PAGE:
+                            # ★ 스캔본은 AI 에 넘기지 않는다. 목차와 쪽 번호만 든 글을 먹이면
+                            #   지어낼 위험만 있고 얻을 것이 없다. 돈도 아낀다.
+                            summary_state = "scanned"
+                            log(f"    [요약문] 글자를 뽑지 못했습니다 — {pages}쪽에서 {len(raw_text)}자"
+                                f"(쪽당 {per_page:.0f}자). 사진으로 된 문서로 봅니다")
+                            raw_text = None
+                        else:
+                            summary_state = "ok"
+                    except Exception as e:
+                        log(f"    [요약문 PDF 처리 실패] {e}")
 
             lat = lon = None
             if not args.skip_geocode:
@@ -1389,6 +1468,8 @@ def build(args):
                 "deptName": detail["deptName"],
                 "deptTel": detail["deptTel"],
                 "summaryFileSeq": summary_file["file_seq"] if summary_file else None,
+                # 해석이 비었을 때 **왜 비었는지**를 화면이 갈라 말하기 위한 값
+                "summaryState": summary_state,
                 "analysis": analysis,
                 # 노선 도형. 자동으로 못 찾은 사업은 관리자 화면에서 직접 그려 넣을 수 있다.
                 "riverNames": river_names,
