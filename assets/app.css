@@ -559,9 +559,11 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .gis-legend span{display:inline-flex;align-items:center;gap:7px;font-size:11.5px;font-weight:600;color:var(--ink-2)}
 .gis-legend .lg{width:11px;height:11px;border-radius:50%;flex:none}
 .gis-legend .lg--home{background:var(--eco);border:2px solid #fff;box-shadow:0 0 0 1px var(--line-2)}
+/* 범례는 **마커와 같은 색·모양**이어야 한다. 마커를 바꾸면 여기도 같이 바꾼다. */
 .gis-legend .lg--strat{background:var(--p80)}
-/* 마커와 같은 마름모 모양으로 맞춘다 */
-.gis-legend .lg--main{background:var(--warn);border-radius:2px;transform:rotate(45deg)}
+.gis-legend .lg--main{background:var(--live)}
+.gis-map--sat ~ .gis-legend .lg--strat,
+.gis-legend--sat .lg--strat{background:var(--accent)}
 .gis-legend .lg--circle{background:transparent;border:1.5px dashed var(--primary)}
 /* 읍면동·시군구 경계선 — 지도에 그린 것과 같은 초록 점선 */
 .gis-legend .lg--bound{background:rgba(31,138,91,.12);border:1.5px dashed var(--eco);border-radius:2px}
@@ -574,27 +576,42 @@ select:disabled{opacity:.5;cursor:not-allowed}
    ② 모양까지 다르게 준다(원 ↔ 마름모).
    색만으로 나누면 색을 구분하기 어려운 사람은 둘을 못 가른다.
    (색은 모두 tokens.css 에 있는 값이다) */
-/* ── 위성지도 위의 마커 ────────────────────────────────────────────
+/* ── 사업 마커 = 핀 ────────────────────────────────────────────────
+   원·마름모로 그렸을 때는 지도에 '칠해진 것'처럼 보여 배경에 묻혔다.
+   핀은 뾰족한 끝이 자리를 가리키고 흰 테두리·그림자로 떠 있어
+   **지도에 꽂힌 물건**으로 읽힌다 (구글·네이버·카카오·애플이 모두 이 방식이다).
+
+   ★ 색은 '지도가 이미 쓰고 있지 않은 색'으로 고른다.
+     VWorld 일반지도 픽셀 실측(2026-08-16):
+       주황·앰버 51.8% · 노랑 27.7% · 초록 7.5% · 파랑 4.5% · **빨강 0.11%**
+     그래서 앰버(--warn)로 두었던 환경영향평가 마커가 고속도로·IC 색에 묻혔다.
+     지도가 거의 안 쓰는 **빨강(--live)** 으로 옮긴다.
+   색만으로 나누지 않는다 — 가운데 점의 유무로 모양도 다르게 둔다
+   (색을 구분하기 어려운 사람도 갈라 볼 수 있어야 한다). */
+.pin{filter:drop-shadow(0 2px 3px rgba(16,28,54,.45))}
+.pin svg{display:block}
+.pin .pin-body{stroke:#fff;stroke-width:2}
+.pin .pin-eye{fill:#fff}
+.pin--strat .pin-body{fill:var(--p80)}    /* 전략환경영향평가 — 짙은 남색 */
+.pin--main  .pin-body{fill:var(--live)}   /* 환경영향평가 — 빨강 (지도가 안 쓰는 색) */
+.pin--main  .pin-eye{r:3.2}               /* 가운데 점 크기를 달리해 모양으로도 구분 */
+.pin--on{filter:drop-shadow(0 3px 6px rgba(16,28,54,.6))}
+
+/* ── 위성 위에서 ──
    ★ 처음에는 색을 **밝은 쪽(파스텔)** 으로 밀었다가 되돌렸다.
      글자용 잣대(WCAG 명도 대비)를 마커에 갖다 쓴 것이 잘못이었다.
      그 잣대는 '배경과 밝기가 얼마나 다른가'만 보므로 계속 옅은 색으로 밀리는데,
      **마커는 글자가 아니라 지도 위에 올려놓은 물건**이다.
      실제로 파스텔로 바꾸니 위성 사진의 **안개·구름처럼 보여서 더 안 보였다.**
-
-   지도 서비스들(구글·네이버·카카오·애플)이 실제로 하는 방식은 이렇다:
-     ① 진한 색을 쓴다 (파스텔 금지)
-     ② 흰 테두리 2~3px
-     ③ 그림자로 '떠 있는 물건'처럼 만든다
-     ④ 위성이라고 마커 색을 바꾸지 않는다 — 학습된 색을 지킨다
-   그래서 여기서도 **색은 그대로 두고, 테두리와 그림자만 강하게** 한다.
-   딱 하나 예외가 전략 마커다 — 짙은 남색(--p80)은 어두운 산 위에서 원리적으로 안 보여서
-   같은 파랑 계열의 **채도 높은 색(--accent)** 으로 바꾼다. 옅게가 아니라 **선명하게**. */
+   위성이라고 색을 바꾸지 않는다(학습된 색을 지킨다). 그림자만 더 진하게 한다.
+   딱 하나, 짙은 남색은 어두운 산 위에서 원리적으로 안 보여서
+   같은 파랑 계열의 **채도 높은 색(--accent)** 으로 바꾼다. 옅게가 아니라 선명하게. */
+.gis-map--sat .pin{filter:drop-shadow(0 2px 4px rgba(0,0,0,.85))}
+.gis-map--sat .pin--strat .pin-body{fill:var(--accent)}
 .gis-map--sat .mk{
   border-width:3px; border-color:#fff;
   box-shadow:0 1px 3px rgba(0,0,0,.9), 0 3px 10px rgba(0,0,0,.55);
 }
-.gis-map--sat .mk--strat{background:var(--accent)}   /* 짙은 남색 → 선명한 파랑 */
-/* 환경(앰버 마름모)·우리 집(초록)은 색을 바꾸지 않는다. 테두리와 그림자로 띄운다. */
 .gis-map--sat .mk--home{border-width:4px}
 
 /* 배경지도 바꾸기 단추 — 지도 화면 위쪽 띠. 눌리면 지금 위성을 보고 있다는 뜻이다. */

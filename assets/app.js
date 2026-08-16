@@ -2284,14 +2284,36 @@ function radiusStyle(){
         fillColor:cssVar("--accent"), fillOpacity:.05 }
     : { color:"#1c47d4", weight:1.4, dashArray:"5 5", fillColor:"#1c47d4", fillOpacity:.05 };
 }
-/* dot = 작은 점 모양. 전국을 작은 미리보기 지도에 담을 때만 쓴다. */
+/* 사업 마커는 **핀(물방울) 모양**이다.
+   원·마름모로 그렸을 때는 지도에 '칠해진 것'처럼 보여서, 특히 위성 위에서 묻혔다.
+   핀은 뾰족한 끝이 자리를 가리키고 그림자로 떠 있어 **지도에 꽂힌 물건**으로 읽힌다.
+   구글·네이버·카카오·애플이 모두 이렇게 하는 이유다.
+
+   예외 두 가지:
+   · 우리 집 — 핀이 아니라 **동그란 점**이다. 지도 앱들이 '현재 위치'를 그렇게 그린다.
+     사업(핀)과 내 자리(점)를 모양으로 갈라 두면 헷갈리지 않는다.
+   · dot — 미니 지도용 작은 점. 그 지도는 아주 작아서 핀을 넣으면 서로 겹친다. */
 function markerIcon(type, on, dot){
-  const size = dot ? 8 : 15;
+  if(dot || type === "home"){
+    const size = dot ? 8 : 15;
+    return L.divIcon({
+      className: "",
+      iconSize: [size, size],
+      iconAnchor: [size / 2, size / 2],
+      html: `<div class="mk mk--${type}${on ? " mk--on" : ""}${dot ? " mk--dot" : ""}"></div>`
+    });
+  }
+  const w = on ? 30 : 25, h = on ? 41 : 34;
   return L.divIcon({
     className: "",
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
-    html: `<div class="mk mk--${type}${on ? " mk--on" : ""}${dot ? " mk--dot" : ""}"></div>`
+    iconSize: [w, h],
+    iconAnchor: [w / 2, h],        // 뾰족한 끝이 실제 위치다 (가운데가 아니다)
+    html: `<div class="pin pin--${type}${on ? " pin--on" : ""}">
+      <svg viewBox="0 0 24 34" width="${w}" height="${h}" aria-hidden="true">
+        <path class="pin-body" d="M12 1.2c-6 0-10.8 4.8-10.8 10.8 0 7.7 9.3 19 10.2 20.1.3.4.9.4 1.2 0
+          .9-1.1 10.2-12.4 10.2-20.1C22.8 6 18 1.2 12 1.2Z"/>
+        <circle class="pin-eye" cx="12" cy="11.8" r="4"/>
+      </svg></div>`
   });
 }
 
@@ -2445,9 +2467,11 @@ function drawRoutes(){
           color:cssVar("--p90"), weight:style.weight + 4, opacity:.9, interactive:false
         }).addTo(gisMap);
         routeLayers.push(casing);
-        style.color = on ? cssVar("--live") : cssVar("--accent");
-        style.weight = on ? 5 : 3.5;
-        style.opacity = 1;
+        // 고른 것과 안 고른 것은 **같은 파랑에서 굵기·진하기로** 가른다.
+        // 빨강은 환경영향평가 핀이 쓰므로 노선에 쓰면 헷갈린다.
+        style.color = cssVar("--accent");
+        style.weight = on ? 5 : 3;
+        style.opacity = on ? 1 : .8;
       }
       const layer = (g.type || "").includes("Polygon")
         ? L.polygon(latlngs, Object.assign({ fillOpacity:on ? 0.25 : 0.12 }, style))
@@ -2991,8 +3015,10 @@ function renderMiniMap(){
     : (homeScope === "all" ? nearbyProjects() : scopedProjects());
   const pts = [];
   shown.filter(p => p.lat != null).forEach(p => {
+    // 미니 지도는 **항상 작은 점**이다. 사업 마커가 핀(25×34)으로 바뀐 뒤로는
+    // 여기에 핀을 넣으면 카드만 한 지도를 핀 몇 개가 덮어 버린다.
     miniLayers.push(L.marker([p.lat, p.lon],
-      { icon:markerIcon(p.type, false, nation), keyboard:false }).addTo(miniMap));
+      { icon:markerIcon(p.type, false, true), keyboard:false }).addTo(miniMap));
     pts.push([p.lat, p.lon]);
   });
 
