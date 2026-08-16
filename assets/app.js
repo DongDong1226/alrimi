@@ -3706,6 +3706,86 @@ loadRegions();
 loadRoutes();
 loadProjects();
 
+/* ============================================================
+   펼친 목록만 우리 것으로 바꾼다 (드롭다운 꾸미기)
+
+   ■ 왜 이런 방식인가
+     `<select>` 를 펼쳤을 때 나오는 목록은 **운영체제가 그린다.** CSS 로는 글꼴도 색도
+     못 바꾼다 (이 프로젝트에서 이미 결론 난 것이다). 바꾸려면 select 를 버리고
+     div 로 새로 만들어야 하는데, 그러면 값 표시·키보드·스크린리더를 전부 우리가
+     떠안게 되고 **app.js 가 select 를 바꿔 그릴 때마다 어긋난다**(캘린더 지역 칸이 그렇다).
+
+     그래서 **닫힌 칸은 native select 그대로 두고, 펼친 목록만** 우리가 그린다.
+       · 값 표시·키보드·스크린리더 → 여전히 native 가 맡는다 (동기화 문제가 아예 없다)
+       · 화면에 select 가 새로 생겨도 자동으로 적용된다 (문서 전체에 위임해서 듣는다)
+
+   ■ 손가락 기기에서는 하지 않는다
+     폰·태블릿은 기본 선택기(아래에서 올라오는 휠)가 훨씬 낫다. 마우스일 때만 바꾼다.
+   ============================================================ */
+const selPop = { el:null, sel:null };
+
+function closeSelPop(){
+  if(!selPop.el) return;
+  selPop.el.remove();
+  selPop.el = null;
+  selPop.sel = null;
+}
+
+function openSelPop(sel){
+  closeSelPop();
+  const opts = Array.from(sel.options);
+  if(!opts.length) return;
+
+  const pop = document.createElement("div");
+  pop.className = "selpop";
+  pop.setAttribute("role", "presentation");
+  pop.innerHTML = opts.map((o, i) =>
+    `<button type="button" class="selpop-o${o.selected ? " is-on" : ""}"
+       data-i="${i}"${o.disabled ? " disabled" : ""}>${esc(o.text)}</button>`).join("");
+  document.body.appendChild(pop);
+
+  // 자리 잡기 — 칸 바로 아래. 아래가 좁으면 위로 띄운다.
+  const r = sel.getBoundingClientRect();
+  const gap = 6;
+  pop.style.minWidth = Math.max(r.width, 140) + "px";
+  const h = pop.offsetHeight;
+  const below = innerHeight - r.bottom;
+  pop.style.left = Math.min(r.left, innerWidth - pop.offsetWidth - 8) + "px";
+  pop.style.top = (below >= h + gap || below >= r.top)
+    ? (r.bottom + gap) + "px"
+    : Math.max(8, r.top - h - gap) + "px";
+
+  const on = pop.querySelector(".is-on");
+  if(on) on.scrollIntoView({ block:"nearest" });
+
+  pop.addEventListener("click", e => {
+    const b = e.target.closest(".selpop-o");
+    if(!b) return;
+    sel.selectedIndex = +b.dataset.i;
+    // ★ change 를 손수 쏘아 준다 — app.js 의 판단이 전부 여기에 걸려 있다.
+    sel.dispatchEvent(new Event("change", { bubbles:true }));
+    closeSelPop();
+    sel.focus();
+  });
+
+  selPop.el = pop;
+  selPop.sel = sel;
+}
+
+/* 문서 전체에 걸어 둔다 — 나중에 만들어지는 select 에도 그대로 적용된다 */
+document.addEventListener("mousedown", e => {
+  const sel = e.target.closest && e.target.closest("select");
+  if(selPop.el && (!sel || sel !== selPop.sel)){ closeSelPop(); }
+  if(!sel || sel.disabled || sel.multiple) return;
+  if(!matchMedia("(pointer:fine)").matches) return;   // 손가락 기기는 기본 선택기가 낫다
+  e.preventDefault();                                  // 운영체제 목록이 뜨는 것을 막는다
+  sel.focus();
+  openSelPop(sel);
+});
+addEventListener("keydown", e => { if(e.key === "Escape") closeSelPop(); });
+addEventListener("resize", closeSelPop);
+addEventListener("scroll", closeSelPop, true);
+
 /* 주소에 ?admin=1 이 있으면 관리자 화면으로 바로 간다.
    ★ 반드시 시작 코드 **뒤**여야 한다 — 앞에서 부르면 위 줄들이 첫 화면으로 되돌린다. */
 if(new URLSearchParams(location.search).get("admin") === "1") enterAdmin();
