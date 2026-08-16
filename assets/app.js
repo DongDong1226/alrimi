@@ -486,6 +486,7 @@ const SAMPLE_PROJECTS = [
 
 let PROJECTS = [];          // 아직 의견을 낼 수 있는 사업 (화면에 보이는 것)
 let CLOSED_PROJECTS = [];   // 기간이 지난 사업 (화면에서 빼지만, 참조되면 최소 정보만 보여준다)
+let DATA_MADE_AT = "";      // data/projects.json 을 만든 날 (관리자 화면 표시용)
 let dataReady = false;
 let usingSample = false;    // 실제 파일을 못 읽어 표본으로 대신하고 있는가
 /* 협의 진행 중인 사업 수 — EIASS 사업조회에서 세어 온 건수.
@@ -659,6 +660,7 @@ async function loadProjects(){
     if(Array.isArray(json.projects) && json.projects.length) list = json.projects;
     // 협의 진행 중인 사업 수 (EIASS 사업조회에서 세어 온 건수)
     UNDER_REVIEW = (json.stats && json.stats.underReview) || {};
+    DATA_MADE_AT = json.generatedAt || "";   // 관리자 화면에서 '언제 만든 자료인지' 보여준다
   }catch(e){
     console.warn("data/projects.json 을 불러오지 못해 표본 데이터를 표시합니다.", e);
   }
@@ -675,6 +677,10 @@ async function loadProjects(){
   }
 
   dataReady = true;
+
+  // 관리자 화면을 열어 둔 채로 자료가 늦게 도착할 수 있다 (자료 읽기는 비동기다).
+  // 그때 다시 그리지 않으면 '수집 현황' 칸이 빈 채로 남는다.
+  if(!$("#admPanel").hidden) renderAdminFeed();
 
   // 처음 온 사람에게는 아무것도 새것으로 표시하지 않는다 — 오늘 날짜만 적어 둔다.
   // (41건이 전부 NEW 로 뜨면 아무 뜻이 없다)
@@ -3493,6 +3499,20 @@ function enterAdmin(){
 $("#btn-admin-enter").addEventListener("click", enterAdmin);
 $("#btn-admin-exit").addEventListener("click", () => show("#scr-onboard"));
 
+/* ★ 관리자 화면으로 가는 길이 **첫 화면 맨 아래 단추 하나뿐**이었다.
+   동네를 고르는 순간 그 화면이 숨겨져 단추가 0×0 이 되고, 새로 고치기 전에는
+   어디서도 들어갈 수 없었다 (2026-08-16 에 담당자가 실제로 막혔다).
+   그래서 두 가지 길을 더 둔다:
+     · 주소에 ?admin=1 — 어느 화면에서든 되고 즐겨찾기에 넣어 둘 수 있다
+     · 홈 푸터의 운영 기관 이름 — 첫 화면의 '기후에너지환경부' 와 같은 방식이다
+   (비밀번호 칸은 그대로 거친다. 어차피 보안장치가 아니라 실수로 들어오는 것을 막는 표지판이다)
+
+   ※ ?admin=1 처리는 **이 파일 맨 끝**에서 한다 — 여기서 부르면 뒤따라 도는
+     시작 코드(rememberScreen 등)가 첫 화면으로 되돌려 놓는다. */
+$("#f-org").addEventListener("click", enterAdmin);
+$("#f-org").style.cursor = "pointer";
+$("#f-org").setAttribute("title", "관리자 화면 열기");
+
 function unlock(){
   if($("#admPw").value === S.adminPw){
     $("#admLock").hidden = true;
@@ -3505,7 +3525,69 @@ function unlock(){
 $("#admGo").addEventListener("click", unlock);
 $("#admPw").addEventListener("keydown", e => { if(e.key === "Enter") unlock(); });
 
+/* ---------- 관리자 · 날짜별로 새로 들어온 사업 ----------
+   담당자가 "오늘 뭐가 들어왔나"를 한눈에 보려는 칸이다.
+
+   기준은 **우리가 그 사업을 처음 본 날(firstSeen)** 이다. 공람 시작일이 아니다 —
+   EIASS 가 늦게 올리거나 우리 수집이 하루 걸러도 그날 들어온 것으로 잡아야 뜻이 있다.
+
+   ★ firstSeen 이 없는 사업은 **공람 시작일로 대신 세고 그 사실을 화면에 밝힌다.**
+     2026-08-16 이전에 수집된 사업이 그렇다. 조용히 섞으면 담당자가
+     "이 날 이만큼 들어왔구나" 하고 잘못 읽는다.
+
+   기한이 지난 사업(CLOSED_PROJECTS)도 함께 센다 — 어제 들어왔다가 오늘 마감된 것도
+   '그날 들어온 것'이기 때문이다. 대신 흐리게 표시한다. */
+function renderAdminFeed(){
+  const box = $("#admFeed");
+  if(!box || !box.classList) return;
+
+  const all = PROJECTS.concat(CLOSED_PROJECTS);
+  const byDay = new Map();
+  let noFirstSeen = 0;
+  all.forEach(p => {
+    if(!p.firstSeen) noFirstSeen++;
+    const day = p.firstSeen || p.periodStart;
+    if(!day) return;
+    if(!byDay.has(day)) byDay.set(day, []);
+    byDay.get(day).push(p);
+  });
+
+  const days = [...byDay.keys()].sort().reverse();
+  const SHOW = 14;                       // 최근 14일치만. 그 아래는 건수만 알린다
+  const head = days.slice(0, SHOW);
+  const restDays = days.slice(SHOW);
+  const restCount = restDays.reduce((n, d) => n + byDay.get(d).length, 0);
+
+  const rows = head.map(d => {
+    const list = byDay.get(d).slice().sort((a, b) => a.name.localeCompare(b.name, "ko"));
+    return `<tr>
+      <th>${esc(d)}</th>
+      <td class="admfeed-n">${list.length}건</td>
+      <td>${list.map(p => `<span class="admfeed-item${p.open ? "" : " is-closed"}">
+            <b>${esc(p.typeLabel || "")}</b> ${esc(p.name)}
+            <i>${esc(p.address ? p.address.split(" ").slice(0, 2).join(" ") : "")}</i>
+            ${p.open ? "" : "<em>기한 지남</em>"}
+          </span>`).join("")}</td>
+    </tr>`;
+  }).join("");
+
+  box.innerHTML = `
+    <p class="hint">
+      <b>자료 만든 날</b> ${esc(DATA_MADE_AT || "알 수 없음")}
+      · <b>담긴 사업</b> ${all.length}건 (의견 낼 수 있는 것 ${PROJECTS.length}건)
+      · 수집은 매일 <b>07시·13시·0시 10분</b>에 자동으로 돕니다.
+    </p>
+    ${noFirstSeen ? `<p class="hint hint--warn">
+      ${noFirstSeen}건은 <b>발견일 기록이 없어 공람 시작일로 세었습니다.</b>
+      2026-08-16 이전에 수집된 사업입니다 — 앞으로 들어오는 사업부터 실제 발견일로 잡힙니다.</p>` : ``}
+    ${rows ? `<div class="admfeed-wrap"><table class="admfeed">
+      <thead><tr><th>날짜</th><th>건수</th><th>사업</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>` : `<p class="hint">아직 표시할 사업이 없습니다.</p>`}
+    ${restCount ? `<p class="hint">그 이전 ${restDays.length}일치 ${restCount}건은 줄여서 표시하지 않았습니다.</p>` : ``}`;
+}
+
 function fillAdmin(){
+  renderAdminFeed();
   $("#a-vworld").value      = S.vworldKey;
   $("#a-service-url").value = S.serviceUrl;
   $("#a-lon").value         = S.centerLon;
@@ -3600,3 +3682,7 @@ applySettings();
 loadRegions();
 loadRoutes();
 loadProjects();
+
+/* 주소에 ?admin=1 이 있으면 관리자 화면으로 바로 간다.
+   ★ 반드시 시작 코드 **뒤**여야 한다 — 앞에서 부르면 위 줄들이 첫 화면으로 되돌린다. */
+if(new URLSearchParams(location.search).get("admin") === "1") enterAdmin();

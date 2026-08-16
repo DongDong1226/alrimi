@@ -405,6 +405,13 @@
       </div>
     </div>
 
+    <!-- 수집 현황 — 담당자가 가장 자주 볼 칸이라 맨 위에 두고 격자 전체 폭을 쓴다.
+         내용은 app.js 의 renderAdminFeed() 가 채운다. -->
+    <div class="adm-card adm-card--wide" id="admFeedCard">
+      <h3>날짜별로 새로 들어온 사업</h3>
+      <div class="inner" id="admFeed"></div>
+    </div>
+
     <div class="adm-grid">
 
       <div class="adm-card">
@@ -630,7 +637,9 @@
       <div class="cal-box cal-box--sub" id="calSub"></div>
       <div class="cal-box cal-box--minor" id="savedCal" hidden></div>
 
-      <div class="proj-grid" id="savedGrid"></div>
+      <!-- --fill : 담은 사업은 개수가 적을 때가 많아 3칸 격자에 빈 자리가 크게 남는다.
+           1~2장일 때만 폭을 채운다 (app.css 의 .proj-grid--fill 설명 참고) -->
+      <div class="proj-grid proj-grid--fill" id="savedGrid"></div>
 
       <!-- 기한이 지난 사업은 아래에 따로 모은다 (진행 중인 것과 섞이면 헷갈린다) -->
       <div id="savedClosedWrap" hidden>

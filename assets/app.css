@@ -325,6 +325,14 @@ button{cursor:pointer}
 .sort-btn svg{width:15px;height:15px}
 
 .proj-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px}
+/* 담은 사업처럼 **목록 전체가 짧은** 곳에 쓴다.
+   3칸 격자에 1~2장만 있으면 오른쪽이 크게 비어 허전해 보인다
+   (실측 1248px 중 422px = 34% 가 빈 자리였다. 바로 위 초록 상자는 폭을 꽉 채우고 있어 더 두드러진다).
+   auto-fit 은 **쓰지 않는 칸을 접어 주므로** 1~2장일 때만 폭을 채우고, 3장부터는 그대로 3칸이다.
+   ★ min 을 340px 로 둔 이유 — 300px 이면 4칸이 되어 3칸 설계가 깨진다 (실측).
+   ★ 홈 사업 목록에는 쓰지 않는다 — 거기는 9개씩 쪽으로 나누므로 마지막 쪽이 짧은 것이 정상이고,
+     그때 폭을 채우면 앞 쪽과 카드 크기가 달라진다. */
+.proj-grid--fill{grid-template-columns:repeat(auto-fit,minmax(340px,1fr))}
 .proj{background:#fff;border:1px solid var(--line);border-radius:var(--r-md);padding:20px;
   display:flex;flex-direction:column;gap:11px;transition:.2s var(--ease)}
 .proj:hover{transform:translateY(-4px);box-shadow:var(--sh-lg);border-color:transparent}
@@ -820,6 +828,23 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .adm-warn{display:flex;gap:12px;background:#fff6f4;border:1px solid #f3c9c0;border-radius:var(--r-md);
   padding:15px 18px;margin-bottom:24px;font-size:var(--fs-body-s);color:#8a2f1d;line-height:1.65}
 .adm-warn svg{width:19px;height:19px;flex:none;margin-top:2px;color:var(--danger)}
+/* 수집 현황 — 격자 위에 통째로 놓는다 (사업명이 길어 두 칸으로는 좁다) */
+.adm-card--wide{margin-bottom:20px}
+.admfeed-wrap{overflow-x:auto}
+.admfeed{width:100%;border-collapse:collapse;font-size:var(--fs-body-s)}
+.admfeed th,.admfeed td{text-align:left;vertical-align:top;padding:9px 10px;
+  border-bottom:1px solid var(--line)}
+.admfeed thead th{font-size:var(--fs-body-xs);color:var(--ink-3);font-weight:700;
+  border-bottom:1px solid var(--line-2)}
+.admfeed tbody th{white-space:nowrap;font-weight:700;color:var(--ink)}
+.admfeed-n{white-space:nowrap;color:var(--primary);font-weight:700}
+.admfeed-item{display:block;margin:2px 0;line-height:1.6;overflow-wrap:anywhere}
+.admfeed-item b{color:var(--ink-3);font-weight:600;font-size:var(--fs-body-xs)}
+.admfeed-item i{color:var(--ink-4);font-style:normal;font-size:var(--fs-body-xs)}
+.admfeed-item.is-closed{opacity:.55}
+.admfeed-item em{font-style:normal;color:var(--ink-4);font-size:var(--fs-body-xs)}
+.hint--warn{color:var(--warn);font-weight:600}
+
 .adm-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;align-items:start}
 .adm-card{background:#fff;border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden}
 .adm-card>h3{font-size:var(--fs-h-xxs);font-weight:800;color:var(--ink);padding:15px 20px;
@@ -858,6 +883,9 @@ select:disabled{opacity:.5;cursor:not-allowed}
   .hero-home>*{min-width:0}
   .hood-card{max-width:520px}
   .proj-grid{grid-template-columns:repeat(2,1fr)}
+  /* 이 폭에서는 2칸이라 1장만 있을 때 절반이 빈다. 여기서도 빈 칸을 접는다.
+     380px 로 둔 이유 — 더 작게 잡으면 3칸이 되어 이 구간의 2칸 설계가 깨진다 */
+  .proj-grid--fill{grid-template-columns:repeat(auto-fit,minmax(380px,1fr))}
   .dash-top{grid-template-columns:repeat(2,1fr)}
   .stat,.dash-cta{border-bottom:1px solid var(--line)}
   .dash-cta{grid-column:1/-1}
