@@ -207,8 +207,12 @@
       <div class="proj-grid m-grid" id="projGrid"></div>
       <nav class="pager" id="projPager" aria-label="사업 목록 페이지"></nav>
 
-      <!-- 지역 캘린더 구독. index.html 과 같은 칸 이름 (app.js 공용) -->
-      <div class="cal-box cal-box--sub" id="calSub"></div>
+      <!-- 구독 설정은 관심목록 탭에 있다. 거기까지 안 들어가는 사람을 위해 한 줄만 남긴다. -->
+      <button class="cal-link" type="button" data-nav="saved">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8Z"></path><path d="M13.7 21a2 2 0 0 1-3.4 0" stroke-linecap="round"></path></svg>
+        <span><b>새 사업이 뜨면 캘린더로 받기</b> — 한 번만 등록해 두면 됩니다</span>
+        <span class="cal-link-go">알림 설정 →</span>
+      </button>
     </section>
 
     <!-- 설명회 -->
@@ -295,7 +299,18 @@
 
     <!-- 아래에서 올라오는 시트. 손잡이를 눌러 크게/작게 -->
     <aside class="gis-side m-sheet" aria-label="내 동네 사업">
-      <button class="m-sheet-grip" type="button" id="btnSheet" aria-label="목록 크게 보기"><i></i></button>
+      <!-- ★ 손잡이만으로는 지도로 못 돌아간다.
+           손잡이는 '한 단계씩 돌아가는' 물건이라, 목록을 조금만 열어 둔 상태에서
+           지도를 다시 보려면 세 번을 눌러야 했다. 상세를 열면 목록이 화면을 꽉 채우는데
+           그때도 나갈 길이 손잡이뿐이었다.
+           그래서 **한 번에 지도로 내려가는 단추**를 손잡이 줄 오른쪽에 따로 둔다. -->
+      <div class="m-sheet-hd">
+        <button class="m-sheet-grip" type="button" id="btnSheet" aria-label="목록 크게 보기"><i></i></button>
+        <button class="m-sheet-close" type="button" id="btnSheetClose">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"></path><path d="M9 4v14M15 6v14"></path></svg>
+          지도 보기
+        </button>
+      </div>
 
       <div class="gis-addr m-addr" id="mAddr" hidden>
         <div class="gis-addr-row">
@@ -345,8 +360,9 @@
     <h2 class="m-sec-t" id="savedHead">담아 둔 사업</h2>
     <p class="saved-note" id="savedNote"></p>
 
-    <!-- 담은 사업 마감일을 한 번에 캘린더로. index.html 과 같은 칸 이름 (app.js 공용) -->
-    <div class="cal-box" id="savedCal" hidden></div>
+    <!-- 구독을 먼저, 파일 받기를 나중에. index.html 과 같은 칸 이름 (app.js 공용) -->
+    <div class="cal-box cal-box--sub" id="calSub"></div>
+    <div class="cal-box cal-box--minor" id="savedCal" hidden></div>
 
     <div class="m-cards" id="savedGrid"></div>
 
@@ -364,24 +380,26 @@
 
 <nav class="m-tabs" id="mTabs" aria-label="주요 메뉴" hidden>
   <button type="button" data-tab="home" class="on">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V20H4z"></path></svg>
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linejoin="round"><path d="M4 10.5 12 4l8 6.5V20H4z"></path></svg></span>
     <span>홈</span>
   </button>
   <button type="button" data-tab="map">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"></path><path d="M9 4v14M15 6v14"></path></svg>
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linejoin="round"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2z"></path><path d="M9 4v14M15 6v14"></path></svg></span>
     <span>지도</span>
   </button>
   <button type="button" data-tab="brief">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M4 11h16"></path></svg>
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M4 11h16"></path></svg></span>
     <span>설명회</span>
   </button>
-  <button type="button" data-tab="hood">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg>
-    <span>내 동네</span>
+  <!-- '안내'를 빼고 '관심목록'을 넣었다. 안내는 자주 볼 것이 아니라 머리말·푸터로 충분하고,
+       담아 둔 사업은 마감을 지켜보려고 담은 것이라 **자주 들어와야 하는 자리**다. -->
+  <button type="button" data-tab="saved">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linejoin="round"><path d="m12 3.6 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.7l5.8-.8z"></path></svg></span>
+    <span>관심목록</span>
   </button>
-  <button type="button" data-tab="guide">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M12 16v-4M12 8.5v.01" stroke-linecap="round"></path></svg>
-    <span>안내</span>
+  <button type="button" data-tab="hood">
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg></span>
+    <span>내 동네</span>
   </button>
 </nav>
 

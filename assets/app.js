@@ -206,16 +206,35 @@ function googleCalUrl(p){
    우리는 파일만 올려 두면 된다 (build_data.py 가 지역마다 만든다).
    ============================================================ */
 const CAL_BASE = "data/cal/";
+const LSCALREGION = "wdn.calRegion";
 
-/* 지금 고른 동네에 맞는 캘린더 파일 이름.
-   시·군·구까지 골랐으면 그 단위로, 시·도만 골랐으면 시·도, 전국이면 전국. */
+/* ★ 구독 지역은 **보고 있는 동네와 따로 고른다.**
+   읍·면·동까지 좁혀 놓고 보는 사람도, 알림은 시·군·구 전체로 받고 싶을 수 있다
+   (옆 동네 사업도 우리 생활권이다). 그래서 이 칸에서 다시 고르게 한다.
+   처음 값은 지금 보고 있는 동네를 따라간다. 읍·면·동은 캘린더 단위가 아니라 시·군·구까지만 쓴다. */
+let CAL_REGION = lsGet(LSCALREGION, null);
+
+function calRegion(){
+  if(CAL_REGION) return CAL_REGION;
+  return isNation(currentHood)
+    ? { sido:ALL_SIDO, sgg:ANY }
+    : { sido:currentHood.sido, sgg:hoodSgg(currentHood) || ANY };
+}
+
+function setCalRegion(r){
+  CAL_REGION = r;
+  lsSet(LSCALREGION, r);
+  renderCalSub();
+}
+
+/* 고른 지역에 맞는 캘린더 파일 이름 */
 function calFeedName(){
-  if(isNation(currentHood)) return { file:"all.ics", label:"전국" };
-  const sgg = hoodSgg(currentHood);
+  const r = calRegion();
+  if(!r.sido || r.sido === ALL_SIDO) return { file:"all.ics", label:"전국" };
   const slug = s => s.replace(/ /g, "-");
-  return sgg
-    ? { file:`${slug(currentHood.sido)}_${slug(sgg)}.ics`, label:`${currentHood.sido} ${sgg}` }
-    : { file:`${slug(currentHood.sido)}.ics`, label:currentHood.sido };
+  return (r.sgg && r.sgg !== ANY)
+    ? { file:`${slug(r.sido)}_${slug(r.sgg)}.ics`, label:`${r.sido} ${r.sgg}` }
+    : { file:`${slug(r.sido)}.ics`, label:r.sido };
 }
 
 /* 구독 주소는 **절대 주소**여야 한다 — 캘린더 앱이 우리 페이지 밖에서 부르기 때문이다. */
@@ -227,24 +246,54 @@ function calFeedUrl(){
 function renderCalSub(){
   const box = $("#calSub");
   if(!box || !box.classList) return;
+  const r = calRegion();
   const { url, label } = calFeedUrl();
   // 아이폰은 webcal:// 을 누르면 구독 창이 바로 뜬다. 구글 캘린더는 cid= 로 받는다.
   const webcal = url.replace(/^https?:/, "webcal:");
   const google = `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(webcal)}`;
+
+  const sidos = REGIONS ? Object.keys(REGIONS) : [];
+  const sggs = (r.sido && r.sido !== ALL_SIDO) ? sggList(r.sido) : [];
+  const opt = (v, cur) => `<option value="${esc(v)}"${v === cur ? " selected" : ""}>${esc(v)}</option>`;
+
   box.innerHTML = `
     <p class="cal-t">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 3v12"></path><path d="m7 10 5 5 5-5" stroke-linecap="round"></path><path d="M4 17v3h16v-3"></path></svg>
-      ${esc(label)}에 새 사업이 뜨면 캘린더로 받기
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8Z"></path><path d="M13.7 21a2 2 0 0 1-3.4 0" stroke-linecap="round"></path></svg>
+      새 사업이 뜨면 캘린더로 자동으로 받기
     </p>
-    <p class="cal-h">한 번만 등록해 두면 <b>새 사업이 생길 때마다 폰 캘린더에 저절로 들어옵니다.</b>
+    <p class="cal-h">한 번만 등록해 두면 <b>그 지역에 새 사업이 생길 때마다 폰 캘린더에 저절로 들어옵니다.</b>
       알림도 폰이 줍니다. 이 화면을 다시 안 열어도 됩니다.</p>
+
+    <div class="cal-pick">
+      <label class="cal-pick-lb" for="calSido">알림 받을 지역</label>
+      <div class="cal-pick-row">
+        <span class="msel"><select id="calSido" aria-label="알림 받을 시·도">
+          ${opt(ALL_SIDO, r.sido)}${sidos.map(s => opt(s, r.sido)).join("")}
+        </select></span>
+        <span class="msel"><select id="calSgg" aria-label="알림 받을 시·군·구"${sggs.length ? "" : " disabled"}>
+          ${opt(ANY, r.sgg)}${sggs.map(s => opt(s, r.sgg)).join("")}
+        </select></span>
+      </div>
+      <p class="cal-h cal-h--sub">보고 있는 동네와 <b>따로 고를 수 있습니다.</b>
+        읍·면·동으로 좁혀 보고 있어도, 알림은 <b>시·군·구 전체</b>로 넓혀 받을 수 있어요.</p>
+    </div>
+
+    <p class="cal-now">지금 받는 지역 <b>${esc(label)}</b></p>
     <div class="cal-btns">
-      <a class="btn btn--primary btn--sm btn--pill" href="${esc(webcal)}">아이폰 · 캘린더 구독</a>
-      <a class="btn btn--line btn--sm btn--pill" href="${esc(google)}" target="_blank" rel="noopener">구글 캘린더로 구독 ↗</a>
+      <a class="btn btn--primary btn--sm btn--pill" href="${esc(google)}" target="_blank" rel="noopener">구글 캘린더로 구독 ↗</a>
+      <a class="btn btn--line btn--sm btn--pill" href="${esc(webcal)}">아이폰 · 캘린더 구독</a>
       <button class="btn btn--ghost btn--sm btn--pill" type="button" id="btnCalCopy">주소 복사</button>
     </div>
-    <p class="cal-h cal-h--sub" id="calSubMsg">갤럭시는 <b>구글 캘린더로 구독</b>을 쓰세요.
+    <p class="cal-h cal-h--sub" id="calSubMsg">갤럭시·PC 는 <b>구글 캘린더로 구독</b>이 가장 쉽습니다.
       안 되면 주소를 복사해 구글 캘린더 → 다른 캘린더 추가 → <b>URL로 추가</b>에 붙여넣으면 됩니다.</p>`;
+
+  $("#calSido").addEventListener("change", e => {
+    // 시·도를 바꾸면 시·군·구는 '전체'로 되돌린다 (다른 시·도의 시·군·구가 남으면 안 된다)
+    setCalRegion({ sido:e.target.value, sgg:ANY });
+  });
+  $("#calSgg").addEventListener("change", e => {
+    setCalRegion({ sido:$("#calSido").value, sgg:e.target.value });
+  });
   $("#btnCalCopy").addEventListener("click", async () => {
     try{
       await navigator.clipboard.writeText(url);
@@ -2578,8 +2627,12 @@ $$("[data-kw]").forEach(b => b.addEventListener("click", () => { $("#q").value =
    위성 쪽이 3배 넘게 무거워서 **기본으로 켜 둘 물건은 아니다.**
    VWorld 는 Base·Satellite·Hybrid·midnight 만 준다 (gray 는 안 됨). 모두 줌 6~19.
    ============================================================ */
-const LSMAPLAYER = "wdn.maplayer";
-let mapLayerKind = (lsGet(LSMAPLAYER, "base") === "sat") ? "sat" : "base";
+/* ★ 지도는 **언제나 일반지도로 시작한다.** 고른 값을 기억하지 않는다.
+   한 번 위성으로 바꾼 사람이 다음에 들어왔을 때도 위성으로 열리면,
+   주민은 그것이 이 서비스의 기본 화면인 줄 안다. 위성은 지명 글자가 없어서
+   "여기가 어디지"가 되므로 **첫 화면으로는 맞지 않다.**
+   (담당자용 route_editor.html 은 예외로 기억한다 — 거기서는 기준점을 잡느라 위성을 계속 쓴다) */
+let mapLayerKind = "base";
 
 function vworldTileUrl(kind){
   const layer = kind === "sat" ? "Satellite" : "Base";
@@ -2717,8 +2770,8 @@ function applyMapLayer(){
 }
 
 function toggleMapLayer(){
+  // 이번 방문에만 바뀐다. 저장하지 않는다 (위 주석 참고)
   mapLayerKind = isSat() ? "base" : "sat";
-  lsSet(LSMAPLAYER, mapLayerKind);
   applyMapLayer();
   // 선 색이 배경에 따라 달라지므로 이미 그려 둔 것을 다시 그린다
   renderGisMarkers(false);

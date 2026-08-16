@@ -28,8 +28,11 @@
     const savedEl = q("#scr-saved");
     const savedOn = !!savedEl && savedEl.classList.contains("on");
     qa("[data-tab]").forEach(b => {
-      const on = (b.dataset.tab === "map") ? mapOn
-        : (b.dataset.tab === "home" && !mapOn && !onboard && !savedOn);
+      const k = b.dataset.tab;
+      const on = k === "map"   ? mapOn
+        : k === "saved" ? savedOn
+        : k === "home"  ? (!mapOn && !onboard && !savedOn)
+        : false;
       b.classList.toggle("on", on);
     });
   }
@@ -39,6 +42,13 @@
     if(kind === "map"){ openMapScreen(); syncTabs(); return; }
     if(kind === "hood"){ openModal("m-hood"); return; }
     if(kind === "guide"){ openModal("m-guide"); return; }
+    // 관심목록 — app.js 가 두 화면 공용으로 처리한다 (머리말 별표와 같은 길)
+    if(kind === "saved"){
+      const star = q('[data-nav="saved"]');
+      if(star) star.click();
+      syncTabs();
+      return;
+    }
 
     // 홈·설명회는 같은 화면의 다른 자리로 간다
     if(!q("#scr-home").classList.contains("on")) show("#scr-home");
@@ -78,6 +88,16 @@
   }
   q("#btnSheet").addEventListener("click", () => {
     step = (step + 1) % STEPS.length;
+    applySheet();
+  });
+  /* '지도 보기' — 한 번에 지도만 보는 상태로 내려간다.
+     상세를 보고 있었으면 목록으로도 되돌려 준다 (상세가 열린 채 닫히면
+     다시 열었을 때 아까 그 상세가 그대로 있어 지도로 돌아온 느낌이 안 난다). */
+  q("#btnSheetClose").addEventListener("click", () => {
+    if(typeof backToGisList === "function" && scrMap.classList.contains("on-detail")){
+      backToGisList();
+    }
+    step = 0;
     applySheet();
   });
   badge.addEventListener("click", () => {

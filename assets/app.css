@@ -590,6 +590,37 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .cal-btns .btn{text-decoration:none}
 /* 구독 칸은 목록 아래에 놓이므로 위쪽 여백을 조금 더 준다 */
 .cal-box--sub{margin-top:26px}
+/* 담은 사업 파일 받기는 **곁들이**다 — 구독이 주인공이라 조용하게 둔다 */
+.cal-box--minor{background:var(--bg-2);border-color:var(--line)}
+.cal-box--minor .cal-t{color:var(--ink-2)}
+
+/* 홈 목록 아래 한 줄 — 관심목록 화면의 구독 설정으로 데려간다.
+   설정 칸을 통째로 여기 두면 화면이 길어져서, 데려가는 줄만 남긴다. */
+.cal-link{display:flex;align-items:center;gap:10px;width:100%;text-align:left;
+  margin-top:22px;padding:13px 16px;border-radius:var(--r-m);
+  background:var(--eco-soft);border:1px solid rgba(31,138,91,.28);
+  color:var(--ink-2);font-size:var(--fs-body-s);line-height:1.5}
+.cal-link svg{width:19px;height:19px;flex:none;color:var(--eco)}
+.cal-link span{min-width:0}
+.cal-link b{color:var(--ink)}
+.cal-link-go{margin-left:auto;flex:none;font-weight:700;color:var(--eco);white-space:nowrap}
+.cal-link:hover{border-color:var(--eco)}
+/* 좁은 화면에서는 두 줄로 눕힌다 — 한 줄에 다 넣으면 글자가 짓눌린다 */
+@media (max-width:560px){
+  .cal-link{flex-wrap:wrap;gap:6px 10px}
+  .cal-link-go{margin-left:29px}
+}
+
+/* 알림 받을 지역 고르기 — 보고 있는 동네와 따로 정할 수 있다 */
+.cal-pick{margin:12px 0 0;padding:12px;border-radius:var(--r-s);
+  background:#fff;border:1px solid var(--line)}
+.cal-pick-lb{display:block;font-size:var(--fs-body-xs);font-weight:700;
+  color:var(--ink-2);margin-bottom:6px}
+.cal-pick-row{display:flex;gap:8px;flex-wrap:wrap}
+.cal-pick-row .msel{flex:1 1 150px;min-width:0}
+.cal-pick-row select{width:100%}
+.cal-now{margin:12px 0 0;font-size:var(--fs-body-s);color:var(--ink-2)}
+.cal-now b{color:var(--eco)}
 
 /* ── 새로 올라온 사업 알림 줄 ──────────────────────────────────────
    지난번 본 뒤로 공람이 시작된 사업이 있을 때만 나온다.
