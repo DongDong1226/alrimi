@@ -389,9 +389,19 @@
     <div class="adm-lock">
       <h2>관리자 확인</h2>
       <p>설정을 변경하려면 비밀번호를 입력하세요.</p>
-      <input id="admPw" type="password" placeholder="비밀번호" autocomplete="off">
+      <!-- 눈 단추 — 한/영 키가 한글이면 'ㅁㅇㅡㅑㅜ1234' 가 들어가는데
+           점으로만 보여서 무엇이 잘못됐는지 알 수가 없다. 보고 고칠 수 있게 한다. -->
+      <div class="adm-pw-row">
+        <input id="admPw" type="password" placeholder="비밀번호" autocomplete="off">
+        <button class="adm-pw-eye" type="button" id="admPwShow"
+                aria-label="비밀번호 보기" aria-pressed="false">보기</button>
+      </div>
       <p class="adm-err" id="admErr"></p>
       <button class="btn btn--primary btn--block" type="button" id="admGo" style="margin-top:6px">확인</button>
+      <!-- 이 잠금은 보안장치가 아니다. 영영 못 들어가는 편이 더 나쁘므로 되돌릴 길을 둔다.
+           두 번 틀렸을 때만 보인다 (app.js 의 unlock 참고). -->
+      <button class="btn btn--ghost btn--block btn--sm" type="button" id="admPwReset"
+              style="margin-top:8px" hidden>기본값으로 되돌리기</button>
     </div>
   </div>
 

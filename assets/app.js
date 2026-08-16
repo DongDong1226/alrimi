@@ -3513,17 +3513,58 @@ $("#f-org").addEventListener("click", enterAdmin);
 $("#f-org").style.cursor = "pointer";
 $("#f-org").setAttribute("title", "관리자 화면 열기");
 
+/* 비밀번호가 안 맞을 때 **왜 안 맞는지**를 알려 준다.
+   그냥 "맞지 않습니다"만 내면 담당자가 원인을 찾을 방법이 없다 (2026-08-16에 실제로 막혔다).
+   막히는 까닭이 거의 항상 둘 중 하나다:
+     ① 한/영 키가 한글이라 'ㅁㅇㅡㅑㅜ1234' 가 들어갔다 — 점으로만 보여서 눈치챌 수 없다
+     ② 이 브라우저에 **바뀐 비밀번호가 저장돼 있다** (설정은 기본값을 덮어쓴다) */
+let pwTries = 0;
 function unlock(){
-  if($("#admPw").value === S.adminPw){
+  const typed = $("#admPw").value.trim();      // 앞뒤 공백은 걷어낸다 (붙여넣기로 잘 붙는다)
+  if(typed === String(S.adminPw).trim()){
     $("#admLock").hidden = true;
     $("#admPanel").hidden = false;
+    pwTries = 0;
     fillAdmin();
-  }else{
-    $("#admErr").textContent = "비밀번호가 맞지 않습니다.";
+    return;
   }
+  pwTries++;
+  const hasHangul = /[ㄱ-ㅎㅏ-ㅣ가-힣]/.test(typed);
+  const changed = String(S.adminPw) !== DEFAULTS.adminPw;
+  let msg = "비밀번호가 맞지 않습니다.";
+  if(hasHangul){
+    msg = "한글이 입력됐습니다 — <b>한/영 키</b>를 확인하고 다시 입력해 주세요.";
+  }else if(changed && pwTries >= 2){
+    msg = `이 브라우저에는 <b>바꾼 비밀번호가 저장돼 있습니다</b>(기본값이 아닙니다).
+      기억나지 않으면 아래 <b>기본값으로 되돌리기</b>를 누르세요.`;
+  }else if(pwTries >= 3){
+    msg = `계속 안 맞으면 아래 <b>기본값으로 되돌리기</b>를 누른 뒤
+      <b>${esc(DEFAULTS.adminPw)}</b> 로 들어가세요.`;
+  }
+  $("#admErr").innerHTML = msg;
+  // 두 번 틀리면 되돌리기 단추를 보여 준다. 이 잠금은 보안장치가 아니라
+  // 실수로 들어오는 것을 막는 표지판이라, 영영 못 들어가는 편이 더 나쁘다.
+  $("#admPwReset").hidden = pwTries < 2;
 }
+$("#admPwReset").addEventListener("click", () => {
+  S.adminPw = DEFAULTS.adminPw;
+  lsSet(LSKEY, S);
+  $("#admPw").value = "";
+  $("#admErr").innerHTML = `기본값으로 되돌렸습니다. <b>${esc(DEFAULTS.adminPw)}</b> 로 들어가세요.`;
+  $("#admPwReset").hidden = true;
+  pwTries = 0;
+  $("#admPw").focus();
+});
 $("#admGo").addEventListener("click", unlock);
 $("#admPw").addEventListener("keydown", e => { if(e.key === "Enter") unlock(); });
+$("#admPwShow").addEventListener("click", () => {
+  const el = $("#admPw");
+  const show = el.type === "password";
+  el.type = show ? "text" : "password";
+  $("#admPwShow").textContent = show ? "숨기기" : "보기";
+  $("#admPwShow").setAttribute("aria-pressed", show ? "true" : "false");
+  el.focus();
+});
 
 /* ---------- 관리자 · 날짜별로 새로 들어온 사업 ----------
    담당자가 "오늘 뭐가 들어왔나"를 한눈에 보려는 칸이다.

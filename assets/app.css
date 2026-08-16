@@ -822,7 +822,15 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .adm-lock input{width:100%;height:48px;border:1px solid var(--line-2);border-radius:var(--r-sm);
   padding:0 14px;font-size:var(--fs-body-m);outline:0}
 .adm-lock input:focus{border-color:var(--primary)}
+/* 비밀번호 칸 + '보기' 단추 — 한/영 키가 한글이면 점으로만 보여서 원인을 못 찾는다 */
+.adm-pw-row{position:relative}
+.adm-pw-row input{padding-right:64px}
+.adm-pw-eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);
+  background:none;border:0;padding:6px 8px;font-size:var(--fs-body-s);font-weight:600;
+  color:var(--ink-3);cursor:pointer;border-radius:var(--r-sm)}
+.adm-pw-eye:hover{color:var(--primary)}
 .adm-err{color:var(--danger);font-size:var(--fs-body-s);font-weight:600;margin-top:10px;min-height:20px}
+.adm-err b{color:var(--danger)}
 
 .adm-body{padding:32px 0 70px}
 .adm-warn{display:flex;gap:12px;background:#fff6f4;border:1px solid #f3c9c0;border-radius:var(--r-md);
