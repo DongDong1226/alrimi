@@ -3661,9 +3661,11 @@ function renderAdminRoutes(){
     ${(!todo.length && !maybe.length)
       ? `<p class="hint">노선을 그려야 할 사업이 지금은 없습니다.</p>` : ``}`;
 
+  // ★ 지도에 맨손으로 점을 찍게 하지 않는다.
+  //   **노선 그리기 도구**로 보낸다 — 거기에는 도면에서 반자동으로 따는 기능과
+  //   길이 검산이 있다. 맨손 그리기는 기준이 없어서 사실상 못 그린다.
   box.querySelectorAll(".admrt-go").forEach(b => b.addEventListener("click", () => {
-    openMapScreen(b.dataset.id);     // 그 사업으로 지도를 열고
-    setRouteArmed(true);             // 바로 그리기를 켠다
+    window.open(`route_editor.html?id=${encodeURIComponent(b.dataset.id)}`, "_blank", "noopener");
   }));
 }
 

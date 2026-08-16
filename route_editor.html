@@ -473,6 +473,26 @@ async function loadAll(){
   ROUTES = Object.assign({}, fileRoutes, local);
   updateSaveState();
   renderList();
+
+  /* 주소에 ?id=사업번호 가 있으면 그 사업을 바로 연다.
+     관리자 화면에서 '이 사업 노선 그리기'를 누르면 여기로 들어온다 —
+     목록에서 이름을 다시 찾게 하면 그것부터가 일이다. */
+  const want = new URLSearchParams(location.search).get("id");
+  if(want){
+    const p = PROJECTS.find(x => String(x.id) === String(want));
+    if(p){
+      // '아직 안 그린 것만' 걸러 두면 이미 그린 사업이 목록에 안 보일 수 있다 → 걸러내기를 푼다
+      if($("#onlyTodo").checked && hasRoute(p)){ $("#onlyTodo").checked = false; renderList(); }
+      select(want);
+      const btn = document.querySelector(`.pbtn[data-id="${CSS.escape(String(want))}"]`);
+      if(btn) btn.scrollIntoView({ block:"nearest" });
+    }else{
+      $("#plist").insertAdjacentHTML("afterbegin",
+        `<li class="muted" style="padding:10px 0">주소로 받은 사업번호
+           <code>${esc(want)}</code> 를 자료에서 찾지 못했습니다.
+           공람이 끝나 목록에서 빠졌을 수 있습니다.</li>`);
+    }
+  }
 }
 
 /* 이 사업에 노선이 있는가 — 직접 그린 것이 먼저, 없으면 수집한 하천 도형.
@@ -481,12 +501,35 @@ function hasRoute(p){
   return Boolean(ROUTES[String(p.id)] || (p.routeGeom && p.routeGeom.length));
 }
 
+/* 이름만 보고 '선형일 수 있다'고 짚는 낱말.
+   ★ 이건 짐작이다. 자료(locationTypes)에는 절대 넣지 않고 이 도구 목록에만 쓴다.
+     (app.js 의 LINEAR_HINTS 와 같은 목록이어야 한다) */
+const LINEAR_HINTS = ["송전선로", "전선로", "송전", "도로", "철도", "전철", "지하철", "궤도",
+  "관로", "수도", "송유관", "가스관", "터널", "노선", "우회", "교량", "제방", "연결도로"];
+
+function linearHits(p){
+  const n = String(p.name || "");
+  return LINEAR_HINTS.filter(w => n.includes(w));
+}
+
 /* 노선을 그려야 할 만한 사업인가.
    · 위치유형에 '선형'이 있거나
-   · 구간(시점·종점) 표가 있으면 선형으로 본다
-   ※ 환경영향평가는 EIASS 에 위치유형 표시가 아예 없다. 그래서 구간 표도 같이 본다. */
+   · 구간(시점·종점) 표가 있거나
+   · **이름이 선형으로 보이면**(짐작) 목록에 올린다
+   ※ 환경영향평가는 EIASS 에 위치유형 표시가 **아예 없다**(2026-08-17 원문 확인).
+     그래서 '345kV 신해남~신장성 송전선로' 같은 사업이 목록에서 통째로 빠졌다.
+     앞의 두 가지만 보면 놓치므로 이름도 같이 본다. 대신 **짐작인 것을 화면에 밝힌다.** */
 function isLinear(p){
-  return (p.locationTypes || []).includes("선형") || (p.segments || []).length > 0;
+  return (p.locationTypes || []).includes("선형")
+      || (p.segments || []).length > 0
+      || linearHits(p).length > 0;
+}
+
+/* 위치유형·구간 표가 없어서 **이름으로만** 걸린 것인가 (= 짐작) */
+function guessedOnly(p){
+  return !(p.locationTypes || []).includes("선형")
+      && !(p.segments || []).length
+      && linearHits(p).length > 0;
 }
 
 /* ============================================================
@@ -505,10 +548,15 @@ function renderList(){
     const mine = ROUTES[key];
     const auto = p.routeGeom && p.routeGeom.length;
     const unsaved = mine && JSON.stringify(mine) !== JSON.stringify(fileRoutes[key]);
-    const tag = mine
+    const tag = (mine
       ? `<span class="tag done">직접 그림</span>` +
         (unsaved ? `<span class="tag" style="border-color:var(--orange);color:var(--orange)">미저장</span>` : "")
-      : auto ? `<span class="tag">하천 자동</span>` : "";
+      : auto ? `<span class="tag">하천 자동</span>` : "")
+      // ★ 이름으로만 걸린 것은 반드시 짐작이라고 밝힌다 (틀릴 수 있다)
+      + (guessedOnly(p)
+          ? `<span class="tag" style="border-color:var(--orange);color:var(--orange)"
+                   title="EIASS 가 위치유형을 주지 않아 사업명으로 짐작한 것입니다. 원문을 확인하세요">이름으로 짐작</span>`
+          : "");
     const on = current && String(current.id) === String(p.id) ? " on" : "";
     return `<li><button type="button" class="pbtn${on}" data-id="${esc(p.id)}">
       <span class="nm">${esc(p.name)}</span>
