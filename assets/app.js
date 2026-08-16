@@ -3762,10 +3762,12 @@ function openSelPop(sel){
     const b = e.target.closest(".selpop-o");
     if(!b) return;
     sel.selectedIndex = +b.dataset.i;
-    // ★ change 를 손수 쏘아 준다 — app.js 의 판단이 전부 여기에 걸려 있다.
-    sel.dispatchEvent(new Event("change", { bubbles:true }));
     closeSelPop();
-    sel.focus();
+    // ★ change 를 손수 쏘아 준다 — app.js 의 판단이 전부 여기에 걸려 있다.
+    //   이 한 줄이 칸을 통째로 다시 그리는 경우가 있어서(캘린더 지역) 먼저 닫아 둔다.
+    sel.dispatchEvent(new Event("change", { bubbles:true }));
+    // 다시 그려져 사라진 칸이면 focus 하지 않는다
+    if(sel.isConnected) sel.focus();
   });
 
   selPop.el = pop;
@@ -3774,6 +3776,13 @@ function openSelPop(sel){
 
 /* 문서 전체에 걸어 둔다 — 나중에 만들어지는 select 에도 그대로 적용된다 */
 document.addEventListener("mousedown", e => {
+  // ★ 펼친 목록 **안**을 누른 것은 여기서 손대지 않는다.
+  //   마우스는 mousedown → mouseup → click 순서로 오는데, 여기서 닫아 버리면
+  //   click 이 도착하기 전에 항목이 사라져 **아무것도 고를 수 없다.**
+  //   (2026-08-17 실제로 그렇게 나갔다. 시험할 때 click 만 직접 불러서 못 잡았다 —
+  //    '연결이 되나'와 '실제로 되나'는 다른 질문이다.)
+  if(e.target.closest && e.target.closest(".selpop")) return;
+
   const sel = e.target.closest && e.target.closest("select");
   if(selPop.el && (!sel || sel !== selPop.sel)){ closeSelPop(); }
   if(!sel || sel.disabled || sel.multiple) return;
