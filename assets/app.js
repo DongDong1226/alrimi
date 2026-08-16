@@ -211,14 +211,18 @@ const LSCALREGION = "wdn.calRegion";
 /* ★ 구독 지역은 **보고 있는 동네와 따로 고른다.**
    읍·면·동까지 좁혀 놓고 보는 사람도, 알림은 시·군·구 전체로 받고 싶을 수 있다
    (옆 동네 사업도 우리 생활권이다). 그래서 이 칸에서 다시 고르게 한다.
-   처음 값은 지금 보고 있는 동네를 따라간다. 읍·면·동은 캘린더 단위가 아니라 시·군·구까지만 쓴다. */
+   처음 값은 지금 보고 있는 동네를 따라간다.
+
+   **고른 단계가 곧 받는 범위다** — 시·군·구까지만 고르면 그 시·군·구 전체가 오고,
+   읍·면·동까지 고르면 그 동네 것만 온다. 그래서 세 칸을 다 보여 준다. */
 let CAL_REGION = lsGet(LSCALREGION, null);
 
 function calRegion(){
   if(CAL_REGION) return CAL_REGION;
   return isNation(currentHood)
-    ? { sido:ALL_SIDO, sgg:ANY }
-    : { sido:currentHood.sido, sgg:hoodSgg(currentHood) || ANY };
+    ? { sido:ALL_SIDO, sgg:ANY, dong:ANY }
+    : { sido:currentHood.sido, sgg:hoodSgg(currentHood) || ANY,
+        dong:hoodDong(currentHood) || ANY };
 }
 
 function setCalRegion(r){
@@ -227,14 +231,18 @@ function setCalRegion(r){
   renderCalSub();
 }
 
-/* 고른 지역에 맞는 캘린더 파일 이름 */
+/* 고른 지역에 맞는 캘린더 파일 이름.
+   **고른 만큼만 좁힌다** — 읍·면·동을 안 골랐으면 시·군·구 파일, 시·군·구도 안 골랐으면 시·도 파일.
+   이름 규칙은 build_data.py 의 cal_slug() 와 반드시 같아야 한다. */
 function calFeedName(){
   const r = calRegion();
   if(!r.sido || r.sido === ALL_SIDO) return { file:"all.ics", label:"전국" };
   const slug = s => s.replace(/ /g, "-");
-  return (r.sgg && r.sgg !== ANY)
-    ? { file:`${slug(r.sido)}_${slug(r.sgg)}.ics`, label:`${r.sido} ${r.sgg}` }
-    : { file:`${slug(r.sido)}.ics`, label:r.sido };
+  const parts = [r.sido];
+  if(r.sgg && r.sgg !== ANY) parts.push(r.sgg);
+  // 읍·면·동은 시·군·구를 고른 뒤에만 뜻이 있다 (세종은 시·군·구가 없어 바로 이어진다)
+  if(r.dong && r.dong !== ANY && (parts.length > 1 || !sggList(r.sido).length)) parts.push(r.dong);
+  return { file:`${parts.map(slug).join("_")}.ics`, label:parts.join(" ") };
 }
 
 /* 구독 주소는 **절대 주소**여야 한다 — 캘린더 앱이 우리 페이지 밖에서 부르기 때문이다. */
@@ -254,7 +262,16 @@ function renderCalSub(){
 
   const sidos = REGIONS ? Object.keys(REGIONS) : [];
   const sggs = (r.sido && r.sido !== ALL_SIDO) ? sggList(r.sido) : [];
+  // 읍·면·동은 시·군·구를 고른 뒤에 열린다. 세종처럼 시·군·구가 없는 곳은 바로 열린다.
+  const dongs = (r.sido && r.sido !== ALL_SIDO && (hoodSgg(r) || !sggs.length))
+    ? dongList(r.sido, r.sgg) : [];
   const opt = (v, cur) => `<option value="${esc(v)}"${v === cur ? " selected" : ""}>${esc(v)}</option>`;
+
+  // ★ PC 는 '구글 캘린더로 구독' 하나만 둔다.
+  //   아이폰 구독(webcal:)은 PC 에서 열 앱이 없고, 주소 복사는 구글 단추가 하는 일을
+  //   손으로 하는 것이라 셋을 나란히 두면 오히려 어느 것을 눌러야 할지 헷갈린다.
+  //   휴대폰(m.html)은 기기마다 편한 길이 달라 셋을 그대로 둔다.
+  const isPhone = document.body.classList.contains("m");
 
   box.innerHTML = `
     <p class="cal-t">
@@ -273,26 +290,35 @@ function renderCalSub(){
         <span class="msel"><select id="calSgg" aria-label="알림 받을 시·군·구"${sggs.length ? "" : " disabled"}>
           ${opt(ANY, r.sgg)}${sggs.map(s => opt(s, r.sgg)).join("")}
         </select></span>
+        <span class="msel"><select id="calDong" aria-label="알림 받을 읍·면·동"${dongs.length ? "" : " disabled"}>
+          ${opt(ANY, r.dong)}${dongs.map(s => opt(s, r.dong)).join("")}
+        </select></span>
       </div>
       <p class="cal-h cal-h--sub">보고 있는 동네와 <b>따로 고를 수 있습니다.</b>
-        읍·면·동으로 좁혀 보고 있어도, 알림은 <b>시·군·구 전체</b>로 넓혀 받을 수 있어요.</p>
+        <b>고른 만큼만 옵니다</b> — 시·군·구까지만 고르면 그 시·군·구 전체가, 읍·면·동까지 고르면 그 동네 것만 옵니다.</p>
     </div>
 
     <p class="cal-now">지금 받는 지역 <b>${esc(label)}</b></p>
     <div class="cal-btns">
       <a class="btn btn--primary btn--sm btn--pill" href="${esc(google)}" target="_blank" rel="noopener">구글 캘린더로 구독 ↗</a>
+      ${isPhone ? `
       <a class="btn btn--line btn--sm btn--pill" href="${esc(webcal)}">아이폰 · 캘린더 구독</a>
-      <button class="btn btn--ghost btn--sm btn--pill" type="button" id="btnCalCopy">주소 복사</button>
+      <button class="btn btn--ghost btn--sm btn--pill" type="button" id="btnCalCopy">주소 복사</button>` : ``}
     </div>
-    <p class="cal-h cal-h--sub" id="calSubMsg">갤럭시·PC 는 <b>구글 캘린더로 구독</b>이 가장 쉽습니다.
-      안 되면 주소를 복사해 구글 캘린더 → 다른 캘린더 추가 → <b>URL로 추가</b>에 붙여넣으면 됩니다.</p>`;
+    <p class="cal-h cal-h--sub" id="calSubMsg">${isPhone
+      ? `아이폰은 <b>아이폰 · 캘린더 구독</b>, 갤럭시는 <b>구글 캘린더로 구독</b>이 가장 쉽습니다.`
+      : `누르면 구글 캘린더에 <b>이 지역 달력이 추가</b>됩니다. 등록해 두면 새 사업이 저절로 들어옵니다.`}</p>`;
 
+  // 위 칸을 바꾸면 아래 칸은 '전체'로 되돌린다.
+  // (다른 시·도의 시·군·구나, 다른 시·군·구의 읍·면·동이 남으면 없는 파일을 가리키게 된다)
   $("#calSido").addEventListener("change", e => {
-    // 시·도를 바꾸면 시·군·구는 '전체'로 되돌린다 (다른 시·도의 시·군·구가 남으면 안 된다)
-    setCalRegion({ sido:e.target.value, sgg:ANY });
+    setCalRegion({ sido:e.target.value, sgg:ANY, dong:ANY });
   });
   $("#calSgg").addEventListener("change", e => {
-    setCalRegion({ sido:$("#calSido").value, sgg:e.target.value });
+    setCalRegion({ sido:$("#calSido").value, sgg:e.target.value, dong:ANY });
+  });
+  $("#calDong").addEventListener("change", e => {
+    setCalRegion({ sido:$("#calSido").value, sgg:$("#calSgg").value, dong:e.target.value });
   });
   $("#btnCalCopy").addEventListener("click", async () => {
     try{
@@ -2514,8 +2540,11 @@ function renderSaved(){
 
   // 담은 사업의 마감일을 **한 번에** 캘린더에 넣는 칸.
   // 여기가 가장 쓸모 있는 자리다 — 담아 둔 이유가 '마감을 놓치지 않는 것'이기 때문이다.
+  //
+  // ★ 휴대폰에만 둔다. 알림을 주는 것은 **폰 캘린더**라, 파일을 PC 로 받아 봐야
+  //   정작 알림이 울려야 할 기기에는 안 들어간다. PC 에서는 위의 '구독' 하나로 충분하다.
   const calBox = $("#savedCal");
-  if(calBox && calBox.classList){
+  if(calBox && calBox.classList && document.body.classList.contains("m")){
     const withDay = open.filter(p => calDeadline(p));
     calBox.hidden = !withDay.length;
     if(withDay.length){
@@ -2535,6 +2564,8 @@ function renderSaved(){
         downloadIcs("알리미-담은사업-마감일.ics", withDay);
       });
     }
+  }else if(calBox && calBox.classList){
+    calBox.hidden = true;   // PC — 위의 '구독'만 남긴다
   }
 
   // 큰 제목이 이미 "아직 담아 둔 사업이 없습니다"라고 말하고 있으므로

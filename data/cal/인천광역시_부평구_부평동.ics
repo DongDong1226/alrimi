@@ -1,0 +1,37 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//우리동네 개발사업 알리미//KO
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:인천광역시 부평구 부평동 개발사업 의견 마감
+X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
+REFRESH-INTERVAL;VALUE=DURATION:PT12H
+X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:HG20260465-105169@alrimi
+DTSTAMP:20260728T000000Z
+DTSTART;VALUE=DATE:20260902
+DTEND;VALUE=DATE:20260903
+SUMMARY:[의견 마감] 인천가족공원 조성사업(3-4·5단계) 타
+ 당성조사
+DESCRIPTION:사업: 인천가족공원 조성사업(3-4·5단계) 타당성
+ 조사\n유형: 전략환경영향평가\n위치: 인천광역시 부평
+ 구 부평동 (평온로 61)\n기관: 한강유역환경청\n공람기간:
+  2026-07-28 ~ 2026-08-26\n의견 제출 마감: 2026-09-02\n\n의견은 EI
+ ASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n
+ 우리동네 개발사업 알리미
+LOCATION:인천광역시 부평구 부평동 (평온로 61)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:인천가족공원 조성사업(3-4·5단계) 타당성조사 
+ 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:인천가족공원 조성사업(3-4·5단계) 타당성조사 
+ 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+END:VCALENDAR

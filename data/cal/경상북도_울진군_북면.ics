@@ -1,0 +1,36 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//우리동네 개발사업 알리미//KO
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:경상북도 울진군 북면 개발사업 의견 마감
+X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
+REFRESH-INTERVAL;VALUE=DURATION:PT12H
+X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:DG20260254-105256@alrimi
+DTSTAMP:20260811T000000Z
+DTSTART;VALUE=DATE:20260916
+DTEND;VALUE=DATE:20260917
+SUMMARY:[의견 마감] 울진군 생활폐기물 처리시설 설치사업
+DESCRIPTION:사업: 울진군 생활폐기물 처리시설 설치사업\n
+ 유형: 전략환경영향평가\n위치: 경상북도 울진군 북면 
+ 나곡리 (울진북로 2534-14)\n기관: 대구지방환경청\n공람기
+ 간: 2026-08-11 ~ 2026-09-09\n의견 제출 마감: 2026-09-16\n\n의견
+ 은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.k
+ r/\n\n우리동네 개발사업 알리미
+LOCATION:경상북도 울진군 북면 나곡리 (울진북로 2534-14)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:울진군 생활폐기물 처리시설 설치사업 의견 제
+ 출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:울진군 생활폐기물 처리시설 설치사업 의견 제
+ 출 오늘 마감
+END:VALARM
+END:VEVENT
+END:VCALENDAR

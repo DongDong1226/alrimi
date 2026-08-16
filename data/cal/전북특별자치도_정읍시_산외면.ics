@@ -1,0 +1,39 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//우리동네 개발사업 알리미//KO
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:전북특별자치도 정읍시 산외면 개발사업 의견 
+ 마감
+X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
+REFRESH-INTERVAL;VALUE=DURATION:PT12H
+X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:JJ20260145-105276@alrimi
+DTSTAMP:20260813T000000Z
+DTSTART;VALUE=DATE:20260918
+DTEND;VALUE=DATE:20260919
+SUMMARY:[의견 마감] 상두천 하천기본계획 재수립 및 실시
+ 설계
+DESCRIPTION:사업: 상두천 하천기본계획 재수립 및 실시설계
+ \n유형: 전략환경영향평가\n위치: 전북특별자치도 정읍
+ 시 산외면 상두리 (상두3길 54-8)\n기관: 전북지방환경청\n
+ 공람기간: 2026-08-13 ~ 2026-09-11\n의견 제출 마감: 2026-09-18\n\
+ n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eia
+ ss.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:전북특별자치도 정읍시 산외면 상두리 (상두3길 54
+ -8)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:상두천 하천기본계획 재수립 및 실시설계 의견 
+ 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:상두천 하천기본계획 재수립 및 실시설계 의견 
+ 제출 오늘 마감
+END:VALARM
+END:VEVENT
+END:VCALENDAR

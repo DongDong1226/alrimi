@@ -1136,14 +1136,22 @@ def build_ics(title, rows):
     return "\r\n".join(folded) + "\r\n"          # 캘린더 파일은 줄바꿈이 CRLF 여야 한다
 
 
-def cal_slug(sido, sgg=None):
-    """파일 이름. 띄어쓰기는 '-' 로 바꾼다 ('청주시 청원구' 같은 이름이 있다)."""
-    name = sido if not sgg else f"{sido}_{sgg}"
+def cal_slug(sido, sgg=None, dong=None):
+    """파일 이름. 띄어쓰기는 '-' 로 바꾼다 ('청주시 청원구' 같은 이름이 있다).
+    ★ 이름 규칙은 app.js 의 calFeedName() 과 반드시 같아야 한다 —
+      어긋나면 화면이 없는 파일을 가리켜 구독이 조용히 실패한다."""
+    name = "_".join([p for p in (sido, sgg, dong) if p])
     return name.replace(" ", "-") + ".ics"
 
 
 def build_calendars(rows):
-    """전국 1개 + 시·도 16개 + 시·군·구 255개 를 만든다."""
+    """전국 1개 + 시·도 16개 + 시·군·구 255개 + 읍·면·동 5,034개 를 만든다 (약 5,300개).
+
+    ★ 읍·면·동까지 만드는 이유: 화면에서 고른 단계가 곧 받는 범위이기 때문이다.
+      시·군·구까지만 고르면 그 시·군·구 전체가, 읍·면·동까지 고르면 그 동네 것만 온다.
+    ★ 사업이 0건인 지역도 반드시 만든다 — 구독해 둔 주소가 사라지면
+      캘린더 앱이 오류를 내거나 구독을 통째로 버린다. 빈 파일은 335바이트뿐이다.
+    """
     try:
         with open(os.path.join(os.path.dirname(OUT_PATH), "regions.json"), encoding="utf-8") as f:
             regions = json.load(f).get("regions") or {}
@@ -1170,15 +1178,34 @@ def build_calendars(rows):
         written += 1
 
     put("all.ics", "전국 개발사업 의견 마감", rows)
+    total = 1
     for sido, info in regions.items():
         in_sido = [p for p in rows if (p.get("address") or "").startswith(sido)]
         put(cal_slug(sido), f"{sido} 개발사업 의견 마감", in_sido)
-        for sgg in (info.get("sgg") or {}):
-            head = f"{sido} {sgg}"
-            put(cal_slug(sido, sgg), f"{head} 개발사업 의견 마감",
-                [p for p in in_sido if (p.get("address") or "").startswith(head)])
+        total += 1
 
-    total = 1 + len(regions) + sum(len(v.get("sgg") or {}) for v in regions.values())
+        sggs = info.get("sgg") or {}
+        for sgg, dongs in sggs.items():
+            head = f"{sido} {sgg}"
+            in_sgg = [p for p in in_sido if (p.get("address") or "").startswith(head)]
+            put(cal_slug(sido, sgg), f"{head} 개발사업 의견 마감", in_sgg)
+            total += 1
+            # 읍·면·동까지 — 고른 만큼만 좁혀 받을 수 있게 한다.
+            # 여기서는 in_sgg 안에서만 찾으므로 건수가 적어 부담이 없다.
+            for dong in (dongs or []):
+                sub = f"{head} {dong}"
+                put(cal_slug(sido, sgg, dong), f"{sub} 개발사업 의견 마감",
+                    [p for p in in_sgg if (p.get("address") or "").startswith(sub)])
+                total += 1
+
+        # 세종처럼 시·군·구 단계가 없는 곳은 시·도 바로 아래에 읍·면·동이 있다
+        if not sggs:
+            for dong in (info.get("dong") or []):
+                sub = f"{sido} {dong}"
+                put(cal_slug(sido, None, dong), f"{sub} 개발사업 의견 마감",
+                    [p for p in in_sido if (p.get("address") or "").startswith(sub)])
+                total += 1
+
     log(f"[캘린더] 지역별 .ics {total}개 준비 (이번에 바뀐 파일 {written}개) → {CAL_DIR}")
 
 

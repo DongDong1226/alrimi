@@ -338,16 +338,22 @@
             <strong>문의</strong><span id="f-tel">032-560-xxxx</span> (평일 09:00–18:00)
           </p>
         </div>
-        <div>
+        <!-- 가운데 칸 — 링크와 저작권.
+             넓은 화면에서는 오른쪽 '자료 출처'와 **나란히** 놓아 푸터 높이를 줄인다.
+             (세로로 쌓으면 아래가 지나치게 두꺼워진다) -->
+        <div class="footer-mid">
           <!-- 아직 준비되지 않은 문서로 가는 빈 링크는 두지 않는다 -->
           <div class="footer-policy">
             <button class="em" type="button" data-modal="m-guide">이용안내</button>
             <button type="button" data-modal="m-contact">문의</button>
           </div>
           <p class="footer-copy">© 2026 기후에너지환경부. 환경영향평가 정보지원시스템(EIASS)에 공개된 자료를 정리해 보여드립니다. 원문과 다른 부분이 있으면 원문이 우선합니다.</p>
-          <!-- 자료 출처 표기 (공공누리 제4유형은 '출처표시'가 의무다).
-               EIASS 푸터 실측: img_opentype04.png = 공공누리 제4유형.
-               온라인에서는 출처 사이트로 가는 링크를 함께 두어야 한다. -->
+        </div>
+        <!-- 자료 출처 표기 (공공누리 제4유형은 '출처표시'가 의무다).
+             EIASS 푸터 실측: img_opentype04.png = 공공누리 제4유형.
+             온라인에서는 출처 사이트로 가는 링크를 함께 두어야 한다.
+             ★ 배치만 옮긴 것이다. 문구와 두 링크는 지우면 안 된다. -->
+        <div class="footer-side">
           <p class="footer-copy footer-src">
             <b>자료 출처</b> 본 서비스는 기후에너지환경부 국립환경과학원이
             <a href="https://www.eiass.go.kr/" target="_blank" rel="noopener">환경영향평가 정보지원시스템(EIASS)</a>에

@@ -1,0 +1,38 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//우리동네 개발사업 알리미//KO
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:경상남도 고성군 고성읍 개발사업 의견 마감
+X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
+REFRESH-INTERVAL;VALUE=DURATION:PT12H
+X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:ME20260075-104824@alrimi
+DTSTAMP:20260713T000000Z
+DTSTART;VALUE=DATE:20260819
+DTEND;VALUE=DATE:20260820
+SUMMARY:[의견 마감] 고성역세권 개발사업 투자선도지구 지
+ 정 및 계획수립
+DESCRIPTION:사업: 고성역세권 개발사업 투자선도지구 지정 
+ 및 계획수립\n유형: 전략환경영향평가\n위치: 경상남도 
+ 고성군 고성읍 송학리 (송학고분로 378-14)\n기관: 기후에
+ 너지환경부\n공람기간: 2026-07-13 ~ 2026-08-12\n의견 제출 마
+ 감: 2026-08-19\n\n의견은 EIASS 에서 본인인증 후 제출합니다
+ .\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:경상남도 고성군 고성읍 송학리 (송학고분로 378-14
+ )
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:고성역세권 개발사업 투자선도지구 지정 및 계
+ 획수립 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:고성역세권 개발사업 투자선도지구 지정 및 계
+ 획수립 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+END:VCALENDAR

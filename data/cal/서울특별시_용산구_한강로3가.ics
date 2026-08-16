@@ -1,0 +1,38 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//우리동네 개발사업 알리미//KO
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:서울특별시 용산구 한강로3가 개발사업 의견 
+ 마감
+X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
+REFRESH-INTERVAL;VALUE=DURATION:PT12H
+X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:HG20260480-105207@alrimi
+DTSTAMP:20260807T000000Z
+DTSTART;VALUE=DATE:20260821
+DTEND;VALUE=DATE:20260822
+SUMMARY:[의견 마감] 용산 AI\,ICT 콘텐츠산업 특정개발진흥
+ 지구 결정(안)
+DESCRIPTION:사업: 용산 AI\,ICT 콘텐츠산업 특정개발진흥지구
+  결정(안)\n유형: 전략환경영향평가\n위치: 서울특별시 
+ 용산구 한강로3가 (청파로 101)\n기관: 한강유역환경청\n
+ 공람기간: 2026-08-07 ~ 2026-08-27\n의견 제출 마감: 2026-08-21\n\
+ n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eia
+ ss.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:서울특별시 용산구 한강로3가 (청파로 101)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:용산 AI\,ICT 콘텐츠산업 특정개발진흥지구 결정(
+ 안) 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:용산 AI\,ICT 콘텐츠산업 특정개발진흥지구 결정(
+ 안) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+END:VCALENDAR

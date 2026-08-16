@@ -421,8 +421,10 @@ button{cursor:pointer}
 .ev-date .ym{font-size:11.5px;color:var(--ink-4);font-weight:600;margin-top:4px}
 
 .site-footer{background:#1a2230;color:rgba(255,255,255,.62)}
-.footer-main{padding:34px 0 30px}
-.footer-main .wrap{display:grid;grid-template-columns:1.4fr 1fr;gap:34px;align-items:start}
+.footer-main{padding:28px 0 24px}
+/* 세 칸으로 나눠 **가로로** 편다 — 세로로 쌓으면 푸터가 지나치게 두꺼워진다.
+   왼쪽 브랜드·연락처 / 가운데 링크·저작권 / 오른쪽 자료 출처 */
+.footer-main .wrap{display:grid;grid-template-columns:1.05fr .95fr 1.25fr;gap:30px;align-items:start}
 .footer-main .brand-logo{color:#fff;font-size:21px}
 .footer-main .brand-logo b{color:var(--accent)}
 .footer-addr{margin-top:14px;font-size:13.5px;line-height:1.85}
@@ -434,7 +436,9 @@ button{cursor:pointer}
 .footer-copy{font-size:13px;color:rgba(255,255,255,.4)}
 /* 자료 출처 표기 — 공공누리 제4유형은 '출처표시'가 이용 조건이라 항상 보여야 한다.
    저작권 문구보다 조용하게 두되, 링크는 읽힐 만큼은 밝게 둔다. */
-.footer-src{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.12);
+/* 나란히 놓을 때는 위가 아니라 **왼쪽**에 선을 둔다 (가로로 갈라 놓는 것이므로) */
+.footer-src{margin-top:0;padding-top:0;padding-left:24px;
+  border-left:1px solid rgba(255,255,255,.12);
   color:rgba(255,255,255,.55);line-height:1.7}
 .footer-src a{color:rgba(255,255,255,.85);text-decoration:underline}
 .footer-src a:hover{color:#fff}
@@ -891,7 +895,10 @@ select:disabled{opacity:.5;cursor:not-allowed}
   .proj .foot{flex-wrap:wrap}
   .dash-tick{flex-direction:column}
   .tick+.tick{border-left:0;border-top:1px solid var(--line)}
-  .footer-main .wrap{grid-template-columns:1fr}
+  .footer-main .wrap{grid-template-columns:1fr;gap:22px}
+  /* 세로로 쌓이면 왼쪽 선이 뜻을 잃는다 — 위쪽 선으로 되돌린다 */
+  .footer-src{margin-top:10px;padding-top:10px;padding-left:0;
+    border-left:0;border-top:1px solid rgba(255,255,255,.12)}
 }
 /* ---------- 휴대폰 (세로로 든 화면) ----------
    휴대폰용 사이트를 따로 만들지 않고 이 폭에서 같은 화면이 바뀌게 한다.

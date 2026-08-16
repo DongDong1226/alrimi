@@ -1,0 +1,38 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//우리동네 개발사업 알리미//KO
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:전북특별자치도 부안군 부안읍 개발사업 의견 
+ 마감
+X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
+REFRESH-INTERVAL;VALUE=DURATION:PT12H
+X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:JJ20260144-105270@alrimi
+DTSTAMP:20260811T000000Z
+DTSTART;VALUE=DATE:20260826
+DTEND;VALUE=DATE:20260827
+SUMMARY:[의견 마감] 부안 해뜰웰니스타운 조성사업
+DESCRIPTION:사업: 부안 해뜰웰니스타운 조성사업\n유형: 전
+ 략환경영향평가\n위치: 전북특별자치도 부안군 부안읍 
+ 선은리 (번영로 228-16)\n기관: 전북지방환경청\n공람기간:
+  2026-08-11 ~ 2026-08-26\n의견 제출 마감: 2026-08-26\n\n의견은 EI
+ ASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n
+ 우리동네 개발사업 알리미
+LOCATION:전북특별자치도 부안군 부안읍 선은리 (번영로 228
+ -16)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:부안 해뜰웰니스타운 조성사업 의견 제출 마감 
+ 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:부안 해뜰웰니스타운 조성사업 의견 제출 오늘 
+ 마감
+END:VALARM
+END:VEVENT
+END:VCALENDAR
