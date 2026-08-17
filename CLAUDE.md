@@ -496,6 +496,11 @@ python tools/shot.py                                          # 휴대폰 첫 �
 python tools/shot.py --click "#setForm button[type=submit]"   # 눌러 본 뒤 찍기
 python tools/shot.py --scroll bottom                          # 아래까지 내려서
 python tools/shot.py --pc                                     # 넓은 화면
+
+# 여러 단계를 거쳐야 하는 화면은 ">>" 로 클릭을 잇는다
+python tools/shot.py --page m.html --click "#setForm button[type=submit] >> [data-tab=map]"
+# 선택자로 못 짚는 것(지도 마커 등)은 자바스크립트로 부른다
+python tools/shot.py --page m.html --eval "renderMapPeek(PROJECTS[0])"
 ```
 
 - **playwright 가 있으면 그것을 쓴다** — 진짜 휴대폰 흉내가 된다
@@ -580,7 +585,17 @@ var phone = shortSide <= 600 && matchMedia("(pointer:coarse)").matches;
   '작게'에서 지도를 다시 보려면 세 번을 눌러야 했고, 상세를 열면 나갈 길이 그것뿐이었다.
   그래서 손잡이 줄 오른쪽에 **`지도 보기` 단추**를 따로 뒀다(`#btnSheetClose`) —
   한 번에 닫힘으로 가고, 상세를 보고 있었으면 목록으로도 되돌린다.
-  사업을 고르면(마커든 목록이든) 자동으로 끝까지 올라간다. 지도 화면에 새로 들어올
+  **★ 지도에서 마커·노선을 누르면 먼저 작은 카드(`#mPeek`, `renderMapPeek()`)만 뜬다** (2026-08-17).
+  바로 전체 화면 상세로 덮으면 **지도를 잃는다** — 어디쯤인지, 노선이 어떻게 지나는지
+  보려고 지도를 켠 것이기 때문이다. 카드에는 유형·면형/선형·D-n·사업명·거리·`자세히 보기`가 있고,
+  **`자세히 보기`를 눌러야** 지금까지처럼 상세로 들어간다(시트가 끝까지 올라간다).
+  - **목록에서 고른 것은 곧장 상세로 간다** — 이미 목록을 보고 고른 것이라 한 단계 더 둘 이유가 없다.
+    가르는 것은 `selectProject(id, moveMap, fromMap)` 의 **세 번째 값**이다
+  - 관리자 그리기 모드(`routeArmed`)일 때도 카드를 거치지 않는다
+  - 면형/선형 배지는 목록과 **같은 `locTagHtml()`** 을 쓴다. 새로 만들면 두 벌이 된다
+  - 목록 시트가 올라오면 카드는 CSS 로 숨는다(`#scr-map:not(.sheet-closed) .m-peek`)
+
+  목록에서 사업을 고르면 시트가 자동으로 끝까지 올라간다. 지도 화면에 새로 들어올
   때마다(다른 화면에서 돌아오는 것 포함) 닫힘으로 되돌아간다 — "지도만 켜면 지도만"
 - **모달** — 아래에서 올라오는 전체 화면
 - 첫 화면은 `지금 내 위치로 보기` 를 맨 위 큰 단추로 둔다 (휴대폰에서 가장 빠른 길)

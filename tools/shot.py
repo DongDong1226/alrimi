@@ -37,7 +37,7 @@ def log(msg):
         print(msg.encode("cp949", "replace").decode("cp949"))
 
 
-def shoot_playwright(url, out, w, h, mobile, full, click, wait, scroll):
+def shoot_playwright(url, out, w, h, mobile, full, click, wait, scroll, evaljs=None):
     from playwright.sync_api import sync_playwright
     with sync_playwright() as p:
         browser = p.chromium.launch()
@@ -49,12 +49,24 @@ def shoot_playwright(url, out, w, h, mobile, full, click, wait, scroll):
         page = ctx.new_page()
         page.goto(url, wait_until="networkidle")
         page.wait_for_timeout(wait)
-        if click:
+        # ★ 여러 곳을 차례로 누를 수 있다 — ">>" 로 잇는다.
+        #   화면이 여러 단계인 곳(동네 설정 → 홈 → 지도 → 목록 열기)은 한 번 눌러서는 못 간다.
+        #   예: --click "#setForm button[type=submit] >> [data-tab=map] >> #btnListBadge"
+        for one in [c.strip() for c in (click or "").split(">>") if c.strip()]:
             try:
-                page.click(click, timeout=4000)
+                page.click(one, timeout=4000)
                 page.wait_for_timeout(1200)
             except Exception as e:
-                log(f"  [누르기 실패] {click}: {type(e).__name__}")
+                log(f"  [누르기 실패] {one}: {type(e).__name__}")
+                break
+        # 선택자로 짚을 수 없는 것(지도 마커 등)은 자바스크립트로 직접 부른다.
+        # 예: --eval "renderMapPeek(PROJECTS[0])"
+        if evaljs:
+            try:
+                page.evaluate(evaljs)
+                page.wait_for_timeout(800)
+            except Exception as e:
+                log(f"  [자바스크립트 실패] {type(e).__name__}: {str(e)[:120]}")
         if scroll:
             page.evaluate("y => scrollTo(0, y === 'bottom' ? document.body.scrollHeight : +y)",
                           scroll)
@@ -89,6 +101,8 @@ def main():
     ap.add_argument("--full", action="store_true", help="스크롤까지 전부")
     ap.add_argument("--click", default=None, help="찍기 전에 누를 것 (CSS 선택자)")
     ap.add_argument("--wait", type=int, default=1500, help="기다릴 시간(ms)")
+    ap.add_argument("--eval", dest="evaljs", default=None,
+                    help="찍기 전에 돌릴 자바스크립트 (선택자로 못 짚는 것용)")
     ap.add_argument("--scroll", default=None, help="찍기 전에 내릴 위치: 숫자(px) 또는 bottom")
     args = ap.parse_args()
 
@@ -104,7 +118,7 @@ def main():
     url = f"{args.base}/{args.page}"
 
     try:
-        over = shoot_playwright(url, out, w, h, mobile, args.full, args.click, args.wait, args.scroll)
+        over = shoot_playwright(url, out, w, h, mobile, args.full, args.click, args.wait, args.scroll, args.evaljs)
     except Exception as e:
         log(f"playwright 를 못 써서 크롬으로 찍습니다 ({type(e).__name__})")
         over = shoot_chrome(url, out, w, h, args.full)

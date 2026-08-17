@@ -258,8 +258,11 @@ body.m .pg{min-width:40px;min-height:40px}
 #scr-map.sheet-full .m-sheet{height:calc(100% - 8px)}
 /* 손잡이 줄 — 손잡이는 가운데, '지도 보기'는 오른쪽 끝.
    손잡이는 크기 조절, 단추는 **한 번에 지도로**. 두 가지 일이라 따로 둔다. */
+/* ★ 머리줄 높이는 '지도 보기' 단추(34px)보다 커야 한다.
+   예전에 23px 이었는데 단추를 가운데 정렬해 두어 **위로 5px 삐져나가 잘렸다**(실측).
+   손잡이만 생각하고 높이를 잡으면 이 사고가 다시 난다 — 단추를 기준으로 잡을 것. */
 .m-sheet-hd{flex:none;position:relative;display:flex;align-items:center;justify-content:center;
-  padding:8px 10px 6px}
+  min-height:44px;padding:5px 10px}
 .m-sheet-grip{flex:none;padding:2px 26px;background:none;border:0;
   display:flex;justify-content:center}
 .m-sheet-grip i{display:block;width:42px;height:5px;border-radius:3px;background:var(--line-strong)}
@@ -299,6 +302,22 @@ body.m .leaflet-control-zoom{margin-top:52px!important}
   padding:12px 22px;font-size:var(--fs-body-s);font-weight:700;min-height:44px;
   box-shadow:0 10px 30px rgba(16,28,54,.35)}
 .m-list-badge svg{width:18px;height:18px;flex:none}
+
+/* 지도에서 마커·노선을 누르면 뜨는 작은 카드 (app.js 의 renderMapPeek).
+   지도를 가리지 않도록 **아래쪽에 낮게** 깔고, 시트(600)보다는 위에 둔다. */
+.m-peek{position:absolute;left:12px;right:12px;bottom:calc(14px + var(--m-safe));
+  z-index:660;background:#fff;border:1px solid var(--line);border-radius:var(--r-lg);
+  box-shadow:0 12px 34px rgba(16,28,54,.28);padding:14px 14px 12px}
+.m-peek .mpeek-x{position:absolute;right:6px;top:4px;background:none;border:0;
+  width:34px;height:34px;font-size:15px;color:var(--ink-3);line-height:1}
+.m-peek .mpeek-tags{display:flex;flex-wrap:wrap;gap:6px;padding-right:30px}
+.m-peek .mpeek-nm{margin-top:7px;font-size:var(--fs-body-m);font-weight:800;color:var(--ink);
+  line-height:1.4;word-break:keep-all;overflow-wrap:anywhere}
+.m-peek .mpeek-sub{margin-top:4px;font-size:var(--fs-body-xs);color:var(--ink-3)}
+.m-peek .mpeek-sub b{color:var(--eco)}
+.m-peek .btn{margin-top:11px}
+/* 목록 시트가 올라와 있으면 카드가 가려지므로 배지와 같은 자리 다툼을 피한다 */
+#scr-map:not(.sheet-closed) .m-peek{display:none}
 
 /* 상세를 볼 때는 주소칸을 감춘다 (app.js 가 on-detail 을 붙인다) */
 #scr-map.on-detail .m-addr{display:none}

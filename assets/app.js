@@ -2925,7 +2925,7 @@ function drawRoutes(){
         : L.polyline(latlngs, style);
       // Leaflet 툴팁은 HTML 로 그린다 — 자료에서 온 글자는 esc() 로 감싼다
       layer.bindTooltip(`${esc(p.name)}${g.name ? " · " + esc(g.name) : ""}`, { sticky:true });
-      layer.on("click", () => selectProject(p.id, false));
+      layer.on("click", () => selectProject(p.id, false, true));   // 지도에서 고름
       layer.addTo(gisMap);
       routeLayers.push(layer);
     });
@@ -3014,7 +3014,7 @@ function renderGisMarkers(fit = true){
       .addTo(gisMap)
       .bindTooltip(esc(p.name), { direction:"top" });
     nameMarker(m, `${p.typeLabel} · ${p.name}`);
-    m.on("click", () => selectProject(p.id, false));
+    m.on("click", () => selectProject(p.id, false, true));         // 지도에서 고름
     gisMarkers.set(String(p.id), m);
   });
 
@@ -3186,6 +3186,7 @@ bindProjectActions("#gisDetail");
 /* 상세에서 목록으로 되돌아간다. 고른 사업이 없어지므로 강조와
    '노선 직접 그리기' 버튼도 함께 끈다. */
 function backToGisList(){
+  hideMapPeek();
   selectedId = null;
   gisMarkers.forEach((m, key) => {
     const q = PROJECTS.find(x => String(x.id) === key);
@@ -3198,7 +3199,52 @@ function backToGisList(){
   exitRouteEdit();
 }
 
-function selectProject(id, moveMap){
+/* ---------- 휴대폰 · 지도 위 작은 카드 ----------
+   마커를 누르자마자 전체 화면 상세가 덮어 버리면 **지도를 잃는다.**
+   어디쯤인지, 노선이 어떻게 지나는지를 보려고 지도를 켠 것인데 그게 가려진다.
+   그래서 지도에서 고른 것은 먼저 **작은 카드**로만 알려 주고,
+   더 볼 사람만 '자세히 보기'로 전체 화면에 들어간다. (지도 앱들이 쓰는 방식이다)
+
+   ※ 목록에서 고른 것은 이미 목록을 보고 고른 것이라 곧장 상세로 간다. */
+function hideMapPeek(){
+  const el = $("#mPeek");
+  if(el && el.classList) el.hidden = true;
+}
+
+function renderMapPeek(p){
+  const el = $("#mPeek");
+  if(!el || !el.classList || !p) return;
+  const r = routeOf(p);
+  const dd = p.dday != null
+    ? `<span class="badge ${p.dday <= 3 ? "badge--live" : "badge--dday"}">D-${esc(p.dday)}</span>` : "";
+  el.innerHTML = `
+    <button class="mpeek-x" type="button" aria-label="닫기">✕</button>
+    <p class="mpeek-tags">
+      <span class="badge ${esc(p.badge)} badge--dot">${esc(p.typeLabel)}</span>
+      ${locTagHtml(p)}${/* 면형/선형 배지는 목록과 같은 함수를 쓴다 — 두 벌이 되면 안 된다 */""}
+      ${dd}
+    </p>
+    <p class="mpeek-nm">${esc(p.name)}</p>
+    <p class="mpeek-sub">${esc(distText(p) || "거리 모름")}
+      ${r ? ` · <b>노선 표시 중</b>` : ""}</p>
+    <button class="btn btn--primary btn--sm btn--block" type="button" data-peek-open>자세히 보기</button>`;
+  el.hidden = false;
+  el.querySelector(".mpeek-x").addEventListener("click", () => {
+    hideMapPeek();
+    selectedId = null;
+    gisMarkers.forEach((m, key) => {
+      const q = PROJECTS.find(x => String(x.id) === key);
+      if(q) setMarkerState(m, q, false);
+    });
+    drawRoutes();
+  });
+  el.querySelector("[data-peek-open]").addEventListener("click", () => {
+    hideMapPeek();
+    showGisPane("detail");     // 여기서부터는 지금까지와 똑같다 (시트가 끝까지 올라간다)
+  });
+}
+
+function selectProject(id, moveMap, fromMap){
   selectedId = String(id);
   // 마커 강조를 위해 아이콘만 갈아끼운다
   gisMarkers.forEach((m, key) => {
@@ -3212,13 +3258,23 @@ function selectProject(id, moveMap){
   drawRoutes();
   renderGisList();
   renderGisDetail();
-  showGisPane("detail");
+
+  // ★ 휴대폰에서 **지도(마커·노선)를 눌러** 고른 것은 작은 카드로만 알린다.
+  //   목록에서 고른 것(fromMap 아님)과 관리자 그리기는 지금까지처럼 곧장 상세로 간다.
+  const peekable = document.body.classList.contains("m") && fromMap && !routeArmed;
+  if(peekable){
+    renderMapPeek(p);
+  }else{
+    hideMapPeek();
+    showGisPane("detail");
+  }
   // 관리자가 그리기 모드로 들어온 경우에만, 사업을 고르는 즉시 그리기가 시작된다.
   if(routeArmed) enterRouteEdit();
 }
 
 function openMapScreen(focusId){
   show("#scr-map");
+  hideMapPeek();                 // 지도에 새로 들어올 때 옛 카드가 남아 있으면 안 된다
   mapHood.set(currentHood);      // 왼쪽 주소 칸을 지금 보고 있는 동네로 맞춘다
 
   // '지도에서 보기'로 들어온 사업이 지금 범위 밖이면 지도에 아예 안 뜬다.
