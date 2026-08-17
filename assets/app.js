@@ -3138,9 +3138,13 @@ function renderGisDetail(){
   const r = routeOf(p);
   box.innerHTML = `
     <div class="gis-detail-nav">
+      <!-- ★ 휴대폰에서는 이 자리가 **지도로 돌아가는 길**이다 (2026-08-17).
+           예전에는 여기 '목록으로', 시트 머리줄에 '지도 보기' 가 따로 있어
+           비슷한 단추가 둘이라 어느 것이 뒤로 가는 것인지 헷갈렸다. 하나로 합쳤다.
+           데스크톱은 시트가 없고 목록·상세가 같은 칸을 번갈아 쓰므로 '목록으로' 그대로다. -->
       <button class="gis-detail-back" type="button" id="btn-gis-back-list">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"></path></svg>
-        목록으로
+        ${document.body.classList.contains("m") ? "지도로 돌아가기" : "목록으로"}
       </button>
       <!-- 휴대폰에서는 상세를 보는 동안 지도가 감춰지므로 되돌아갈 길을 준다 -->
       <button class="btn btn--line btn--sm btn--pill gis-to-map" type="button" id="btn-gis-to-map">
@@ -3174,7 +3178,15 @@ function renderGisDetail(){
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><path d="M15 3h6v6"></path><path d="M10 14 21 3"></path></svg>
         EIASS 원문 페이지 열기
       </button>` : ""}`;
-  $("#btn-gis-back-list").addEventListener("click", backToGisList);
+  $("#btn-gis-back-list").addEventListener("click", () => {
+    // 휴대폰: 시트를 접어 **지도로** 돌아간다. 시트를 여닫는 코드는 mobile.js 에 있으므로
+    // 그 단추를 대신 눌러 준다 — 같은 일을 두 벌로 만들지 않기 위해서다.
+    if(document.body.classList.contains("m")){
+      const close = document.getElementById("btnSheetClose");
+      if(close){ close.click(); return; }
+    }
+    backToGisList();
+  });
   // '지도 보기'는 고른 사업을 그대로 둔 채 지도만 다시 보여준다.
   $("#btn-gis-to-map").addEventListener("click", () => {
     showGisPane("list");

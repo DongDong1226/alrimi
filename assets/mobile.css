@@ -273,6 +273,9 @@ body.m .pg{min-width:40px;min-height:40px}
 .m-sheet-close svg{width:15px;height:15px;flex:none}
 /* 목록이 닫혀 있으면(지도만 보는 중) 이 단추도 뜻이 없다 */
 #scr-map.sheet-closed .m-sheet-close{display:none}
+/* ★ 상세를 보는 중에는 숨긴다 — 상세 안에 '지도로 돌아가기' 가 이미 있다.
+   비슷한 단추가 둘이면 어느 것이 뒤로 가는 것인지 헷갈린다 (2026-08-17). */
+#scr-map.on-detail .m-sheet-close{display:none}
 .m-sheet-body{flex:1;min-height:0;overflow-y:auto;
   padding-bottom:calc(var(--m-safe) + 8px)}
 .m-addr{flex:none;padding:8px 12px 12px;background:var(--bg-2)}
