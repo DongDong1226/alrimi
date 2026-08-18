@@ -7,4 +7,32 @@ X-WR-CALNAME:경기도 양주시 개발사업 의견 마감
 X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:HG20260521-105373@alrimi
+DTSTAMP:20260818T000000Z
+DTSTART;VALUE=DATE:20260904
+DTEND;VALUE=DATE:20260905
+SUMMARY:[의견 마감] 양주 도시관리계획(개발제한구역 해제
+  및 지구단위계획) 결정(변경)
+DESCRIPTION:사업: 양주 도시관리계획(개발제한구역 해제 및
+  지구단위계획) 결정(변경)\n유형: 전략환경영향평가\n위
+ 치: 경기도 양주시 장흥면 교현리 (북한산로 857)\n기관: 
+ 한강유역환경청\n공람기간: 2026-08-18 ~ 2026-09-04\n의견 제
+ 출 마감: 2026-09-04\n\n의견은 EIASS 에서 본인인증 후 제출
+ 합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알리
+ 미
+LOCATION:경기도 양주시 장흥면 교현리 (북한산로 857)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:양주 도시관리계획(개발제한구역 해제 및 지구
+ 단위계획) 결정(변경) 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:양주 도시관리계획(개발제한구역 해제 및 지구
+ 단위계획) 결정(변경) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
 END:VCALENDAR

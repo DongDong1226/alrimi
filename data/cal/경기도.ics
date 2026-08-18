@@ -8,6 +8,60 @@ X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
 BEGIN:VEVENT
+UID:HG20260521-105373@alrimi
+DTSTAMP:20260818T000000Z
+DTSTART;VALUE=DATE:20260904
+DTEND;VALUE=DATE:20260905
+SUMMARY:[의견 마감] 양주 도시관리계획(개발제한구역 해제
+  및 지구단위계획) 결정(변경)
+DESCRIPTION:사업: 양주 도시관리계획(개발제한구역 해제 및
+  지구단위계획) 결정(변경)\n유형: 전략환경영향평가\n위
+ 치: 경기도 양주시 장흥면 교현리 (북한산로 857)\n기관: 
+ 한강유역환경청\n공람기간: 2026-08-18 ~ 2026-09-04\n의견 제
+ 출 마감: 2026-09-04\n\n의견은 EIASS 에서 본인인증 후 제출
+ 합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알리
+ 미
+LOCATION:경기도 양주시 장흥면 교현리 (북한산로 857)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:양주 도시관리계획(개발제한구역 해제 및 지구
+ 단위계획) 결정(변경) 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:양주 도시관리계획(개발제한구역 해제 및 지구
+ 단위계획) 결정(변경) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:ME20250045-100429@alrimi
+DTSTAMP:20260818T000000Z
+DTSTART;VALUE=DATE:20260922
+DTEND;VALUE=DATE:20260923
+SUMMARY:[의견 마감] 위례~과천 광역철도 민간투자사업
+DESCRIPTION:사업: 위례~과천 광역철도 민간투자사업\n유형: 
+ 전략환경영향평가\n위치: 경기도 과천시 중앙동 (관문로
+  47)\n기관: 기후에너지환경부\n공람기간: 2026-08-18 ~ 2026-09
+ -15\n의견 제출 마감: 2026-09-22\n\n의견은 EIASS 에서 본인인
+ 증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발
+ 사업 알리미
+LOCATION:경기도 과천시 중앙동 (관문로 47)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:위례~과천 광역철도 민간투자사업 의견 제출 마
+ 감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:위례~과천 광역철도 민간투자사업 의견 제출 오
+ 늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:HG20260517-105350@alrimi
 DTSTAMP:20260814T000000Z
 DTSTART;VALUE=DATE:20260911
