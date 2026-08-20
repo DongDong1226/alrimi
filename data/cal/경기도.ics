@@ -8,6 +8,33 @@ X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
 BEGIN:VEVENT
+UID:HG20260530-105412@alrimi
+DTSTAMP:20260820T000000Z
+DTSTART;VALUE=DATE:20260903
+DTEND;VALUE=DATE:20260904
+SUMMARY:[의견 마감] 여주 도시관리계획(용도지역\, 도시지
+ 역 외 지역) 결정(변경)
+DESCRIPTION:사업: 여주 도시관리계획(용도지역\, 도시지역 
+ 외 지역) 결정(변경)\n유형: 전략환경영향평가\n위치: 경
+ 기도 여주시 홍문동 (세종로 1)\n기관: 한강유역환경청\n
+ 공람기간: 2026-08-20 ~ 2026-09-03\n의견 제출 마감: 2026-09-03\n\
+ n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eia
+ ss.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:경기도 여주시 홍문동 (세종로 1)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:여주 도시관리계획(용도지역\, 도시지역 외 지
+ 역) 결정(변경) 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:여주 도시관리계획(용도지역\, 도시지역 외 지
+ 역) 결정(변경) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:HG20260521-105373@alrimi
 DTSTAMP:20260818T000000Z
 DTSTART;VALUE=DATE:20260904
