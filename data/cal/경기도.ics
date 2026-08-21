@@ -8,6 +8,33 @@ X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
 BEGIN:VEVENT
+UID:HG20260525-105403@alrimi
+DTSTAMP:20260821T000000Z
+DTSTART;VALUE=DATE:20260925
+DTEND;VALUE=DATE:20260926
+SUMMARY:[의견 마감] 김포 통진읍 환경기초시설 도시관리계
+ 획 결정(변경)
+DESCRIPTION:사업: 김포 통진읍 환경기초시설 도시관리계획 
+ 결정(변경)\n유형: 전략환경영향평가\n위치: 경기도 김포
+ 시 통진읍 수참리 (하성로 58-143)\n기관: 한강유역환경청\
+ n공람기간: 2026-08-21 ~ 2026-09-18\n의견 제출 마감: 2026-09-25\n
+ \n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.ei
+ ass.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:경기도 김포시 통진읍 수참리 (하성로 58-143)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:김포 통진읍 환경기초시설 도시관리계획 결정(
+ 변경) 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:김포 통진읍 환경기초시설 도시관리계획 결정(
+ 변경) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:HG20260530-105412@alrimi
 DTSTAMP:20260820T000000Z
 DTSTART;VALUE=DATE:20260903
