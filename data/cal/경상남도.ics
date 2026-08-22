@@ -34,27 +34,4 @@ DESCRIPTION:낙동강남해권역(창원천\, 남천) 하천기본계획
  의견 제출 오늘 마감
 END:VALARM
 END:VEVENT
-BEGIN:VEVENT
-UID:ME2026D002-45766@alrimi
-DTSTAMP:20260715T000000Z
-DTSTART;VALUE=DATE:20260821
-DTEND;VALUE=DATE:20260822
-SUMMARY:[의견 마감] 지세포항 정비공사
-DESCRIPTION:사업: 지세포항 정비공사\n유형: 환경영향평가\n
- 위치: 경상남도 거제시 일운면 (지세포해안로 89-7)\n기관
- : 해양수산부\n공람기간: 2026-07-15 ~ 2026-08-14\n의견 제출 
- 마감: 2026-08-21\n\n의견은 EIASS 에서 본인인증 후 제출합니
- 다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알리미
-LOCATION:경상남도 거제시 일운면 (지세포해안로 89-7)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:지세포항 정비공사 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:지세포항 정비공사 의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
 END:VCALENDAR

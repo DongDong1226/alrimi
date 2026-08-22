@@ -840,63 +840,6 @@ DESCRIPTION:고창 명사십리 관광지 지정 의견 제출 오늘 마
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:JJ20260133-105019@alrimi
-DTSTAMP:20260714T000000Z
-DTSTART;VALUE=DATE:20260821
-DTEND;VALUE=DATE:20260822
-SUMMARY:[의견 마감] 전주시 문화산업진흥지구 지정
-DESCRIPTION:사업: 전주시 문화산업진흥지구 지정\n유형: 전
- 략환경영향평가\n위치: 전북특별자치도 전주시 완산구 
- 고사동 (전주객사2길 60)\n기관: 전북지방환경청\n공람기
- 간: 2026-07-14 ~ 2026-08-14\n의견 제출 마감: 2026-08-21\n\n의견
- 은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.k
- r/\n\n우리동네 개발사업 알리미
-LOCATION:전북특별자치도 전주시 완산구 고사동 (전주객사2
- 길 60)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:전주시 문화산업진흥지구 지정 의견 제출 마감 
- 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:전주시 문화산업진흥지구 지정 의견 제출 오늘 
- 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:WJ20260124-104876@alrimi
-DTSTAMP:20260629T000000Z
-DTSTART;VALUE=DATE:20260821
-DTEND;VALUE=DATE:20260822
-SUMMARY:[의견 마감] 양양 군관리계획(양양 인구해안·동산
- 해안지구 지구단위계획구역) 결정(변경)(안)
-DESCRIPTION:사업: 양양 군관리계획(양양 인구해안·동산해
- 안지구 지구단위계획구역) 결정(변경)(안)\n유형: 전략환
- 경영향평가\n위치: 강원특별자치도 양양군 현남면 동산
- 리 (동산큰길 62-40)\n기관: 원주지방환경청\n공람기간: 202
- 6-06-29 ~ 2026-08-11\n의견 제출 마감: 2026-08-21\n\n의견은 EIASS 
- 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우
- 리동네 개발사업 알리미
-LOCATION:강원특별자치도 양양군 현남면 동산리 (동산큰길 
- 62-40)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:양양 군관리계획(양양 인구해안·동산해안지구 
- 지구단위계획구역) 결정(변경)(안) 의견 제출 마감 3일 
- 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:양양 군관리계획(양양 인구해안·동산해안지구 
- 지구단위계획구역) 결정(변경)(안) 의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 UID:WJ2026D001-45783@alrimi
 DTSTAMP:20260728T000000Z
 DTSTART;VALUE=DATE:20260902
@@ -972,29 +915,6 @@ DESCRIPTION:25-N-패키지시설사업(C084) 의견 제출 오늘 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ME2026D002-45766@alrimi
-DTSTAMP:20260715T000000Z
-DTSTART;VALUE=DATE:20260821
-DTEND;VALUE=DATE:20260822
-SUMMARY:[의견 마감] 지세포항 정비공사
-DESCRIPTION:사업: 지세포항 정비공사\n유형: 환경영향평가\n
- 위치: 경상남도 거제시 일운면 (지세포해안로 89-7)\n기관
- : 해양수산부\n공람기간: 2026-07-15 ~ 2026-08-14\n의견 제출 
- 마감: 2026-08-21\n\n의견은 EIASS 에서 본인인증 후 제출합니
- 다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알리미
-LOCATION:경상남도 거제시 일운면 (지세포해안로 89-7)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:지세포항 정비공사 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:지세포항 정비공사 의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 UID:ME2026C014-45765@alrimi
 DTSTAMP:20260731T000000Z
 DTSTART;VALUE=DATE:20260907
@@ -1019,34 +939,6 @@ ACTION:DISPLAY
 TRIGGER:-PT15H
 DESCRIPTION:영광칠해 해상풍력 발전사업(발전단지~육상변
  전소 구간) 의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:GG2026O002-45755@alrimi
-DTSTAMP:20260624T000000Z
-DTSTART;VALUE=DATE:20260821
-DTEND;VALUE=DATE:20260822
-SUMMARY:[의견 마감] 청주시 유기성폐자원 바이오가스화시
- 설 민간투자사업
-DESCRIPTION:사업: 청주시 유기성폐자원 바이오가스화시설 
- 민간투자사업\n유형: 환경영향평가\n위치: 충청북도 청
- 주시 흥덕구 신대동 (미호로521번길 103)\n기관: 청주시\n
- 공람기간: 2026-06-24 ~ 2026-08-14\n의견 제출 마감: 2026-08-21\n\
- n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eia
- ss.go.kr/\n\n우리동네 개발사업 알리미
-LOCATION:충청북도 청주시 흥덕구 신대동 (미호로521번길 103
- )
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:청주시 유기성폐자원 바이오가스화시설 민간투
- 자사업 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:청주시 유기성폐자원 바이오가스화시설 민간투
- 자사업 의견 제출 오늘 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
