@@ -7,4 +7,30 @@ X-WR-CALNAME:경상북도 구미시 봉곡동 개발사업 의견 마감
 X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:DG2026A005-45797@alrimi
+DTSTAMP:20260824T000000Z
+DTSTART;VALUE=DATE:20260928
+DTEND;VALUE=DATE:20260929
+SUMMARY:[의견 마감] 구미 봉곡신도시지구 도시개발사업
+DESCRIPTION:사업: 구미 봉곡신도시지구 도시개발사업\n유형
+ : 환경영향평가\n위치: 경상북도 구미시 봉곡동 (봉곡서
+ 로7길 52-9)\n기관: 구미시\n공람기간: 2026-08-24 ~ 2026-09-21\n
+ 의견 제출 마감: 2026-09-28\n\n의견은 EIASS 에서 본인인증 
+ 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사
+ 업 알리미
+LOCATION:경상북도 구미시 봉곡동 (봉곡서로7길 52-9)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:구미 봉곡신도시지구 도시개발사업 의견 제출 
+ 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:구미 봉곡신도시지구 도시개발사업 의견 제출 
+ 오늘 마감
+END:VALARM
+END:VEVENT
 END:VCALENDAR

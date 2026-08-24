@@ -7,30 +7,4 @@ X-WR-CALNAME:경상북도 구미시 장천면 개발사업 의견 마감
 X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
-BEGIN:VEVENT
-UID:DG2026B003-45691@alrimi
-DTSTAMP:20260722T000000Z
-DTSTART;VALUE=DATE:20260823
-DTEND;VALUE=DATE:20260824
-SUMMARY:[의견 마감] 구미 장천 일반산업단지 개발사업
-DESCRIPTION:사업: 구미 장천 일반산업단지 개발사업\n유형: 
- 환경영향평가\n위치: 경상북도 구미시 장천면 (강동로 30
- 2-41)\n기관: 경상북도\n공람기간: 2026-07-22 ~ 2026-08-23\n의견
-  제출 마감: 2026-08-23\n\n의견은 EIASS 에서 본인인증 후 제
- 출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알
- 리미
-LOCATION:경상북도 구미시 장천면 (강동로 302-41)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:구미 장천 일반산업단지 개발사업 의견 제출 마
- 감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:구미 장천 일반산업단지 개발사업 의견 제출 오
- 늘 마감
-END:VALARM
-END:VEVENT
 END:VCALENDAR
