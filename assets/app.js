@@ -2872,7 +2872,13 @@ async function loadRoutes(){
 
 function routeOf(p){
   const manual = manualRoutes[String(p.id)];
-  if(manual) return { geoms:[manual], source:"manual" };
+  /* ★ 구간표의 시점·종점을 곧게 이어 만든 노선은 따로 밝힌다 (2026-08-25).
+     실제로 굽은 모양이 아니므로 "직접 그린 노선"과 같은 말로 설명하면 사실과 다르다.
+     표시는 도구(route_editor.html)가 도형에 붙여 둔 note 로 가른다. */
+  if(manual) return {
+    geoms:[manual],
+    source: manual.note === "segment-ends" ? "segment-ends" : "manual"
+  };
   if(p.routeGeom && p.routeGeom.length) return { geoms:p.routeGeom, source:p.routeSource || "auto" };
   return null;
 }
@@ -3128,6 +3134,7 @@ function showGisPane(which){
 
 const ROUTE_SOURCE_TEXT = {
   manual: "관리자가 지도에서 직접 그린 노선입니다.",
+  "segment-ends": "평가서 구간표에 적힌 구간별 시점·종점 주소를 좌표로 바꿔 곧게 이은 선입니다. 대략의 위치와 방향만 보여주며, 실제로 굽은 모양은 반영되지 않았습니다.",
   "vworld-river": "요약문에 적힌 하천 이름으로 국가 하천 자료(VWorld)에서 찾은 실제 하천 모양입니다. 사업 구간만 잘라낸 것이 아니라 하천 전체가 표시됩니다."
 };
 

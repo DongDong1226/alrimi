@@ -128,6 +128,19 @@
   table.seg th{ text-align:left; width:52px; color:var(--ink-3); vertical-align:top; padding:3px 0 }
   table.seg td{ padding:3px 0; overflow-wrap:anywhere }
 
+  /* ★ 구간표의 시점·종점 목록 (2026-08-25) */
+  .segtbl{ width:100%; border-collapse:collapse; font-size:var(--fs-body-xs) }
+  .segtbl th,.segtbl td{ padding:4px 3px; border-bottom:1px solid var(--line);
+    text-align:left; vertical-align:top }
+  .segtbl th{ color:var(--ink-3); font-weight:600; white-space:nowrap }
+  .segtbl td.n{ text-align:right; white-space:nowrap }
+  .segtbl .ok{ color:var(--eco); font-weight:700 }
+  .segtbl .warn{ color:var(--orange); font-weight:700 }
+  .segtbl .bad{ color:var(--danger); font-weight:700 }
+  .segtbl button{ padding:2px 6px; font-size:var(--fs-body-xs) }
+  .segwrap{ max-height:300px; overflow:auto; margin-top:8px }
+  .sep{ border:0; border-top:1px solid var(--line); margin:12px 0 10px }
+  .box h3{ font-size:var(--fs-body-s); margin:0 0 6px }
   .len{ font-size:var(--fs-body-m); font-weight:700 }
   .len.ok{ color:var(--eco) }
   .len.warn{ color:var(--orange) }
@@ -167,9 +180,33 @@
       <p id="dName" style="font-weight:700;margin:0 0 6px;overflow-wrap:anywhere"></p>
       <p class="muted" id="dMeta" style="margin:0 0 8px"></p>
       <div id="dSegs"></div>
+
+      <!-- ★ 구간표의 시점·종점을 좌표로 바꿔 그대로 노선으로 쓴다 (2026-08-25).
+           소하천처럼 구간이 짧으면 시점→종점 직선만으로도 위치를 충분히 알 수 있다.
+           하천망도에 없는 소하천 사업은 이 길밖에 없다. -->
+      <hr class="sep">
+      <h3>구간표의 시점·종점으로 만들기</h3>
+      <p class="muted" style="margin:0 0 8px">
+        구간표에 적힌 <b>시점·종점 주소</b>를 좌표로 바꿔 지도에 찍고, 그 둘을 <b>곧게 이어</b> 노선으로 씁니다.
+        구간이 짧은 소하천에 알맞습니다. <b>실제로 굽은 모양은 반영되지 않습니다.</b><br>
+        찍힌 점은 <b>끌어서 옮길 수 있습니다</b> — 틀린 곳만 하나씩 고치면 됩니다.
+      </p>
       <div class="row">
-        <button id="btnGuide">시점·종점 지도에 표시</button>
+        <button id="btnGuide">구간 시점·종점 찾기</button>
+        <button id="btnSegClear">표시 지우기</button>
         <span class="muted" id="guideMsg"></span>
+      </div>
+      <div id="segResult" hidden>
+        <div class="row">
+          <button id="btnSegUse" class="primary">고른 구간을 노선으로 담기</button>
+          <span class="muted" id="segSum"></span>
+        </div>
+        <div class="segwrap"><table class="segtbl" id="segTable"></table></div>
+        <p class="muted" style="margin:8px 0 0">
+          <b>비교</b>는 <b>시점~종점 직선 길이 ÷ 고시 연장</b>입니다. 하천은 굽어 있으므로
+          직선이 조금 짧은 것(60~110%)이 정상입니다. 주황·빨강은 <b>주소를 잘못 짚었을 수
+          있다</b>는 뜻이니 그 구간만 지도에서 점을 끌어 고치세요.
+        </p>
       </div>
     </div>
 
@@ -621,6 +658,7 @@ function select(id){
 
   // 이미 그려 둔 것이 있으면 이어서 고칠 수 있게 불러온다.
   branches = [];
+  fromSegments = false;
   const saved = ROUTES[String(current.id)];
   if(saved){
     // ★ 예전에는 flatLatLngs 로 **한 줄로 뭉개서** 읽었다 —
@@ -628,6 +666,8 @@ function select(id){
     const segs = splitLatLngs(saved);
     pts = segs.pop() || [];
     branches = segs;
+    // 구간 시점·종점으로 만든 노선이면 그 표시를 되살린다 (저장할 때 다시 붙이려고).
+    fromSegments = saved.note === "segment-ends";
   }
 
   $("#detailBox").hidden = false;
@@ -727,16 +767,21 @@ function drawnKm(){
   return branches.reduce((s, b) => s + one(b), 0) + one(pts);
 }
 
-/* 고시된 연장(예: "9.36km")을 숫자로 읽는다. 못 읽으면 null. */
+/* 고시된 연장(예: "9.36km")을 숫자로 읽는다. 못 읽으면 null.
+   ★ 2026-08-25: **모든 구간을 더한다.** 예전에는 맨 앞 구간 하나만 읽었는데,
+     구간이 여럿인 사업(옹진군 소하천 46구간, 위례~과천 3구간)에서는 그것과 견주면
+     길이 검산이 통째로 헛돈다 — 46구간을 다 그려 놓고 "+2700%" 라고 나온다. */
 function officialKm(){
+  let sum = 0, found = false;
   for(const s of (current && current.segments) || []){
     const m = /([\d.]+)\s*(km|킬로|m)?/i.exec(s.length || "");
     if(!m) continue;
     const v = parseFloat(m[1]);
     if(!isFinite(v)) continue;
-    return (m[2] || "").toLowerCase() === "m" ? v / 1000 : v;
+    sum += (m[2] || "").toLowerCase() === "m" ? v / 1000 : v;
+    found = true;
   }
-  return null;
+  return found ? sum : null;
 }
 
 /* ★ 이 도구의 핵심 — 그린 길이와 고시된 연장을 견줘 본다.
@@ -749,16 +794,29 @@ function updateLength(){
   el.className = "len";
 
   const off = officialKm();
-  if(off == null || pts.length < 2){
+  // ★ pts 가 아니라 **그린 길이**로 본다 — 구간 시점·종점으로 만든 노선은
+  //   전부 branches 에 들어가고 pts 는 비어 있기 때문이다.
+  if(off == null || km <= 0){
     $("#lenCmp").textContent = off == null ? "(고시 연장이 적혀 있지 않아 비교할 수 없습니다)" : "";
     return;
   }
   const diff = (km - off) / off * 100;
-  const near = Math.abs(diff) <= 15;
+  /* ★ 잣대가 방식마다 다르다 (2026-08-25).
+     손으로 굽은 모양까지 따라 그린 노선은 고시 연장과 ±15% 안에 들어와야 맞다.
+     그런데 **구간 시점·종점을 곧게 이은 노선은 원래 고시보다 짧다** — 하천이 굽어 있으니
+     당연하다(옹진군 46구간 실측 -17%). 여기에 ±15% 를 들이대면 제대로 만든 것에
+     "많이 다릅니다"라고 겁을 주게 된다. 그래서 -40% ~ +10% 를 정상으로 본다. */
+  const near = fromSegments ? (diff >= -40 && diff <= 10) : Math.abs(diff) <= 15;
   el.classList.add(near ? "ok" : "warn");
   $("#lenCmp").textContent =
     `고시 ${off.toFixed(2)} km 대비 ${diff >= 0 ? "+" : ""}${diff.toFixed(0)}% ` +
-    (near ? "— 비슷합니다" : "— 많이 다릅니다. 빠뜨린 구간이 없는지 보세요");
+    (near
+      ? (fromSegments ? "— 직선으로 이었으니 이 정도 짧은 것이 정상입니다" : "— 비슷합니다")
+      : (fromSegments
+          ? (diff > 0
+              ? "— 직선이 고시보다 깁니다. 시점·종점을 잘못 짚은 구간이 있는지 보세요"
+              : "— 너무 짧습니다. 빠뜨린 구간이 없는지 보세요")
+          : "— 많이 다릅니다. 빠뜨린 구간이 없는지 보세요"));
 }
 
 /* ============================================================
@@ -779,24 +837,60 @@ function jsonp(base, params, timeoutMs = 8000){
   });
 }
 
-async function geocode(addr, key){
-  // "… (왕산로 205) 청량리역" 처럼 뒤에 장소 이름이 붙어 있다. 괄호까지만 잘라 쓴다.
-  const cut = String(addr || "").replace(/\)[^)]*$/, ")").trim();
-  for(const [type, q] of [["ROAD", cut], ["PARCEL", cut]]){
+/* ★ 2026-08-25 에 여기를 크게 고쳤다 — 예전에는 한 곳도 못 찾았다.
+   EIASS 구간표의 주소는 "시도 시군구 읍면 리 (도로명 번호) 리 지번" 꼴이다.
+   예전 코드는 괄호까지만 잘라 "인천광역시 옹진군 북도면 신도리 (신도로484번길 150)" 를 넣었는데,
+   이것은 **지번주소도 도로명주소도 아니라서** 지오코더가 읽지 못한다.
+   실측(옹진군 소하천 46구간 = 92곳): 옛 방식 **0곳 성공** / 아래 방식 **92곳 전부 성공**.
+   그러니 지번과 도로명을 갈라내 **각각** 물어봐야 한다. */
+function addrCandidates(raw){
+  const a = String(raw || "").replace(/\s+/g, " ").trim();
+  const m = /^(.*?)\s*\(([^)]*)\)\s*(.*)$/.exec(a);
+  if(!m) return [{ type:"PARCEL", q:a, rough:false }, { type:"ROAD", q:a, rough:false }];
+  const head = m[1].trim(), road = m[2].trim(), tail = m[3].trim();
+  const ht = head.split(" ").filter(Boolean);
+  const out = [];
+  // ① 지번 — 괄호 뒤의 "리 지번". 하천 시·종점이 실제로 그 지번에 있으므로 가장 정확하다.
+  if(tail){
+    const tt = tail.split(" ").filter(Boolean);
+    const dup = ht.length && tt.length && ht[ht.length - 1] === tt[0];   // "신도리 신도리" 방지
+    out.push({ type:"PARCEL", q:(dup ? ht.slice(0, -1) : ht).concat(tt).join(" "), rough:false });
+  }
+  // ② 도로명 — 리·동을 **떼고** 도로명을 붙인다. 리를 남기면 못 찾는다(실측).
+  if(ht.length && road){
+    out.push({ type:"ROAD", q:ht.slice(0, -1).concat(road.split(" ")).join(" "), rough:false });
+  }
+  // ③ 마지막 수단 — 리 대표점. 하천 시·종점이 아니라 **동네 한복판**이라 부정확하다.
+  //    쓰이면 목록에 '리대표'라고 반드시 밝힌다.
+  if(head) out.push({ type:"PARCEL", q:head, rough:true });
+  return out;
+}
+
+async function geocodeAddr(raw, key){
+  for(const c of addrCandidates(raw)){
+    if(!c.q) continue;
     const r = await jsonp("https://api.vworld.kr/req/address", {
       service:"address", request:"getCoord", version:"2.0", crs:"EPSG:4326",
-      type, address:q, key, format:"json"
+      type:c.type, address:c.q, key, format:"json"
     });
     const pt = r && r.response && r.response.status === "OK" && r.response.result &&
       r.response.result.point;
-    if(pt) return [parseFloat(pt.y), parseFloat(pt.x)];
+    if(pt) return { pt:[parseFloat(pt.y), parseFloat(pt.x)], rough:c.rough, query:c.q };
   }
   return null;
 }
 
+/* ============================================================
+   구간표의 시점·종점 — 찾기 · 고치기 · 노선으로 담기
+   ============================================================ */
+let segEnds = [];          // [{ i, on, from:{pt,rough,addr}|null, to:{...}|null }]
+let fromSegments = false;  // 지금 노선이 구간 시점·종점에서 만들어진 것인가
+
 function clearGuides(){
   guideLayers.forEach(l => map.removeLayer(l));
   guideLayers = [];
+  segEnds = [];
+  $("#segResult").hidden = true;
   $("#guideMsg").textContent = "";
 }
 
@@ -804,28 +898,155 @@ async function showGuides(){
   const key = ($("#key").value || "").trim();
   if(!key){ $("#guideMsg").textContent = "VWorld 키가 필요합니다."; return; }
   if(!current) return;
-  clearGuides();
-  $("#guideMsg").textContent = "찾는 중…";
+  const segs = current.segments || [];
+  if(!segs.length){ $("#guideMsg").textContent = "구간 표가 없습니다. 원문을 보고 직접 그리세요."; return; }
 
-  const found = [];
-  for(const s of current.segments || []){
-    for(const [label, addr, color] of [["시점", s.from, "#1f8a5b"], ["종점", s.to, "#0b3d91"]]){
-      if(!addr) continue;
-      const pt = await geocode(addr, key);
-      if(!pt) continue;
-      const m = L.circleMarker(pt, {
-        radius:9, color, fillColor:"#fff", fillOpacity:1, weight:3
-      }).addTo(map).bindTooltip(`${label} · ${addr}`, { permanent:false });
-      guideLayers.push(m);
-      found.push(pt);
+  clearGuides();
+  $("#btnGuide").disabled = true;
+  for(let i = 0; i < segs.length; i++){
+    $("#guideMsg").textContent = `찾는 중… ${i + 1}/${segs.length}`;
+    const a = await geocodeAddr(segs[i].from, key);
+    const b = await geocodeAddr(segs[i].to, key);
+    segEnds.push({
+      i,
+      on: !!(a && b),
+      from: a ? { pt:a.pt, rough:a.rough, addr:segs[i].from } : null,
+      to:   b ? { pt:b.pt, rough:b.rough, addr:segs[i].to } : null
+    });
+  }
+  $("#btnGuide").disabled = false;
+
+  const okN = segEnds.filter(x => x.on).length;
+  $("#guideMsg").textContent = okN
+    ? `${segs.length}구간 중 ${okN}구간의 시점·종점을 찾았습니다.`
+    : "주소를 찾지 못했습니다. 원문을 보고 직접 찾아 그리세요.";
+  $("#segResult").hidden = !okN;
+  drawSegEnds();
+  renderSegTable();
+
+  const all = [];
+  segEnds.forEach(x => { if(x.from) all.push(x.from.pt); if(x.to) all.push(x.to.pt); });
+  if(all.length) map.fitBounds(L.latLngBounds(all).pad(0.2));
+}
+
+/* 시점(초록)·종점(남색)과 그 사이 미리보기 선을 그린다.
+   ★ 점은 끌어서 옮길 수 있다 — 주소를 잘못 짚은 구간만 사람이 하나씩 고치면 된다. */
+function drawSegEnds(){
+  guideLayers.forEach(l => map.removeLayer(l));
+  guideLayers = [];
+  segEnds.forEach(sg => {
+    // 이미 노선으로 담았으면 그 선이 이미 그려져 있다 — 같은 자리에 두 겹으로 그리지 않는다.
+    if(sg.from && sg.to && !fromSegments){
+      guideLayers.push(L.polyline([sg.from.pt, sg.to.pt], {
+        color:"#1f8a5b", weight:3, opacity: sg.on ? .8 : .25, dashArray:"6 4"
+      }).addTo(map).bindTooltip(`${sg.i + 1}구간`));
     }
-  }
-  if(found.length){
-    map.fitBounds(L.latLngBounds(found).pad(0.35));
-    $("#guideMsg").textContent = `${found.length}곳 표시했습니다 (초록=시점 / 남색=종점)`;
-  }else{
-    $("#guideMsg").textContent = "주소를 찾지 못했습니다. 원문을 보고 직접 찾아 그리세요.";
-  }
+    [["from", "시점", "#1f8a5b"], ["to", "종점", "#0b3d91"]].forEach(pair => {
+      const k = pair[0], label = pair[1], color = pair[2];
+      const e = sg[k];
+      if(!e) return;
+      const m = L.marker(e.pt, {
+        draggable:true,
+        icon:L.divIcon({
+          className:"", iconSize:[16, 16], iconAnchor:[8, 8],
+          html:`<div style="width:16px;height:16px;border-radius:50%;background:#fff;
+                 border:3px solid ${color};opacity:${sg.on ? 1 : .4}"></div>`
+        })
+      }).addTo(map).bindTooltip(
+        `${sg.i + 1}구간 ${label}${e.rough ? " · ⚠ 리 대표점(부정확)" : ""}<br>${esc(e.addr)}`,
+        { permanent:false });
+      m.on("dragend", ev => {
+        const ll = ev.target.getLatLng();
+        e.pt = [ll.lat, ll.lng];
+        e.rough = false;            // 사람이 직접 짚었으니 더 이상 '대표점'이 아니다
+        drawSegEnds();
+        renderSegTable();
+        syncSegRoute();             // 담아 둔 노선이 있으면 바로 따라 바뀐다
+      });
+      guideLayers.push(m);
+    });
+  });
+}
+
+/* 한 구간의 시점~종점 직선 길이(km). 양끝을 못 찾았으면 null. */
+function segStraightKm(sg){
+  if(!sg.from || !sg.to) return null;
+  return haversineKm(sg.from.pt[0], sg.from.pt[1], sg.to.pt[0], sg.to.pt[1]);
+}
+
+/* 구간표에 적힌 연장 한 줄("1.75km")을 km 숫자로 읽는다. 못 읽으면 null. */
+function segOfficialKm(i){
+  const s = ((current && current.segments) || [])[i];
+  const m = /([\d.]+)\s*(km|킬로|m)?/i.exec((s && s.length) || "");
+  if(!m) return null;
+  const v = parseFloat(m[1]);
+  if(!isFinite(v)) return null;
+  return (m[2] || "").toLowerCase() === "m" ? v / 1000 : v;
+}
+
+/* 직선/고시 비율을 등급으로 나눈다.
+   하천은 굽어 있으므로 **직선이 조금 짧은 것이 정상**이다(60~110%).
+   직선이 고시보다 길면(>110%) 주소를 잘못 짚었을 가능성이 높다. */
+function segGrade(r){
+  if(r == null) return { cls:"", txt:"—" };
+  const pct = Math.round(r * 100);
+  if(r >= 0.6 && r <= 1.1) return { cls:"ok", txt:pct + "%" };
+  if(r >= 0.4 && r <= 1.5) return { cls:"warn", txt:pct + "% ⚠" };
+  return { cls:"bad", txt:pct + "% ⚠" };
+}
+
+function renderSegTable(){
+  const rows = segEnds.map(sg => {
+    const st = segStraightKm(sg), off = segOfficialKm(sg.i);
+    const g = segGrade(st != null && off ? st / off : null);
+    const bad = !sg.from || !sg.to;
+    const rough = (sg.from && sg.from.rough) || (sg.to && sg.to.rough);
+    return `<tr>
+      <td><label><input type="checkbox" data-segon="${sg.i}" ${sg.on ? "checked" : ""}
+        ${bad ? "disabled" : ""}> ${sg.i + 1}</label></td>
+      <td class="n">${st != null ? st.toFixed(2) : "—"}</td>
+      <td class="n">${off ? off.toFixed(2) : "—"}</td>
+      <td class="n ${g.cls}">${bad ? `<span class="bad">못 찾음</span>` : g.txt}</td>
+      <td>${bad ? "" : `<button type="button" data-segzoom="${sg.i}">보기</button>`}
+        ${rough ? `<span class="warn" title="하천 시·종점이 아니라 동네 대표점입니다">리대표</span>` : ""}</td>
+    </tr>`;
+  }).join("");
+
+  $("#segTable").innerHTML =
+    `<tr><th>구간</th><th>직선</th><th>고시</th><th>비교</th><th></th></tr>${rows}`;
+
+  $("#segTable").querySelectorAll("[data-segon]").forEach(cb => cb.addEventListener("change", () => {
+    const sg = segEnds.find(x => String(x.i) === cb.dataset.segon);
+    if(sg) sg.on = cb.checked;
+    drawSegEnds(); updateSegSum(); syncSegRoute();
+  }));
+  $("#segTable").querySelectorAll("[data-segzoom]").forEach(b => b.addEventListener("click", () => {
+    const sg = segEnds.find(x => String(x.i) === b.dataset.segzoom);
+    if(sg && sg.from && sg.to) map.fitBounds(L.latLngBounds([sg.from.pt, sg.to.pt]).pad(0.5));
+  }));
+  updateSegSum();
+}
+
+function updateSegSum(){
+  const use = segEnds.filter(x => x.on && x.from && x.to);
+  let str = 0, off = 0;
+  use.forEach(sg => {
+    str += segStraightKm(sg) || 0;
+    off += segOfficialKm(sg.i) || 0;
+  });
+  $("#segSum").textContent = use.length
+    ? `고른 ${use.length}구간 · 직선 합계 ${str.toFixed(2)} km` +
+      (off ? ` / 고시 합계 ${off.toFixed(2)} km` : "")
+    : "고른 구간이 없습니다.";
+}
+
+/* 담아 둔 노선이 구간 시점·종점에서 온 것이면, 점을 고칠 때마다 바로 따라 바뀐다.
+   ★ 손으로 찍은 점(pts)은 건드리지 않는다 — 사람이 일부러 그린 것을 지우면 안 된다. */
+function syncSegRoute(){
+  if(!fromSegments) return;
+  branches = segEnds.filter(x => x.on && x.from && x.to)
+    .map(sg => [sg.from.pt.slice(), sg.to.pt.slice()]);
+  redraw();
 }
 
 /* ============================================================
@@ -886,8 +1107,14 @@ function toGeoJson(){
   // 둘 이상이면 MultiLineString — 갈라지는 노선을 한 줄로 뭉개지 않는다.
   const conv = a => a.map(([lat, lon]) => [+lon.toFixed(5), +lat.toFixed(5)]);
   const all = branches.concat([pts]).filter(a => a.length >= 2);
-  if(all.length <= 1) return { type:"LineString", coordinates: conv(all[0] || pts) };
-  return { type:"MultiLineString", coordinates: all.map(conv) };
+  const g = all.length <= 1
+    ? { type:"LineString", coordinates: conv(all[0] || pts) }
+    : { type:"MultiLineString", coordinates: all.map(conv) };
+  /* ★ 구간표의 시점·종점을 곧게 이어 만든 것이면 그 사실을 파일에 적어 둔다.
+     주민 화면(app.js 의 ROUTE_SOURCE_TEXT)이 "실제로 굽은 모양은 아니다"라고
+     밝혀야 하기 때문이다. 지어내지 않는 값 규칙과 같은 뜻이다. */
+  if(fromSegments) g.note = "segment-ends";
+  return g;
 }
 
 /* 저장된 도형을 **갈래별로** 나눠 읽는다.
@@ -1673,6 +1900,23 @@ $("#btnLayer").addEventListener("click", () => {
 });
 $("#onlyTodo").addEventListener("change", renderList);
 $("#btnGuide").addEventListener("click", showGuides);
+$("#btnSegClear").addEventListener("click", clearGuides);
+
+/* 고른 구간을 노선으로 담는다 — 구간마다 시점→종점 직선 한 줄(갈래 하나)이 된다. */
+$("#btnSegUse").addEventListener("click", () => {
+  const use = segEnds.filter(x => x.on && x.from && x.to);
+  if(!use.length){ $("#msg").textContent = "고른 구간이 없습니다."; return; }
+  if((branches.length || pts.length >= 2) && !fromSegments &&
+     !confirm("이미 그려 둔 노선이 있습니다. 구간 시점·종점으로 바꿀까요?")) return;
+  branches = use.map(sg => [sg.from.pt.slice(), sg.to.pt.slice()]);
+  pts = [];
+  fromSegments = true;
+  redraw();
+  map.fitBounds(L.latLngBounds(branches.flat()).pad(0.15));
+  $("#msg").textContent =
+    `${use.length}개 구간을 노선으로 담았습니다. 점을 끌어 고치면 노선도 바로 따라 바뀝니다. ` +
+    `'이 사업에 저장'을 누른 뒤 6번에서 파일로 저장하세요.`;
+});
 $("#btnUndo").addEventListener("click", () => { pts.pop(); redraw(); });
 $("#btnClear").addEventListener("click", () => { pts = []; redraw(); refreshBranchUi(); });
 
@@ -1714,7 +1958,10 @@ $("#btnImport").addEventListener("click", doImport);
 
 $("#btnSave").addEventListener("click", () => {
   if(!current) return;
-  if(pts.length < 2){ $("#msg").textContent = "점이 2개 이상이어야 저장됩니다."; return; }
+  // ★ 구간 시점·종점으로 만든 노선은 전부 branches 에 있고 pts 는 비어 있다.
+  if(pts.length < 2 && !branches.length){
+    $("#msg").textContent = "점이 2개 이상이어야 저장됩니다."; return;
+  }
   ROUTES[String(current.id)] = toGeoJson();
   persistRoutes();     // 이 브라우저에 바로 남긴다 — 새로 고쳐도 안 없어진다
   $("#msg").textContent =
