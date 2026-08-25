@@ -661,15 +661,35 @@ def extract_river_names(text):
 # 하천 사업일 때만 하천 도형을 노선으로 쓴다.
 RIVER_BIZ_HINTS = ("하천", "河川", "수계", "河")
 
+# ★ 사업명 자체가 '하천을 계획하는 사업'이라고 못 박은 경우 (2026-08-25 추가).
+#   여기 걸리면 **사업구분이 무엇이든** 하천 사업으로 본다.
+#
+#   왜 필요했나 — `천미천 외 1개소 하천기본계획(변경)` 의 EIASS 사업구분이
+#   `개발사업(전체) / 기반시설 (축제 및 보축 등)` 이었다. '하천'이 한 글자도 없다.
+#   예전 규칙은 **사업구분과 근거법령이 둘 다 비었을 때만** 사업명을 봤으므로,
+#   뭉뚱그린 사업구분이 붙어 있으면 사업명에 '하천기본계획'이 있어도 그냥 넘어갔다.
+#   그래서 노선을 **아예 찾지 않았다** (VWorld 에는 천미천 도형이 사업지 2.1km 앞에 있었다).
+#
+#   ★ 여기 넣는 말은 **'하천 자체를 계획하는 사업'만** 가리켜야 한다.
+#     `하천 횡단교량` 처럼 **지나가기만 하는** 사업이 걸리면 엉뚱한 하천을 노선으로 그리게 된다.
+#     그래서 '하천'만으로는 안 되고 계획 이름까지 붙은 말만 넣는다.
+#     (실측: 지금 자료 42건 중 이 규칙에 걸리는 것은 하천 사업 10건뿐이고 도로·철도는 0건)
+RIVER_PLAN_HINTS = (
+    "하천기본계획", "하천정비기본계획", "하천정비종합계획", "소하천정비",
+    "하천정비계획", "하천환경정비", "하천재해예방",
+)
+
 
 def is_river_project(name, biz_type, law_basis):
-    haystack = " ".join(filter(None, [biz_type, law_basis, name]))
-    # 사업구분·근거법령에 '하천'이 있으면 확실하다. (예: "하천이용 / 하천기본계획", "「하천법」")
+    # ① 사업명이 '하천 계획'이라고 못 박았으면 사업구분을 보지 않는다.
+    if any(h in (name or "") for h in RIVER_PLAN_HINTS):
+        return True
+    # ② 사업구분·근거법령에 '하천'이 있으면 확실하다. (예: "하천이용 / 하천기본계획", "「하천법」")
     if biz_type and "하천" in biz_type:
         return True
     if law_basis and "하천" in law_basis:
         return True
-    # 사업구분 정보가 없을 때만 사업명으로 판단한다.
+    # ③ 사업구분 정보가 없을 때만 사업명을 느슨하게 본다.
     if not biz_type and not law_basis:
         return any(h in (name or "") for h in RIVER_BIZ_HINTS)
     return False
@@ -1293,6 +1313,45 @@ def refresh_cached(cached, item, vworld_key, skip_geocode, category_key, delay,
             cached["routeGeom"] = routes
             cached["routeSource"] = "vworld-river"
             log(f"    (재사용) 비어 있던 노선 도형 {len(routes)}개를 채웠습니다")
+
+    # ★ 하천 사업 판정(isRiver) 되받기 — 판정 **규칙이 바뀌면** 이미 받아 둔 사업은
+    #   증분 수집이 통째로 건너뛰므로 **옛 판정이 영영 굳는다.**
+    #
+    #   2026-08-25 에 실제로 겪었다. `is_river_project()` 가 뭉뚱그린 사업구분
+    #   (`개발사업(전체) / 기반시설`) 때문에 `천미천 … 하천기본계획(변경)` 을
+    #   '하천 사업이 아님'으로 보고 있었다. 규칙만 고쳐도 그 사업은 안 고쳐진다.
+    #
+    #   판정은 이름·사업구분만 보는 **공짜 계산**이라 매번 다시 한다.
+    #   False -> True 로 뒤집혔고 하천 이름이 비어 있으면 요약문을 다시 읽어 채운다.
+    #   **돈은 들지 않는다** — 요약문 PDF 와 VWorld 만 쓰고 AI 는 부르지 않는다.
+    if not skip_route and "선형" in (cached.get("locationTypes") or []):
+        now_river = is_river_project(cached.get("name"), cached.get("bizType"), None)
+        if now_river and not cached.get("isRiver"):
+            cached["isRiver"] = True
+            log("    (재사용) 하천 사업으로 다시 판정했습니다 (판정 규칙이 바뀌었습니다)")
+        if cached.get("isRiver") and not cached.get("riverNames") and not cached.get("routeGeom"):
+            if view_closed(cached.get("periodEnd"), today):
+                # 공람이 끝나면 EIASS 가 첨부를 내려서 요약문을 받을 수 없다.
+                log("    (재사용) 공람이 끝나 요약문을 받을 수 없어 하천 이름을 못 채웁니다")
+            elif not cached.get("summaryFileSeq"):
+                log("    (재사용) 요약문 파일이 없어 하천 이름을 못 채웁니다")
+            else:
+                try:
+                    text, _pages = extract_pdf_text(download_file(cached["summaryFileSeq"]))
+                    names = extract_river_names(text)
+                    if names:
+                        cached["riverNames"] = names
+                        routes = fetch_river_routes(names, cached.get("lat"), cached.get("lon"),
+                                                    vworld_key, vworld_domain)
+                        if routes:
+                            cached["routeGeom"] = routes
+                            cached["routeSource"] = "vworld-river"
+                        log(f"    (재사용) 하천 이름 {len(names)}개를 채웠습니다"
+                            f" → 노선 도형 {len(routes)}개")
+                    else:
+                        log("    (재사용) 요약문에서 하천 이름을 찾지 못했습니다")
+                except Exception as e:
+                    log(f"    [하천 이름 되받기 실패 — 다음에 다시 해 봅니다] {e}")
 
     # ★ summaryState 되받기 — 노선 도형과 **똑같은 함정**이다.
     #
