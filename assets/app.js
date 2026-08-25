@@ -3701,12 +3701,14 @@ function renderAdminRoutes(){
   if(!box || !box.classList) return;
 
   const all = PROJECTS.concat(CLOSED_PROJECTS);
-  const todo = [];      // EIASS 가 '선형'이라고 밝혔는데 노선이 없는 것
+  const todo = [];      // EIASS 가 '선형'이라고 밝혔는데 노선이 없는 것 (도로·철도 등)
+  const river = [];     // ★ 그중 하천 사업 — 자동으로 찾았어야 하는데 못 찾은 것
   const maybe = [];     // 위치유형이 없어서 이름으로만 짐작되는 것
   all.forEach(p => {
     if(routeOf(p)) return;                       // 이미 그려졌거나 자동으로 찾은 것
     const types = p.locationTypes || [];
-    if(types.includes("선형")) todo.push(p);
+    // 하천 사업은 원래 자동으로 받아온다. 그런데도 비어 있으면 까닭이 따로 있으므로 나눠 보여준다.
+    if(types.includes("선형")) (p.isRiver ? river : todo).push(p);
     else if(!types.length && linearByName(p).length) maybe.push({ p, hits:linearByName(p) });
   });
 
@@ -3717,6 +3719,14 @@ function renderAdminRoutes(){
     </li>`;
 
   box.innerHTML = `
+    ${river.length ? `<p class="admrt-h">하천 사업인데 노선을 <b>자동으로 못 받아온 것</b> — ${river.length}건</p>
+      <p class="hint hint--warn">하천 사업은 요약문에서 하천 이름을 찾아
+        국토정보플랫폼(VWorld) <b>하천망도</b>에서 실제 도형을 자동으로 받아옵니다.
+        그런데 하천망도에는 <b>국가하천·지방하천만 있고 소하천은 들어 있지 않습니다.</b>
+        <b>소하천</b>만 다루는 사업은 다시 수집해도 자동으로는 영영 찾을 수 없습니다 —
+        아래 사업은 사람이 직접 그려야 합니다.</p>
+      <ul class="admrt">${river.map(p => row(p, "자동 조회 안 됨")).join("")}</ul>` : ``}
+
     ${todo.length ? `<p class="admrt-h">EIASS 가 <b>선형</b>이라고 밝힌 사업 중 노선이 없는 것 — ${todo.length}건</p>
       <ul class="admrt">${todo.map(p => row(p)).join("")}</ul>` : ``}
 
@@ -3726,7 +3736,7 @@ function renderAdminRoutes(){
         원문을 확인하고 판단하세요. <b>자료에는 넣지 않았고 주민 화면에도 나오지 않습니다.</b></p>
       <ul class="admrt">${maybe.map(m => row(m.p, m.hits.join("·"))).join("")}</ul>` : ``}
 
-    ${(!todo.length && !maybe.length)
+    ${(!river.length && !todo.length && !maybe.length)
       ? `<p class="hint">노선을 그려야 할 사업이 지금은 없습니다.</p>` : ``}`;
 
   // ★ 지도에 맨손으로 점을 찍게 하지 않는다.
