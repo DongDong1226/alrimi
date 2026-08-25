@@ -269,10 +269,14 @@ function renderCalSub(){
     ? dongList(r.sido, r.sgg) : [];
   const opt = (v, cur) => `<option value="${esc(v)}"${v === cur ? " selected" : ""}>${esc(v)}</option>`;
 
-  // ★ PC 는 '구글 캘린더로 구독' 하나만 둔다.
-  //   아이폰 구독(webcal:)은 PC 에서 열 앱이 없고, 주소 복사는 구글 단추가 하는 일을
-  //   손으로 하는 것이라 셋을 나란히 두면 오히려 어느 것을 눌러야 할지 헷갈린다.
-  //   휴대폰(m.html)은 기기마다 편한 길이 달라 셋을 그대로 둔다.
+  /* ★ PC 에는 '구글 캘린더로 구독' + '주소 복사' 두 개를 둔다 (2026-08-25 정정).
+       아이폰 구독(webcal:)만 PC 에서 뺀다 — PC 에는 그것을 열 앱이 없다.
+
+     ★ '주소 복사'를 PC 에서 뺐던 2026-08-16 결정을 되돌린 것이다. 그때는
+       "구글 단추가 하는 일을 손으로 하는 것"이라고 봤는데, 2026-08-17 에
+       **갤럭시는 폰만으로 구독 등록이 아예 안 된다**는 것을 알게 되면서 전제가 깨졌다 —
+       갤럭시 주민은 **결국 PC 에서 등록해야 하고**, 네이버·아웃룩을 쓰면 구글 단추로는 길이 없다.
+     휴대폰(m.html)은 기기마다 편한 길이 달라 셋을 그대로 둔다. */
   const isPhone = document.body.classList.contains("m");
 
   box.innerHTML = `
@@ -302,14 +306,33 @@ function renderCalSub(){
 
     <p class="cal-now">지금 받는 지역 <b>${esc(label)}</b></p>
     <div class="cal-btns">
-      <a class="btn btn--primary btn--sm btn--pill" href="${esc(google)}" target="_blank" rel="noopener">구글 캘린더로 구독 ↗</a>
+      <!-- ★ 단추 순서와 크기가 화면마다 다르다 (2026-08-25).
+           **휴대폰에서는 '구글 캘린더로 구독'이 어느 기기에서도 잘 안 된다** —
+           갤럭시는 앱에 'URL로 추가'가 없고, 아이폰은 옆의 전용 단추가 낫다.
+           그런데 그것이 가장 큰 단추라 **가장 눈에 띄는 길이 막다른 길**이었다.
+           그래서 폰에서는 아이폰 단추를 앞·크게, 갤럭시가 쓸 '주소 복사'를 그다음에 둔다.
+           PC 는 구글 단추가 실제로 되는 길이므로 그대로 앞·크게 둔다. -->
       ${isPhone ? `
-      <a class="btn btn--line btn--sm btn--pill" href="${esc(webcal)}">아이폰 · 캘린더 구독</a>
-      <button class="btn btn--ghost btn--sm btn--pill" type="button" id="btnCalCopy">주소 복사</button>` : ``}
+      <a class="btn btn--primary btn--sm btn--pill" href="${esc(webcal)}">아이폰 · 캘린더 구독</a>
+      <button class="btn btn--line btn--sm btn--pill" type="button" id="btnCalCopy">주소 복사</button>
+      <a class="btn btn--ghost btn--sm btn--pill" href="${esc(google)}" target="_blank" rel="noopener">구글 캘린더로 구독 ↗</a>`
+      : `
+      <a class="btn btn--primary btn--sm btn--pill" href="${esc(google)}" target="_blank" rel="noopener">구글 캘린더로 구독 ↗</a>
+      <button class="btn btn--ghost btn--sm btn--pill" type="button" id="btnCalCopy">주소 복사</button>`}
     </div>
+    <!-- ★ 2026-08-25 정정. 예전에는 "갤럭시는 구글 캘린더로 구독이 가장 쉽습니다"라고
+         적혀 있었는데 **사실이 아니다** — 구글 캘린더 앱에는 'URL로 추가'가 없고(PC 웹에만 있다),
+         삼성 캘린더는 외부 ICS 주소를 아예 지원하지 않는다. 그래서 **안드로이드 폰에서는
+         어떤 기본 앱으로도 등록이 안 된다.** 되는 것처럼 안내하면 주민이 눌러 보고 실패한 뒤
+         '이 서비스가 고장 났다'고 여긴다. 안 되는 것은 안 된다고 밝히고, **되는 길**을 알려 준다. -->
     <p class="cal-h cal-h--sub" id="calSubMsg">${isPhone
-      ? `아이폰은 <b>아이폰 · 캘린더 구독</b>, 갤럭시는 <b>구글 캘린더로 구독</b>이 가장 쉽습니다.`
-      : `누르면 구글 캘린더에 <b>이 지역 달력이 추가</b>됩니다. 등록해 두면 새 사업이 저절로 들어옵니다.`}</p>`;
+      ? `<b>아이폰</b> — <b>아이폰 · 캘린더 구독</b>을 누르면 바로 등록됩니다.<br>
+         <b>갤럭시</b> — <b>폰에서는 등록이 안 됩니다.</b> 구글 캘린더 앱과 삼성 캘린더가
+         주소 구독을 지원하지 않기 때문입니다. <b>주소 복사</b>를 눌러 두었다가
+         <b>PC에서 한 번만</b> 등록하면, 그 뒤로는 폰 캘린더에 저절로 나타나고 알림도 옵니다.`
+      : `누르면 구글 캘린더에 <b>이 지역 달력이 추가</b>됩니다. 등록해 두면 새 사업이 저절로 들어옵니다.<br>
+         <b>갤럭시를 쓰신다면 여기 PC에서 등록하세요</b> — 폰 캘린더에 저절로 나타납니다.
+         네이버·아웃룩 등 다른 캘린더는 <b>주소 복사</b> 후 그 캘린더의 <b>URL로 추가</b>에 붙여넣으세요.`}</p>`;
 
   // 위 칸을 바꾸면 아래 칸은 '전체'로 되돌린다.
   // (다른 시·도의 시·군·구나, 다른 시·군·구의 읍·면·동이 남으면 없는 파일을 가리키게 된다)
@@ -325,7 +348,11 @@ function renderCalSub(){
   $("#btnCalCopy").addEventListener("click", async () => {
     try{
       await navigator.clipboard.writeText(url);
-      $("#calSubMsg").textContent = "주소를 복사했습니다. 캘린더 앱의 'URL로 추가'에 붙여넣으세요.";
+      // ★ "캘린더 앱의 'URL로 추가'" 라고만 하면 안 된다 — 구글 캘린더 앱과 삼성 캘린더에는
+      //   그 메뉴가 아예 없다(구글은 PC 웹에만 있다). 어디에 넣어야 하는지를 밝힌다.
+      $("#calSubMsg").textContent = isPhone
+        ? "주소를 복사했습니다. PC에서 구글 캘린더를 열어 '다른 캘린더 +' → 'URL로 추가'에 붙여넣으세요. 그러면 폰 캘린더에도 저절로 나타납니다."
+        : "주소를 복사했습니다. 캘린더의 'URL로 추가'에 붙여넣으세요 (구글 캘린더는 '다른 캘린더 +' → 'URL로 추가').";
     }catch(e){
       $("#calSubMsg").textContent = url;   // 복사가 막히면 눈으로 보고 옮길 수 있게 보여 준다
     }
