@@ -178,7 +178,10 @@
       <p class="muted" style="margin:0 0 8px">지도를 눌러 점을 찍습니다. 점은 끌어서 옮길 수 있습니다.</p>
       <div class="row">
         <button id="btnUndo">되돌리기</button>
-        <button id="btnClear" class="danger">모두 지우기</button>
+        <button id="btnClear" class="danger">이 갈래 지우기</button>
+        <!-- ★ 두 갈래로 갈라지는 노선이 있다. 갈래를 따로 담을 수 있어야 한다. -->
+        <button id="btnBranch">갈래 마무리 · 새 갈래</button>
+        <span class="muted" id="branchMsg"></span>
       </div>
       <div class="row">
         <span>그린 길이 <span class="len" id="lenNow">0.00 km</span></span>
@@ -214,6 +217,31 @@
         </div>
         <ul class="gcplist" id="gcpList"></ul>
         <p class="muted" id="fitMsg" style="margin:6px 0 0"></p>
+        <!-- ★ 되돌릴 길을 반드시 둔다. 예전에는 한 번 어긋나면
+             도면을 닫고 처음부터 다시 해야 했다 (담당자가 실제로 겪음, 2026-08-17). -->
+        <div class="row" style="margin-top:6px">
+          <button id="btnGcpClear" class="danger">기준점 모두 지우기</button>
+          <button id="btnPlanReset" class="danger">도면 작업 초기화</button>
+          <span class="muted">초기화는 기준점·색·범위·추출을 지웁니다 (도면과 그린 선은 남습니다)</span>
+        </div>
+
+        <!-- ★ AI 가 도면에서 읽은 기준점 후보를 받는 칸.
+             AI 는 **지명과 그 픽셀 자리만** 읽고, 좌표는 VWorld 가 준다.
+             (AI 에게 위경도를 직접 물으면 900m 씩 틀린다 — docs/HISTORY.md 2026-08-17)
+             만드는 법:  python tools/plan_gcp.py 도면.png --id 사업번호 -->
+        <details style="margin-top:8px">
+          <summary class="muted" style="cursor:pointer">기준점 후보 붙여넣기 (AI 도우미)</summary>
+          <p class="muted" style="margin:6px 0">
+            <code>python tools/plan_gcp.py 도면.png --id 사업번호</code> 를 돌려 나온 JSON 을 넣으세요.
+            <b>제안일 뿐이라 반드시 지도에서 확인·보정해야 합니다.</b>
+          </p>
+          <textarea id="gcpPaste" rows="3" placeholder='{"image":{...},"gcps":[...]}'
+                    style="width:100%;box-sizing:border-box"></textarea>
+          <div class="row" style="margin-top:6px">
+            <button id="btnGcpPaste">후보 넣기</button>
+            <span class="muted" id="gcpPasteMsg"></span>
+          </div>
+        </details>
 
         <hr style="border:0;border-top:1px solid var(--line);margin:10px 0">
 
@@ -242,6 +270,16 @@
         </div>
         <p class="muted" style="margin:2px 0 0">
           역 표시·글자가 선을 덮으면 선이 동강 납니다. 그 틈을 이어 줍니다. 0이면 안 잇습니다.</p>
+
+        <!-- ★ 시작·종점을 짚어 주면 그 사이만 따라간다 (담당자 요청, 2026-08-17).
+             안 짚으면 지금까지처럼 '가장 긴 경로'를 알아서 고른다. -->
+        <div class="row" style="margin-top:8px">
+          <button id="btnEnds">시작·종점 도면에서 짚기</button>
+          <button id="btnEndsClear">지정 해제</button>
+          <span class="muted" id="endsMsg"></span>
+        </div>
+        <p class="muted" style="margin:2px 0 0">
+          갈라지는 노선은 <b>갈래마다</b> 시작·종점을 짚고 한 갈래씩 뽑으면 됩니다.</p>
 
         <hr style="border:0;border-top:1px solid var(--line);margin:10px 0">
 
@@ -372,10 +410,14 @@ function updateSaveState(){
   el.style.color = pend ? "var(--orange)" : "var(--ink-3)";
 }
 let current = null;     // 지금 고른 사업
-let pts = [];           // 그리는 중인 점 [[위도,경도], ...]
+let pts = [];           // **지금 그리는 갈래**의 점 [[위도,경도], ...]
+/* ★ 두 갈래로 갈라지는 노선이 있다 (담당자 메모, 2026-08-17).
+   그래서 '끝낸 갈래'를 따로 모아 둔다. 저장할 때 갈래가 2개 이상이면
+   MultiLineString 으로 나간다. 화면(app.js)은 이미 그것을 견딘다 — 확인함. */
+let branches = [];      // 끝낸 갈래들 [[[위도,경도],...], ...]
 
 let map, tileLayer = null;
-let ptLayers = [], lineLayer = null, guideLayers = [], otherLayer = null;
+let ptLayers = [], lineLayer = null, guideLayers = [], otherLayer = null, branchLayers = [];
 
 const $ = sel => document.querySelector(sel);   // 부를 때 "#아이디" 로 쓴다
 const esc = s => String(s == null ? "" : s)
@@ -578,8 +620,15 @@ function select(id){
   if(!current) return;
 
   // 이미 그려 둔 것이 있으면 이어서 고칠 수 있게 불러온다.
+  branches = [];
   const saved = ROUTES[String(current.id)];
-  if(saved) pts = flatLatLngs(saved.coordinates);
+  if(saved){
+    // ★ 예전에는 flatLatLngs 로 **한 줄로 뭉개서** 읽었다 —
+    //   그러면 갈래가 있는 노선을 열자마자 갈래가 사라진다.
+    const segs = splitLatLngs(saved);
+    pts = segs.pop() || [];
+    branches = segs;
+  }
 
   $("#detailBox").hidden = false;
   $("#drawBox").hidden = false;
@@ -622,6 +671,12 @@ function redraw(){
   ptLayers = [];
   if(lineLayer){ map.removeLayer(lineLayer); lineLayer = null; }
 
+  // 끝낸 갈래는 연하게 깔아 둔다 — 지금 그리는 갈래와 구별되어야 한다
+  branchLayers.forEach(l => map.removeLayer(l));
+  branchLayers = branches.map((b, i) =>
+    L.polyline(b, { color:"#de3412", weight:4, opacity:.35, dashArray:"7 5" })
+      .addTo(map).bindTooltip(`갈래 ${i + 1}`));
+
   if(pts.length >= 2){
     lineLayer = L.polyline(pts, { color:"#de3412", weight:4, opacity:.9 }).addTo(map);
   }
@@ -650,6 +705,7 @@ function redraw(){
   });
 
   updateLength();
+  refreshBranchUi();
 }
 
 /* 두 점 사이 거리(km). app.js 의 haversineKm 과 같은 식이다. */
@@ -662,11 +718,13 @@ function haversineKm(la1, lo1, la2, lo2){
 }
 
 function drawnKm(){
-  let s = 0;
-  for(let i = 1; i < pts.length; i++){
-    s += haversineKm(pts[i - 1][0], pts[i - 1][1], pts[i][0], pts[i][1]);
-  }
-  return s;
+  // ★ 끝낸 갈래까지 **모두 합쳐** 센다. 한 갈래만 세면 길이 검산이 헛돈다.
+  const one = a => {
+    let s = 0;
+    for(let i = 1; i < a.length; i++) s += haversineKm(a[i-1][0], a[i-1][1], a[i][0], a[i][1]);
+    return s;
+  };
+  return branches.reduce((s, b) => s + one(b), 0) + one(pts);
 }
 
 /* 고시된 연장(예: "9.36km")을 숫자로 읽는다. 못 읽으면 null. */
@@ -824,10 +882,23 @@ function doImport(){
 /* 화면은 [위도,경도]로 다루지만 저장은 GeoJSON 규칙(경도,위도)에 맞춘다.
    app.js 의 manualGeoJson() 과 똑같은 형식이어야 한다. */
 function toGeoJson(){
-  return {
-    type:"LineString",
-    coordinates: pts.map(([lat, lon]) => [+lon.toFixed(5), +lat.toFixed(5)])
-  };
+  // 갈래가 하나면 예전 그대로 LineString (옛 파일과 섞여도 문제없다).
+  // 둘 이상이면 MultiLineString — 갈라지는 노선을 한 줄로 뭉개지 않는다.
+  const conv = a => a.map(([lat, lon]) => [+lon.toFixed(5), +lat.toFixed(5)]);
+  const all = branches.concat([pts]).filter(a => a.length >= 2);
+  if(all.length <= 1) return { type:"LineString", coordinates: conv(all[0] || pts) };
+  return { type:"MultiLineString", coordinates: all.map(conv) };
+}
+
+/* 저장된 도형을 **갈래별로** 나눠 읽는다.
+   LineString -> 갈래 1개 / MultiLineString -> 갈래 n개.
+   ★ flatLatLngs 처럼 한 줄로 뭉개면 갈라지는 노선이 열자마자 망가진다. */
+function splitLatLngs(geom){
+  const c = (geom && geom.coordinates) || [];
+  if(!c.length) return [];
+  const isLine = Array.isArray(c[0]) && typeof c[0][0] === "number";
+  const lines = isLine ? [c] : c;
+  return lines.map(l => flatLatLngs(l)).filter(a => a.length >= 2);
 }
 
 /* 저장된 좌표를 [[위도,경도], ...] 한 줄로 편다 (LineString·MultiLineString 둘 다) */
@@ -883,6 +954,7 @@ let samples = [];       // 고른 선 색 [[r,g,b], ...]
 let roi = null;         // [x0,y0,x1,y1] 도면 좌표
 let roiDrag = null;
 let trace = null;       // 추출한 경로 (도면 좌표)
+let ends = [];          // 시작·종점 (도면 좌표) — 비어 있으면 '가장 긴 경로'로 뽑는다
 let gcpMarkers = [];
 let fitFn = null, fitRms = null;
 
@@ -988,6 +1060,8 @@ function drawPlan(){
     ctx.stroke();
   }
   gcps.forEach((g, i) => markPoint(g.img, i + 1, "#de3412", px));
+  // 시작·종점 — 기준점(빨강)과 헷갈리지 않게 다른 색으로 둔다
+  ends.forEach((e, i) => markPoint(e, i === 0 ? "시작" : "종점", "#1f8a5b", px));
   if(gcpPending) markPoint(gcpPending, "?", "#f5a623", px);
   ctx.restore();
 }
@@ -1065,6 +1139,14 @@ function normRect(r){
 
 function onPlanClick(p){
   if(p[0] < 0 || p[1] < 0 || p[0] > plan.w || p[1] > plan.h) return;
+  if(imgMode === "ends"){
+    // 시작 → 종점 두 번 누른다. 세 번째부터는 다시 시작점으로 본다.
+    if(ends.length >= 2) ends = [];
+    ends.push(p);
+    updateEndsMsg();
+    drawPlan();
+    return;
+  }
   if(imgMode === "gcp"){
     gcpPending = p;
     $("#gcpMsg").textContent = "이제 지도에서 같은 곳을 누르세요.";
@@ -1087,10 +1169,12 @@ function setImgMode(m){
   $("#btnGcpAdd").classList.toggle("on", m === "gcp");
   $("#btnPick").classList.toggle("on", m === "color");
   $("#btnRoi").classList.toggle("on", m === "roi");
+  $("#btnEnds").classList.toggle("on", m === "ends");
   $("#imgHint").textContent =
     m === "gcp" ? "도면에서 알아볼 수 있는 곳을 누르세요" :
     m === "color" ? "도면에서 노선(선) 위를 누르세요" :
-    m === "roi" ? "노선이 있는 범위를 끌어서 감싸세요" : "끌면 이동 · 휠로 확대";
+    m === "roi" ? "노선이 있는 범위를 끌어서 감싸세요" :
+    m === "ends" ? "노선의 시작점을 누르고, 이어서 종점을 누르세요" : "끌면 이동 · 휠로 확대";
   cv.style.cursor = m === "pan" ? "grab" : "crosshair";
 }
 
@@ -1133,6 +1217,100 @@ function refreshGcpUi(){
   computeFit();
   drawPlan();
 }
+
+/* ---------- AI 가 읽은 기준점 후보 받기 ----------
+   tools/plan_gcp.py 가 낸 JSON 을 그대로 받는다.
+   ★ AI 는 **도면 속 지명과 그 픽셀 자리**만 읽었고, 위경도는 **VWorld** 가 준 것이다.
+     (AI 에게 위경도를 직접 물으면 900m 씩 틀린다 — docs/HISTORY.md 2026-08-17 실측)
+   ★ 넣고 끝이 아니다. 사람이 지도에서 확인·보정해야 한다. RMS 가 그것을 잡아 준다. */
+function applyGcpSuggest(text){
+  const msg = $("#gcpPasteMsg");
+  const say = t => { msg.textContent = t; };
+  if(!plan){ say("도면을 먼저 불러오세요."); return; }
+  let d;
+  try{ d = JSON.parse(text); }catch(e){ say("JSON 형식이 아닙니다."); return; }
+  const list = Array.isArray(d.gcps) ? d.gcps : null;
+  if(!list || !list.length){ say("gcps 가 비어 있습니다."); return; }
+  const iw = d.image && d.image.w, ih = d.image && d.image.h;
+  if(!iw || !ih){ say("image 크기(w,h)가 없습니다."); return; }
+
+  // 도면은 긴 변 2400px 로 줄여 두었으므로 픽셀을 그 배율로 옮긴다.
+  // ★ 가로세로 비가 다르면 **다른 그림**을 넣은 것이다 — 조용히 어긋나면 안 되므로 막는다.
+  const rIn = iw / ih, rNow = plan.w / plan.h;
+  if(Math.abs(rIn - rNow) / rNow > 0.02){
+    say(`도면이 다릅니다 — 후보는 ${iw}x${ih} 인데 지금 불러온 것은 ${plan.w}x${plan.h} 입니다.`);
+    return;
+  }
+  const k = plan.w / iw;
+
+  let added = 0, skipped = 0;
+  const warn = [];
+  list.forEach(g => {
+    const x = +g.x * k, y = +g.y * k;
+    const lat = +g.lat, lon = +g.lon;
+    if(!isFinite(x) || !isFinite(y) || !isFinite(lat) || !isFinite(lon)){ skipped++; return; }
+    if(x < 0 || y < 0 || x > plan.w || y > plan.h){ skipped++; return; }
+    gcps.push({ img:[x, y], ll:[lat, lon] });
+    added++;
+    if(g.kind === "dong") warn.push(g.name);
+  });
+  refreshGcpUi();
+
+  let t = `후보 ${added}개를 넣었습니다.` + (skipped ? ` (${skipped}개는 값이 이상해 건너뜀)` : "");
+  if(warn.length){
+    t += ` ⚠ ${warn.join("·")} 은(는) **동 이름**이라 좌표가 0.7~2.5km 어긋날 수 있습니다 — 지도에서 옮기세요.`;
+  }
+  t += " 지도의 빨간 점을 끌지 말고, 틀린 것은 '지움' 후 직접 찍으세요.";
+  say(t);
+}
+$("#btnGcpPaste").addEventListener("click", () => applyGcpSuggest($("#gcpPaste").value.trim()));
+
+/* ---------- 시작·종점 ----------
+   ★ 안 짚으면 지금까지처럼 '가장 긴 경로'를 알아서 고른다 (기존 동작 그대로).
+     짚으면 그 두 점을 잇는 **최단 경로**만 따라간다 — 갈라지는 노선에서 한 갈래만 뽑을 때 쓴다. */
+function updateEndsMsg(){
+  const el = $("#endsMsg");
+  if(!el) return;
+  el.textContent = ends.length === 0
+    ? "안 짚으면 가장 긴 경로를 알아서 고릅니다."
+    : ends.length === 1 ? "시작점을 찍었습니다. 이제 종점을 누르세요."
+    : "시작·종점을 지정했습니다. 이 사이만 따라갑니다.";
+}
+$("#btnEnds").addEventListener("click", () => {
+  if(!plan) return;
+  ends = [];
+  setImgMode(imgMode === "ends" ? "pan" : "ends");
+  updateEndsMsg(); drawPlan();
+});
+$("#btnEndsClear").addEventListener("click", () => {
+  ends = [];
+  if(imgMode === "ends") setImgMode("pan");
+  updateEndsMsg(); drawPlan();
+});
+
+/* ---------- 되돌릴 길 ----------
+   ★ 예전에는 한 번 잘못되면 **도면을 닫고 기준점부터 처음부터** 다시 해야 했다.
+     단계마다 그 단계만 지울 수 있어야 한다. 그린 선(pts·branches)은 건드리지 않는다. */
+$("#btnGcpClear").addEventListener("click", () => {
+  gcps = []; gcpPending = null;
+  refreshGcpUi();          // 안에서 computeFit·drawPlan 까지 한다
+  $("#gcpMsg").textContent = "기준점을 모두 지웠습니다. 도면 → 지도 순서로 다시 찍으세요.";
+});
+
+$("#btnPlanReset").addEventListener("click", () => {
+  gcps = []; gcpPending = null;
+  samples = []; roi = null; roiDrag = null;
+  trace = null; ends = [];
+  fitFn = null; fitRms = null;
+  setImgMode("pan");
+  refreshGcpUi();
+  renderSwatches();
+  $("#gcpMsg").textContent = "도면 → 지도 순서로 같은 곳을 누릅니다.";
+  $("#traceMsg").textContent = "";
+  $("#endsMsg").textContent = "";
+  $("#gcpPasteMsg").textContent = "";
+  drawPlan();
+});
 
 /* ---------- 변환식 세우기 ----------
    기준점 수에 따라 쓰는 식이 달라진다.
@@ -1373,10 +1551,46 @@ function traceRoute(){
     }
   }
 
+  /* ★ 시작·종점을 짚었으면 **그 사이만** 남긴다 (담당자 요청, 2026-08-17).
+     ★ 왜 여기서 자르나 — 앞에서 따로 길을 찾게 했더니 **역 표시에 끊긴 선을 못 넘었다.**
+       위의 '틈 잇기'는 이미 그 문제를 풀어 둔 검증된 코드다. 그것을 그대로 타고
+       마지막에 잘라내는 편이 안전하다. */
+  let guided = false;
+  if(ends.length === 2){
+    const near = q => {
+      let bi = 0, bd = Infinity;
+      chain.forEach((c, i) => {
+        const d = Math.hypot(c[0] - q[0], c[1] - q[1]);
+        if(d < bd){ bd = d; bi = i; }
+      });
+      return { i:bi, d:bd };
+    };
+    const A = near(ends[0]), B = near(ends[1]);
+    const tooFar = Math.max(A.d, B.d);
+    if(tooFar > Math.max(40, cell * 12)){
+      $("#traceMsg").textContent =
+        `시작·종점이 따온 선에서 ${Math.round(tooFar)}px 떨어져 있습니다 — ` +
+        `선 위를 정확히 누르거나, 색·범위·'끊긴 틈 잇기'를 다시 보세요.`;
+      return;
+    }
+    if(A.i === B.i){ $("#traceMsg").textContent = "시작과 종점이 같은 자리입니다."; return; }
+    chain = A.i < B.i ? chain.slice(A.i, B.i + 1)
+                      : chain.slice(B.i, A.i + 1).reverse();   // 시작 -> 종점 방향으로
+    guided = true;
+  }
+
   let pix = simplify(chain, cell * 1.2);
   if(pix.length < 2){ $("#traceMsg").textContent = "경로가 너무 짧습니다."; return; }
   const leftover = pieces.length;
 
+  applyTrace(pix, { gaps, leftover, blobs: blobs.length, guided });
+}
+
+/* 뽑은 픽셀 경로를 지도 좌표로 옮겨 '그리는 중인 갈래'에 넣는다.
+   ★ '가장 긴 경로' 방식과 '시작·종점' 방식이 **같은 자리로 모이게** 하려고 따로 뺐다 —
+     두 벌로 두면 한쪽만 고쳐져 결과가 달라진다. */
+function applyTrace(pix, info){
+  info = info || {};
   trace = pix;
   const got = pix.map(([x, y]) => toLL(fitFn(x, y)));
 
@@ -1402,10 +1616,14 @@ function traceRoute(){
   // ★ 무엇을 어떻게 했는지 그대로 알린다.
   //   조용히 반쪽만 따오는 것이 이 도구에서 가장 위험하다 — 화면에는 그럴듯하게 보이기 때문이다.
   const km = drawnKm();
-  const bits = [`점 ${pts.length}개 · 길이 ${km.toFixed(2)}km`];
+  const gaps = info.gaps || [];
+  const bits = [];
+  bits.push(info.guided ? `시작·종점 사이를 따라갔습니다 · 점 ${pts.length}개`
+                        : `점 ${pts.length}개`);
+  bits.push(`길이 ${km.toFixed(2)}km${branches.length ? ` (갈래 ${branches.length + 1}개 합계)` : ""}`);
   if(gaps.length) bits.push(`끊긴 곳 ${gaps.length}군데를 이었습니다(틈 ${gaps.join(", ")}px)`);
-  if(leftover)    bits.push(`⚠ 멀리 떨어진 조각 ${leftover}개는 못 붙였습니다 — '끊긴 틈 잇기'를 늘리거나 범위를 나눠 이어붙이세요`);
-  if(blobs.length) bits.push(`딱지·글자처럼 뭉툭한 덩어리 ${blobs.length}개는 건너뛰었습니다`);
+  if(info.leftover) bits.push(`⚠ 멀리 떨어진 조각 ${info.leftover}개는 못 붙였습니다 — '끊긴 틈 잇기'를 늘리거나 범위를 나눠 이어붙이세요`);
+  if(info.blobs) bits.push(`딱지·글자처럼 뭉툭한 덩어리 ${info.blobs}개는 건너뛰었습니다`);
   if(fitRms != null) bits.push(`기준점 오차 ${fitRms.toFixed(0)}m`);
   bits.push("위 3.그리기 의 길이 검산을 꼭 확인하세요");
   $("#traceMsg").textContent = bits.join(" · ");
@@ -1456,7 +1674,42 @@ $("#btnLayer").addEventListener("click", () => {
 $("#onlyTodo").addEventListener("change", renderList);
 $("#btnGuide").addEventListener("click", showGuides);
 $("#btnUndo").addEventListener("click", () => { pts.pop(); redraw(); });
-$("#btnClear").addEventListener("click", () => { pts = []; redraw(); });
+$("#btnClear").addEventListener("click", () => { pts = []; redraw(); refreshBranchUi(); });
+
+/* ---------- 갈래 ----------
+   두 갈래로 갈라지는 노선이 있다 (담당자 메모, 2026-08-17).
+   '갈래 마무리'를 누르면 지금 그린 것을 갈래로 담고 새 갈래를 시작한다. */
+function refreshBranchUi(){
+  const el = $("#branchMsg");
+  if(!el) return;
+  const n = branches.length;
+  el.innerHTML = n
+    ? `끝낸 갈래 <b>${n}개</b> · 지금 갈래 ${pts.length}점` +
+      ` <button type="button" id="btnBranchPop">마지막 갈래 되돌리기</button>`
+    : (pts.length ? `지금 갈래 ${pts.length}점` : "");
+  const back = document.getElementById("btnBranchPop");
+  if(back) back.addEventListener("click", () => {
+    // 되돌릴 길을 반드시 둔다 — 잘못 마무리했을 때 처음부터 다시 하면 안 된다
+    if(!branches.length) return;
+    // ★ 순서가 중요하다. 먼저 되돌릴 갈래를 꺼낸 **뒤에** 지금 그리던 것을 보관해야 한다.
+    //   반대로 하면 방금 넣은 것을 도로 꺼내 제자리걸음이 된다 (2026-08-17 시험에서 잡음).
+    const back = branches.pop();
+    if(pts.length >= 2) branches.push(pts);
+    pts = back;
+    redraw(); refreshBranchUi();
+    $("#msg").textContent = "마지막 갈래를 다시 편집 상태로 되돌렸습니다.";
+  });
+}
+
+$("#btnBranch").addEventListener("click", () => {
+  if(pts.length < 2){ $("#msg").textContent = "점이 2개 이상이어야 갈래로 담을 수 있습니다."; return; }
+  branches.push(pts);
+  pts = [];
+  redraw(); refreshBranchUi();
+  $("#msg").textContent =
+    `갈래 ${branches.length}개를 담았습니다. 이어서 다음 갈래를 그리세요. ` +
+    `저장하면 갈래가 그대로 유지됩니다(MultiLineString).`;
+});
 $("#btnImport").addEventListener("click", doImport);
 
 $("#btnSave").addEventListener("click", () => {
