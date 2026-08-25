@@ -8,6 +8,247 @@ X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
 BEGIN:VEVENT
+UID:ME20260101-105394@alrimi
+DTSTAMP:20260824T000000Z
+DTSTART;VALUE=DATE:20260907
+DTEND;VALUE=DATE:20260908
+SUMMARY:[의견 마감] 고성 평화경제특구 개발계획
+DESCRIPTION:사업: 고성 평화경제특구 개발계획\n유형: 전략
+ 환경영향평가\n위치: 강원특별자치도 고성군 현내면 죽
+ 정리 (이승만별장길 33)\n기관: 기후에너지환경부\n공람
+ 기간: 2026-08-24 ~ 2026-09-07\n의견 제출 마감: 2026-09-07\n\n의
+ 견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.g
+ o.kr/\n\n우리동네 개발사업 알리미
+LOCATION:강원특별자치도 고성군 현내면 죽정리 (이승만별
+ 장길 33)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:고성 평화경제특구 개발계획 의견 제출 마감 3
+ 일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:고성 평화경제특구 개발계획 의견 제출 오늘 마
+ 감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:HG20260508-105322@alrimi
+DTSTAMP:20260824T000000Z
+DTSTART;VALUE=DATE:20261007
+DTEND;VALUE=DATE:20261008
+SUMMARY:[의견 마감] 김포시 도시관리계획(개발제한구역) 
+ 결정(변경)(재협의)
+DESCRIPTION:사업: 김포시 도시관리계획(개발제한구역) 결정
+ (변경)(재협의)\n유형: 전략환경영향평가\n위치: 경기도 
+ 김포시 고촌읍 신곡리 (신기신동로 87)\n기관: 한강유역
+ 환경청\n공람기간: 2026-08-24 ~ 2026-09-30\n의견 제출 마감: 20
+ 26-10-07\n\n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttp
+ s://www.eiass.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:경기도 김포시 고촌읍 신곡리 (신기신동로 87)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:김포시 도시관리계획(개발제한구역) 결정(변경)
+ (재협의) 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:김포시 도시관리계획(개발제한구역) 결정(변경)
+ (재협의) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:HG20260525-105403@alrimi
+DTSTAMP:20260821T000000Z
+DTSTART;VALUE=DATE:20260925
+DTEND;VALUE=DATE:20260926
+SUMMARY:[의견 마감] 김포 통진읍 환경기초시설 도시관리계
+ 획 결정(변경)
+DESCRIPTION:사업: 김포 통진읍 환경기초시설 도시관리계획 
+ 결정(변경)\n유형: 전략환경영향평가\n위치: 경기도 김포
+ 시 통진읍 수참리 (하성로 58-143)\n기관: 한강유역환경청\
+ n공람기간: 2026-08-21 ~ 2026-09-18\n의견 제출 마감: 2026-09-25\n
+ \n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.ei
+ ass.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:경기도 김포시 통진읍 수참리 (하성로 58-143)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:김포 통진읍 환경기초시설 도시관리계획 결정(
+ 변경) 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:김포 통진읍 환경기초시설 도시관리계획 결정(
+ 변경) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:HG20260530-105412@alrimi
+DTSTAMP:20260820T000000Z
+DTSTART;VALUE=DATE:20260903
+DTEND;VALUE=DATE:20260904
+SUMMARY:[의견 마감] 여주 도시관리계획(용도지역\, 도시지
+ 역 외 지역) 결정(변경)
+DESCRIPTION:사업: 여주 도시관리계획(용도지역\, 도시지역 
+ 외 지역) 결정(변경)\n유형: 전략환경영향평가\n위치: 경
+ 기도 여주시 홍문동 (세종로 1)\n기관: 한강유역환경청\n
+ 공람기간: 2026-08-20 ~ 2026-09-03\n의견 제출 마감: 2026-09-03\n\
+ n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eia
+ ss.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:경기도 여주시 홍문동 (세종로 1)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:여주 도시관리계획(용도지역\, 도시지역 외 지
+ 역) 결정(변경) 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:여주 도시관리계획(용도지역\, 도시지역 외 지
+ 역) 결정(변경) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:JJ20260157-105363@alrimi
+DTSTAMP:20260819T000000Z
+DTSTART;VALUE=DATE:20260915
+DTEND;VALUE=DATE:20260916
+SUMMARY:[의견 마감] 익산시 문화산업진흥지구 지정
+DESCRIPTION:사업: 익산시 문화산업진흥지구 지정\n유형: 전
+ 략환경영향평가\n위치: 전북특별자치도 익산시 중앙동3
+ 가 (중앙로3길 10)\n기관: 전북지방환경청\n공람기간: 2026-
+ 08-19 ~ 2026-09-15\n의견 제출 마감: 2026-09-15\n\n의견은 EIASS 
+ 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우
+ 리동네 개발사업 알리미
+LOCATION:전북특별자치도 익산시 중앙동3가 (중앙로3길 10)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:익산시 문화산업진흥지구 지정 의견 제출 마감 
+ 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:익산시 문화산업진흥지구 지정 의견 제출 오늘 
+ 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:WJ20260154-105328@alrimi
+DTSTAMP:20260819T000000Z
+DTSTART;VALUE=DATE:20260923
+DTEND;VALUE=DATE:20260924
+SUMMARY:[의견 마감] 양구 지석농공단지 조성사업
+DESCRIPTION:사업: 양구 지석농공단지 조성사업\n유형: 전략
+ 환경영향평가\n위치: 강원특별자치도 양구군 동면 지석
+ 리 (금강산로956번길 206)\n기관: 원주지방환경청\n공람기
+ 간: 2026-08-19 ~ 2026-09-16\n의견 제출 마감: 2026-09-23\n\n의견
+ 은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.k
+ r/\n\n우리동네 개발사업 알리미
+LOCATION:강원특별자치도 양구군 동면 지석리 (금강산로956
+ 번길 206)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:양구 지석농공단지 조성사업 의견 제출 마감 3
+ 일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:양구 지석농공단지 조성사업 의견 제출 오늘 마
+ 감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:ND20260192-105281@alrimi
+DTSTAMP:20260819T000000Z
+DTSTART;VALUE=DATE:20260923
+DTEND;VALUE=DATE:20260924
+SUMMARY:[의견 마감] 서낙동강수계 하천기본계획
+DESCRIPTION:사업: 서낙동강수계 하천기본계획\n유형: 전략
+ 환경영향평가\n위치: 부산광역시 강서구 대저1동 (공항
+ 로 1487)\n기관: 낙동강유역환경청\n공람기간: 2026-08-19 ~ 20
+ 26-09-16\n의견 제출 마감: 2026-09-23\n\n의견은 EIASS 에서 본
+ 인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 
+ 개발사업 알리미
+LOCATION:부산광역시 강서구 대저1동 (공항로 1487)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:서낙동강수계 하천기본계획 의견 제출 마감 3일
+  전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:서낙동강수계 하천기본계획 의견 제출 오늘 마
+ 감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:HG20260521-105373@alrimi
+DTSTAMP:20260818T000000Z
+DTSTART;VALUE=DATE:20260904
+DTEND;VALUE=DATE:20260905
+SUMMARY:[의견 마감] 양주 도시관리계획(개발제한구역 해제
+  및 지구단위계획) 결정(변경)
+DESCRIPTION:사업: 양주 도시관리계획(개발제한구역 해제 및
+  지구단위계획) 결정(변경)\n유형: 전략환경영향평가\n위
+ 치: 경기도 양주시 장흥면 교현리 (북한산로 857)\n기관: 
+ 한강유역환경청\n공람기간: 2026-08-18 ~ 2026-09-04\n의견 제
+ 출 마감: 2026-09-04\n\n의견은 EIASS 에서 본인인증 후 제출
+ 합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알리
+ 미
+LOCATION:경기도 양주시 장흥면 교현리 (북한산로 857)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:양주 도시관리계획(개발제한구역 해제 및 지구
+ 단위계획) 결정(변경) 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:양주 도시관리계획(개발제한구역 해제 및 지구
+ 단위계획) 결정(변경) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:ME20250045-100429@alrimi
+DTSTAMP:20260818T000000Z
+DTSTART;VALUE=DATE:20260922
+DTEND;VALUE=DATE:20260923
+SUMMARY:[의견 마감] 위례~과천 광역철도 민간투자사업
+DESCRIPTION:사업: 위례~과천 광역철도 민간투자사업\n유형: 
+ 전략환경영향평가\n위치: 경기도 과천시 중앙동 (관문로
+  47)\n기관: 기후에너지환경부\n공람기간: 2026-08-18 ~ 2026-09
+ -15\n의견 제출 마감: 2026-09-22\n\n의견은 EIASS 에서 본인인
+ 증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발
+ 사업 알리미
+LOCATION:경기도 과천시 중앙동 (관문로 47)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:위례~과천 광역철도 민간투자사업 의견 제출 마
+ 감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:위례~과천 광역철도 민간투자사업 의견 제출 오
+ 늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:HG20260517-105350@alrimi
 DTSTAMP:20260814T000000Z
 DTSTART;VALUE=DATE:20260911
@@ -262,7 +503,7 @@ DESCRIPTION:사업: 영동 군관리계획(용도지역·지구\, 농어촌
  관광·휴양형 지구단위계획) 결정(변경)(안)\n유형: 전략
  환경영향평가\n위치: 충청북도 영동군 추풍령면 계룡리 
  (계룡1길 37-50)\n기관: 금강유역환경청\n공람기간: 2026-08-0
- 4 ~ 2026-09-02\n의견 제출 마감: 2026-09-09\n\n의견은 EIASS 에서
+ 4 ~ 2026-09-04\n의견 제출 마감: 2026-09-09\n\n의견은 EIASS 에서
   본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동
  네 개발사업 알리미
 LOCATION:충청북도 영동군 추풍령면 계룡리 (계룡1길 37-50)
@@ -599,6 +840,33 @@ DESCRIPTION:광양(Ⅳ) 공업용수도사업 의견 제출 오늘 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
+UID:HG20260499-105294@alrimi
+DTSTAMP:20260722T000000Z
+DTSTART;VALUE=DATE:20260921
+DTEND;VALUE=DATE:20260922
+SUMMARY:[의견 마감] 옹진군 소하천정비종합계획(재정비)
+DESCRIPTION:사업: 옹진군 소하천정비종합계획(재정비)\n유
+ 형: 전략환경영향평가\n위치: 인천광역시 옹진군 북도면
+  신도리 (신도로484번길 150)\n기관: 한강유역환경청\n공람
+ 기간: 2026-07-22 ~ 2026-09-21\n의견 제출 마감: 2026-09-21\n\n의
+ 견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.g
+ o.kr/\n\n우리동네 개발사업 알리미
+LOCATION:인천광역시 옹진군 북도면 신도리 (신도로484번길 
+ 150)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:옹진군 소하천정비종합계획(재정비) 의견 제출 
+ 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:옹진군 소하천정비종합계획(재정비) 의견 제출 
+ 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:ND20260168-105013@alrimi
 DTSTAMP:20260722T000000Z
 DTSTART;VALUE=DATE:20260826
@@ -680,166 +948,29 @@ DESCRIPTION:고창 명사십리 관광지 지정 의견 제출 오늘 마
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:DG20260232-105072@alrimi
-DTSTAMP:20260715T000000Z
-DTSTART;VALUE=DATE:20260819
-DTEND;VALUE=DATE:20260820
-SUMMARY:[의견 마감] 대구도시철도1호선 영천(금호) 연장사
- 업
-DESCRIPTION:사업: 대구도시철도1호선 영천(금호) 연장사업\n
- 유형: 전략환경영향평가\n위치: 경상북도 경산시 하양읍
-  금락리 (하양역길 1)\n기관: 대구지방환경청\n공람기간: 
- 2026-07-15 ~ 2026-08-12\n의견 제출 마감: 2026-08-19\n\n의견은 EIA
- SS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n
- 우리동네 개발사업 알리미
-LOCATION:경상북도 경산시 하양읍 금락리 (하양역길 1)
+UID:DG2026A005-45797@alrimi
+DTSTAMP:20260824T000000Z
+DTSTART;VALUE=DATE:20260928
+DTEND;VALUE=DATE:20260929
+SUMMARY:[의견 마감] 구미 봉곡신도시지구 도시개발사업
+DESCRIPTION:사업: 구미 봉곡신도시지구 도시개발사업\n유형
+ : 환경영향평가\n위치: 경상북도 구미시 봉곡동 (봉곡서
+ 로7길 52-9)\n기관: 구미시\n공람기간: 2026-08-24 ~ 2026-09-21\n
+ 의견 제출 마감: 2026-09-28\n\n의견은 EIASS 에서 본인인증 
+ 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사
+ 업 알리미
+LOCATION:경상북도 구미시 봉곡동 (봉곡서로7길 52-9)
 BEGIN:VALARM
 ACTION:DISPLAY
 TRIGGER:-P3DT15H
-DESCRIPTION:대구도시철도1호선 영천(금호) 연장사업 의견 
- 제출 마감 3일 전
+DESCRIPTION:구미 봉곡신도시지구 도시개발사업 의견 제출 
+ 마감 3일 전
 END:VALARM
 BEGIN:VALARM
 ACTION:DISPLAY
 TRIGGER:-PT15H
-DESCRIPTION:대구도시철도1호선 영천(금호) 연장사업 의견 
- 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:ND20260171-105042@alrimi
-DTSTAMP:20260714T000000Z
-DTSTART;VALUE=DATE:20260819
-DTEND;VALUE=DATE:20260820
-SUMMARY:[의견 마감] 울산 여천하수처리시설 건설 민간투자
- 사업
-DESCRIPTION:사업: 울산 여천하수처리시설 건설 민간투자사
- 업\n유형: 전략환경영향평가\n위치: 울산광역시 남구 매
- 암동 (납도로 156)\n기관: 낙동강유역환경청\n공람기간: 20
- 26-07-14 ~ 2026-08-12\n의견 제출 마감: 2026-08-19\n\n의견은 EIASS
-  에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우
- 리동네 개발사업 알리미
-LOCATION:울산광역시 남구 매암동 (납도로 156)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:울산 여천하수처리시설 건설 민간투자사업 의
- 견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:울산 여천하수처리시설 건설 민간투자사업 의
- 견 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:JJ20260133-105019@alrimi
-DTSTAMP:20260714T000000Z
-DTSTART;VALUE=DATE:20260821
-DTEND;VALUE=DATE:20260822
-SUMMARY:[의견 마감] 전주시 문화산업진흥지구 지정
-DESCRIPTION:사업: 전주시 문화산업진흥지구 지정\n유형: 전
- 략환경영향평가\n위치: 전북특별자치도 전주시 완산구 
- 고사동 (전주객사2길 60)\n기관: 전북지방환경청\n공람기
- 간: 2026-07-14 ~ 2026-08-14\n의견 제출 마감: 2026-08-21\n\n의견
- 은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.k
- r/\n\n우리동네 개발사업 알리미
-LOCATION:전북특별자치도 전주시 완산구 고사동 (전주객사2
- 길 60)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:전주시 문화산업진흥지구 지정 의견 제출 마감 
- 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:전주시 문화산업진흥지구 지정 의견 제출 오늘 
- 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:ME20260080-104955@alrimi
-DTSTAMP:20260713T000000Z
-DTSTART;VALUE=DATE:20260818
-DTEND;VALUE=DATE:20260819
-SUMMARY:[의견 마감] 25-A-00부대
-DESCRIPTION:사업: 25-A-00부대\n유형: 전략환경영향평가\n위치
- : 충청남도 논산시 연무읍 죽평리 (득안대로 416)\n기관: 
- 기후에너지환경부\n공람기간: 2026-07-13 ~ 2026-08-11\n의견 
- 제출 마감: 2026-08-18\n\n의견은 EIASS 에서 본인인증 후 제
- 출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알
- 리미
-LOCATION:충청남도 논산시 연무읍 죽평리 (득안대로 416)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:25-A-00부대 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:25-A-00부대 의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:ME20260075-104824@alrimi
-DTSTAMP:20260713T000000Z
-DTSTART;VALUE=DATE:20260819
-DTEND;VALUE=DATE:20260820
-SUMMARY:[의견 마감] 고성역세권 개발사업 투자선도지구 지
- 정 및 계획수립
-DESCRIPTION:사업: 고성역세권 개발사업 투자선도지구 지정 
- 및 계획수립\n유형: 전략환경영향평가\n위치: 경상남도 
- 고성군 고성읍 송학리 (송학고분로 378-14)\n기관: 기후에
- 너지환경부\n공람기간: 2026-07-13 ~ 2026-08-12\n의견 제출 마
- 감: 2026-08-19\n\n의견은 EIASS 에서 본인인증 후 제출합니다
- .\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알리미
-LOCATION:경상남도 고성군 고성읍 송학리 (송학고분로 378-14
- )
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:고성역세권 개발사업 투자선도지구 지정 및 계
- 획수립 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:고성역세권 개발사업 투자선도지구 지정 및 계
- 획수립 의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:WJ20260124-104876@alrimi
-DTSTAMP:20260629T000000Z
-DTSTART;VALUE=DATE:20260821
-DTEND;VALUE=DATE:20260822
-SUMMARY:[의견 마감] 양양 군관리계획(양양 인구해안·동산
- 해안지구 지구단위계획구역) 결정(변경)(안)
-DESCRIPTION:사업: 양양 군관리계획(양양 인구해안·동산해
- 안지구 지구단위계획구역) 결정(변경)(안)\n유형: 전략환
- 경영향평가\n위치: 강원특별자치도 양양군 현남면 동산
- 리 (동산큰길 62-40)\n기관: 원주지방환경청\n공람기간: 202
- 6-06-29 ~ 2026-08-11\n의견 제출 마감: 2026-08-21\n\n의견은 EIASS 
- 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우
- 리동네 개발사업 알리미
-LOCATION:강원특별자치도 양양군 현남면 동산리 (동산큰길 
- 62-40)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:양양 군관리계획(양양 인구해안·동산해안지구 
- 지구단위계획구역) 결정(변경)(안) 의견 제출 마감 3일 
- 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:양양 군관리계획(양양 인구해안·동산해안지구 
- 지구단위계획구역) 결정(변경)(안) 의견 제출 오늘 마감
+DESCRIPTION:구미 봉곡신도시지구 도시개발사업 의견 제출 
+ 오늘 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
@@ -869,42 +1000,42 @@ DESCRIPTION:동해신항 관리부두 건설공사 의견 제출 오늘 마
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:GW2026B001-45781@alrimi
-DTSTAMP:20260724T000000Z
-DTSTART;VALUE=DATE:20260819
-DTEND;VALUE=DATE:20260820
-SUMMARY:[의견 마감] 영월군 첨단산업 핵심소재 일반산업단
- 지 조성사업
-DESCRIPTION:사업: 영월군 첨단산업 핵심소재 일반산업단지 
- 조성사업\n유형: 환경영향평가\n위치: 강원특별자치도 
- 영월군 산솔면 (응고개길 13)\n기관: 영월군\n공람기간: 20
- 26-07-24 ~ 2026-08-12\n의견 제출 마감: 2026-08-19\n\n의견은 EIASS
-  에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우
- 리동네 개발사업 알리미
-LOCATION:강원특별자치도 영월군 산솔면 (응고개길 13)
+UID:YS2026C003-45779@alrimi
+DTSTAMP:20260818T000000Z
+DTSTART;VALUE=DATE:20260925
+DTEND;VALUE=DATE:20260926
+SUMMARY:[의견 마감] 345kv 신해남~신강진 송전선로 건설사업
+DESCRIPTION:사업: 345kv 신해남~신강진 송전선로 건설사업\n
+ 유형: 환경영향평가\n위치: 전남광주통합특별시 해남군 
+ 황산면 (학동마을길 267)\n기관: 기후에너지환경부\n공람
+ 기간: 2026-08-18 ~ 2026-09-18\n의견 제출 마감: 2026-09-25\n\n의
+ 견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.g
+ o.kr/\n\n우리동네 개발사업 알리미
+LOCATION:전남광주통합특별시 해남군 황산면 (학동마을길 2
+ 67)
 BEGIN:VALARM
 ACTION:DISPLAY
 TRIGGER:-P3DT15H
-DESCRIPTION:영월군 첨단산업 핵심소재 일반산업단지 조성
- 사업 의견 제출 마감 3일 전
+DESCRIPTION:345kv 신해남~신강진 송전선로 건설사업 의견 제
+ 출 마감 3일 전
 END:VALARM
 BEGIN:VALARM
 ACTION:DISPLAY
 TRIGGER:-PT15H
-DESCRIPTION:영월군 첨단산업 핵심소재 일반산업단지 조성
- 사업 의견 제출 오늘 마감
+DESCRIPTION:345kv 신해남~신강진 송전선로 건설사업 의견 제
+ 출 오늘 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
 UID:YS2026C001-45777@alrimi
 DTSTAMP:20260803T000000Z
-DTSTART;VALUE=DATE:20260911
-DTEND;VALUE=DATE:20260912
+DTSTART;VALUE=DATE:20260925
+DTEND;VALUE=DATE:20260926
 SUMMARY:[의견 마감] 345kV 신해남~신장성 송전선로 건설사업
 DESCRIPTION:사업: 345kV 신해남~신장성 송전선로 건설사업\n
  유형: 환경영향평가\n위치: 전남광주통합특별시 강진군 
  성전면 (두원길 37-7)\n기관: 기후에너지환경부\n공람기간
- : 2026-08-03 ~ 2026-09-04\n의견 제출 마감: 2026-09-11\n\n의견은 E
+ : 2026-08-03 ~ 2026-09-18\n의견 제출 마감: 2026-09-25\n\n의견은 E
  IASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\
  n우리동네 개발사업 알리미
 LOCATION:전남광주통합특별시 강진군 성전면 (두원길 37-7)
@@ -971,29 +1102,6 @@ DESCRIPTION:25-N-패키지시설사업(C084) 의견 제출 오늘 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ME2026D002-45766@alrimi
-DTSTAMP:20260715T000000Z
-DTSTART;VALUE=DATE:20260821
-DTEND;VALUE=DATE:20260822
-SUMMARY:[의견 마감] 지세포항 정비공사
-DESCRIPTION:사업: 지세포항 정비공사\n유형: 환경영향평가\n
- 위치: 경상남도 거제시 일운면 (지세포해안로 89-7)\n기관
- : 해양수산부\n공람기간: 2026-07-15 ~ 2026-08-14\n의견 제출 
- 마감: 2026-08-21\n\n의견은 EIASS 에서 본인인증 후 제출합니
- 다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알리미
-LOCATION:경상남도 거제시 일운면 (지세포해안로 89-7)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:지세포항 정비공사 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:지세포항 정비공사 의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 UID:ME2026C014-45765@alrimi
 DTSTAMP:20260731T000000Z
 DTSTART;VALUE=DATE:20260907
@@ -1018,85 +1126,6 @@ ACTION:DISPLAY
 TRIGGER:-PT15H
 DESCRIPTION:영광칠해 해상풍력 발전사업(발전단지~육상변
  전소 구간) 의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:ME2026C013-45761@alrimi
-DTSTAMP:20260708T000000Z
-DTSTART;VALUE=DATE:20260818
-DTEND;VALUE=DATE:20260819
-SUMMARY:[의견 마감] 신호남복합(500MW) 건설사업
-DESCRIPTION:사업: 신호남복합(500MW) 건설사업\n유형: 환경영
- 향평가\n위치: 전라남도 여수시 월내동 (여수산단로 1203)
- \n기관: 기후에너지환경부\n공람기간: 2026-07-08 ~ 2026-08-11\
- n의견 제출 마감: 2026-08-18\n\n의견은 EIASS 에서 본인인증 
- 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사
- 업 알리미
-LOCATION:전라남도 여수시 월내동 (여수산단로 1203)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:신호남복합(500MW) 건설사업 의견 제출 마감 3일 
- 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:신호남복합(500MW) 건설사업 의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:GG2026O002-45755@alrimi
-DTSTAMP:20260624T000000Z
-DTSTART;VALUE=DATE:20260821
-DTEND;VALUE=DATE:20260822
-SUMMARY:[의견 마감] 청주시 유기성폐자원 바이오가스화시
- 설 민간투자사업
-DESCRIPTION:사업: 청주시 유기성폐자원 바이오가스화시설 
- 민간투자사업\n유형: 환경영향평가\n위치: 충청북도 청
- 주시 흥덕구 신대동 (미호로521번길 103)\n기관: 청주시\n
- 공람기간: 2026-06-24 ~ 2026-08-14\n의견 제출 마감: 2026-08-21\n\
- n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eia
- ss.go.kr/\n\n우리동네 개발사업 알리미
-LOCATION:충청북도 청주시 흥덕구 신대동 (미호로521번길 103
- )
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:청주시 유기성폐자원 바이오가스화시설 민간투
- 자사업 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:청주시 유기성폐자원 바이오가스화시설 민간투
- 자사업 의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:DG2026B003-45691@alrimi
-DTSTAMP:20260722T000000Z
-DTSTART;VALUE=DATE:20260823
-DTEND;VALUE=DATE:20260824
-SUMMARY:[의견 마감] 구미 장천 일반산업단지 개발사업
-DESCRIPTION:사업: 구미 장천 일반산업단지 개발사업\n유형: 
- 환경영향평가\n위치: 경상북도 구미시 장천면 (강동로 30
- 2-41)\n기관: 경상북도\n공람기간: 2026-07-22 ~ 2026-08-23\n의견
-  제출 마감: 2026-08-23\n\n의견은 EIASS 에서 본인인증 후 제
- 출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알
- 리미
-LOCATION:경상북도 구미시 장천면 (강동로 302-41)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:구미 장천 일반산업단지 개발사업 의견 제출 마
- 감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:구미 장천 일반산업단지 개발사업 의견 제출 오
- 늘 마감
 END:VALARM
 END:VEVENT
 END:VCALENDAR

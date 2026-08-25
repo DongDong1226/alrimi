@@ -8,4 +8,31 @@ X-WR-CALNAME:전남광주통합특별시 해남군 황산면 개발사업
 X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:YS2026C003-45779@alrimi
+DTSTAMP:20260818T000000Z
+DTSTART;VALUE=DATE:20260925
+DTEND;VALUE=DATE:20260926
+SUMMARY:[의견 마감] 345kv 신해남~신강진 송전선로 건설사업
+DESCRIPTION:사업: 345kv 신해남~신강진 송전선로 건설사업\n
+ 유형: 환경영향평가\n위치: 전남광주통합특별시 해남군 
+ 황산면 (학동마을길 267)\n기관: 기후에너지환경부\n공람
+ 기간: 2026-08-18 ~ 2026-09-18\n의견 제출 마감: 2026-09-25\n\n의
+ 견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.g
+ o.kr/\n\n우리동네 개발사업 알리미
+LOCATION:전남광주통합특별시 해남군 황산면 (학동마을길 2
+ 67)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:345kv 신해남~신강진 송전선로 건설사업 의견 제
+ 출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:345kv 신해남~신강진 송전선로 건설사업 의견 제
+ 출 오늘 마감
+END:VALARM
+END:VEVENT
 END:VCALENDAR

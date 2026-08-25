@@ -8,33 +8,57 @@ X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
 BEGIN:VEVENT
-UID:WJ20260124-104876@alrimi
-DTSTAMP:20260629T000000Z
-DTSTART;VALUE=DATE:20260821
-DTEND;VALUE=DATE:20260822
-SUMMARY:[의견 마감] 양양 군관리계획(양양 인구해안·동산
- 해안지구 지구단위계획구역) 결정(변경)(안)
-DESCRIPTION:사업: 양양 군관리계획(양양 인구해안·동산해
- 안지구 지구단위계획구역) 결정(변경)(안)\n유형: 전략환
- 경영향평가\n위치: 강원특별자치도 양양군 현남면 동산
- 리 (동산큰길 62-40)\n기관: 원주지방환경청\n공람기간: 202
- 6-06-29 ~ 2026-08-11\n의견 제출 마감: 2026-08-21\n\n의견은 EIASS 
- 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우
- 리동네 개발사업 알리미
-LOCATION:강원특별자치도 양양군 현남면 동산리 (동산큰길 
- 62-40)
+UID:ME20260101-105394@alrimi
+DTSTAMP:20260824T000000Z
+DTSTART;VALUE=DATE:20260907
+DTEND;VALUE=DATE:20260908
+SUMMARY:[의견 마감] 고성 평화경제특구 개발계획
+DESCRIPTION:사업: 고성 평화경제특구 개발계획\n유형: 전략
+ 환경영향평가\n위치: 강원특별자치도 고성군 현내면 죽
+ 정리 (이승만별장길 33)\n기관: 기후에너지환경부\n공람
+ 기간: 2026-08-24 ~ 2026-09-07\n의견 제출 마감: 2026-09-07\n\n의
+ 견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.g
+ o.kr/\n\n우리동네 개발사업 알리미
+LOCATION:강원특별자치도 고성군 현내면 죽정리 (이승만별
+ 장길 33)
 BEGIN:VALARM
 ACTION:DISPLAY
 TRIGGER:-P3DT15H
-DESCRIPTION:양양 군관리계획(양양 인구해안·동산해안지구 
- 지구단위계획구역) 결정(변경)(안) 의견 제출 마감 3일 
- 전
+DESCRIPTION:고성 평화경제특구 개발계획 의견 제출 마감 3
+ 일 전
 END:VALARM
 BEGIN:VALARM
 ACTION:DISPLAY
 TRIGGER:-PT15H
-DESCRIPTION:양양 군관리계획(양양 인구해안·동산해안지구 
- 지구단위계획구역) 결정(변경)(안) 의견 제출 오늘 마감
+DESCRIPTION:고성 평화경제특구 개발계획 의견 제출 오늘 마
+ 감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:WJ20260154-105328@alrimi
+DTSTAMP:20260819T000000Z
+DTSTART;VALUE=DATE:20260923
+DTEND;VALUE=DATE:20260924
+SUMMARY:[의견 마감] 양구 지석농공단지 조성사업
+DESCRIPTION:사업: 양구 지석농공단지 조성사업\n유형: 전략
+ 환경영향평가\n위치: 강원특별자치도 양구군 동면 지석
+ 리 (금강산로956번길 206)\n기관: 원주지방환경청\n공람기
+ 간: 2026-08-19 ~ 2026-09-16\n의견 제출 마감: 2026-09-23\n\n의견
+ 은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.k
+ r/\n\n우리동네 개발사업 알리미
+LOCATION:강원특별자치도 양구군 동면 지석리 (금강산로956
+ 번길 206)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:양구 지석농공단지 조성사업 의견 제출 마감 3
+ 일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:양구 지석농공단지 조성사업 의견 제출 오늘 마
+ 감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
@@ -61,33 +85,6 @@ ACTION:DISPLAY
 TRIGGER:-PT15H
 DESCRIPTION:동해신항 관리부두 건설공사 의견 제출 오늘 마
  감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:GW2026B001-45781@alrimi
-DTSTAMP:20260724T000000Z
-DTSTART;VALUE=DATE:20260819
-DTEND;VALUE=DATE:20260820
-SUMMARY:[의견 마감] 영월군 첨단산업 핵심소재 일반산업단
- 지 조성사업
-DESCRIPTION:사업: 영월군 첨단산업 핵심소재 일반산업단지 
- 조성사업\n유형: 환경영향평가\n위치: 강원특별자치도 
- 영월군 산솔면 (응고개길 13)\n기관: 영월군\n공람기간: 20
- 26-07-24 ~ 2026-08-12\n의견 제출 마감: 2026-08-19\n\n의견은 EIASS
-  에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우
- 리동네 개발사업 알리미
-LOCATION:강원특별자치도 영월군 산솔면 (응고개길 13)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:영월군 첨단산업 핵심소재 일반산업단지 조성
- 사업 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:영월군 첨단산업 핵심소재 일반산업단지 조성
- 사업 의견 제출 오늘 마감
 END:VALARM
 END:VEVENT
 END:VCALENDAR
