@@ -350,6 +350,11 @@ button{cursor:pointer}
 .proj .rows{display:flex;flex-direction:column;gap:6px;font-size:var(--fs-body-s);color:var(--ink-2)}
 .proj .rows div{display:flex;align-items:flex-start;gap:7px}
 .proj .rows svg{width:15px;height:15px;color:var(--ink-4);flex:none;margin-top:3px}
+/* ★ 주소 아래 줄에 오는 '우리 집에서 ○km'.
+   한 줄에 '·'로 붙여 놓으면 주소가 긴 사업에서 거리가 주소 뒤에 묻힌다.
+   줄을 나누고 한 단계 연한 글자색을 써서 '주소 + 덧붙인 정보'로 읽히게 한다.
+   아이콘이 flex:none 이라 두 번째 줄도 주소와 같은 자리에서 시작한다. */
+.proj .rows .dist{color:var(--ink-3)}
 .proj .foot{display:flex;align-items:center;gap:8px;border-top:1px solid var(--line);
   padding-top:13px;margin-top:auto}
 .proj-empty{padding:36px;text-align:center;color:var(--ink-3);background:#fff;

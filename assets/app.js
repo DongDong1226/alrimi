@@ -2349,7 +2349,7 @@ function projCardHtml(p, opts = {}){
       <p class="ttl">${esc(p.name)}</p>
       <p class="desc">공람기간 ${esc(p.period)}${p.opinionEnd ? `<br><b class="op-end">의견 마감 ${esc(p.opinionEnd)}</b>` : ""}</p>
       <div class="rows">
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg><span>${esc(p.where)}${dist ? " · 우리 집에서 " + esc(dist) : ""}</span></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg><span>${esc(p.where)}${dist ? `<br><span class="dist">우리 집에서 ${esc(dist)}</span>` : ""}</span></div>
         <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"></path><path d="M15 3v4h4"></path></svg><span>${esc(p.org)} · ${esc(p.stage)}</span></div>
       </div>
       <div class="foot">
