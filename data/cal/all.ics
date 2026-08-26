@@ -88,33 +88,6 @@ DESCRIPTION:파주 평화경제특구 의견 제출 오늘 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ME20260101-105394@alrimi
-DTSTAMP:20260824T000000Z
-DTSTART;VALUE=DATE:20260907
-DTEND;VALUE=DATE:20260908
-SUMMARY:[의견 마감] 고성 평화경제특구 개발계획
-DESCRIPTION:사업: 고성 평화경제특구 개발계획\n유형: 전략
- 환경영향평가\n위치: 강원특별자치도 고성군 현내면 죽
- 정리 (이승만별장길 33)\n기관: 기후에너지환경부\n공람
- 기간: 2026-08-24 ~ 2026-09-07\n의견 제출 마감: 2026-09-07\n\n의
- 견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.g
- o.kr/\n\n우리동네 개발사업 알리미
-LOCATION:강원특별자치도 고성군 현내면 죽정리 (이승만별
- 장길 33)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:고성 평화경제특구 개발계획 의견 제출 마감 3
- 일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:고성 평화경제특구 개발계획 의견 제출 오늘 마
- 감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 UID:HG20260508-105322@alrimi
 DTSTAMP:20260824T000000Z
 DTSTART;VALUE=DATE:20261007
@@ -193,6 +166,33 @@ ACTION:DISPLAY
 TRIGGER:-PT15H
 DESCRIPTION:여주 도시관리계획(용도지역\, 도시지역 외 지
  역) 결정(변경) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:YS20260239-105431@alrimi
+DTSTAMP:20260819T000000Z
+DTSTART;VALUE=DATE:20260926
+DTEND;VALUE=DATE:20260927
+SUMMARY:[의견 마감] 제주시 농어촌도로 기본계획
+DESCRIPTION:사업: 제주시 농어촌도로 기본계획\n유형: 전략
+ 환경영향평가\n위치: 제주특별자치도 제주시 애월읍 애
+ 월리 (애월원당길 101-10)\n기관: 영산강유역환경청\n공람
+ 기간: 2026-08-19 ~ 2026-09-18\n의견 제출 마감: 2026-09-26\n\n의
+ 견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.g
+ o.kr/\n\n우리동네 개발사업 알리미
+LOCATION:제주특별자치도 제주시 애월읍 애월리 (애월원당
+ 길 101-10)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:제주시 농어촌도로 기본계획 의견 제출 마감 3
+ 일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:제주시 농어촌도로 기본계획 의견 제출 오늘 마
+ 감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
