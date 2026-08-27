@@ -498,33 +498,6 @@ DESCRIPTION:상두천 하천기본계획 재수립 및 실시설계 의견
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:JJ20260144-105270@alrimi
-DTSTAMP:20260811T000000Z
-DTSTART;VALUE=DATE:20260826
-DTEND;VALUE=DATE:20260827
-SUMMARY:[의견 마감] 부안 해뜰웰니스타운 조성사업
-DESCRIPTION:사업: 부안 해뜰웰니스타운 조성사업\n유형: 전
- 략환경영향평가\n위치: 전북특별자치도 부안군 부안읍 
- 선은리 (번영로 228-16)\n기관: 전북지방환경청\n공람기간:
-  2026-08-11 ~ 2026-08-26\n의견 제출 마감: 2026-08-26\n\n의견은 EI
- ASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n
- 우리동네 개발사업 알리미
-LOCATION:전북특별자치도 부안군 부안읍 선은리 (번영로 228
- -16)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:부안 해뜰웰니스타운 조성사업 의견 제출 마감 
- 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:부안 해뜰웰니스타운 조성사업 의견 제출 오늘 
- 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 UID:DG20260254-105256@alrimi
 DTSTAMP:20260811T000000Z
 DTSTART;VALUE=DATE:20260916
@@ -947,33 +920,6 @@ ACTION:DISPLAY
 TRIGGER:-PT15H
 DESCRIPTION:옹진군 소하천정비종합계획(재정비) 의견 제출 
  오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:ND20260168-105013@alrimi
-DTSTAMP:20260722T000000Z
-DTSTART;VALUE=DATE:20260826
-DTEND;VALUE=DATE:20260827
-SUMMARY:[의견 마감] 낙동강남해권역(창원천\, 남천) 하천기
- 본계획
-DESCRIPTION:사업: 낙동강남해권역(창원천\, 남천) 하천기본
- 계획\n유형: 전략환경영향평가\n위치: 경상남도 창원시 
- 의창구 사림동 (용지로 329)\n기관: 낙동강유역환경청\n공
- 람기간: 2026-07-22 ~ 2026-08-19\n의견 제출 마감: 2026-08-26\n\n
- 의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eias
- s.go.kr/\n\n우리동네 개발사업 알리미
-LOCATION:경상남도 창원시 의창구 사림동 (용지로 329)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:낙동강남해권역(창원천\, 남천) 하천기본계획 
- 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:낙동강남해권역(창원천\, 남천) 하천기본계획 
- 의견 제출 오늘 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
