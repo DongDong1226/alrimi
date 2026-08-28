@@ -8,6 +8,87 @@ X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
 BEGIN:VEVENT
+UID:GG20260349-105442@alrimi
+DTSTAMP:20260828T000000Z
+DTSTART;VALUE=DATE:20260914
+DTEND;VALUE=DATE:20260915
+SUMMARY:[의견 마감] 증평군 화물자동차 공영차고지 조성 
+ 군관리계획 결정(변경)
+DESCRIPTION:사업: 증평군 화물자동차 공영차고지 조성 군관
+ 리계획 결정(변경)\n유형: 전략환경영향평가\n위치: 충청
+ 북도 증평군 증평읍 미암리 (하평로 3)\n기관: 금강유역
+ 환경청\n공람기간: 2026-08-28 ~ 2026-09-14\n의견 제출 마감: 20
+ 26-09-14\n\n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttp
+ s://www.eiass.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:충청북도 증평군 증평읍 미암리 (하평로 3)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:증평군 화물자동차 공영차고지 조성 군관리계
+ 획 결정(변경) 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:증평군 화물자동차 공영차고지 조성 군관리계
+ 획 결정(변경) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:ME20260101-105394@alrimi
+DTSTAMP:20260828T000000Z
+DTSTART;VALUE=DATE:20260911
+DTEND;VALUE=DATE:20260912
+SUMMARY:[의견 마감] 고성 평화경제특구 개발계획
+DESCRIPTION:사업: 고성 평화경제특구 개발계획\n유형: 전략
+ 환경영향평가\n위치: 강원특별자치도 고성군 현내면 죽
+ 정리 (이승만별장길 33)\n기관: 기후에너지환경부\n공람
+ 기간: 2026-08-28 ~ 2026-09-11\n의견 제출 마감: 2026-09-11\n\n의
+ 견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.g
+ o.kr/\n\n우리동네 개발사업 알리미
+LOCATION:강원특별자치도 고성군 현내면 죽정리 (이승만별
+ 장길 33)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:고성 평화경제특구 개발계획 의견 제출 마감 3
+ 일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:고성 평화경제특구 개발계획 의견 제출 오늘 마
+ 감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:ND20260201-105339@alrimi
+DTSTAMP:20260828T000000Z
+DTSTART;VALUE=DATE:20260917
+DTEND;VALUE=DATE:20260918
+SUMMARY:[의견 마감] 진주도시관리계획(용도지역\, 시설:주
+ 차장) 결정(변경)
+DESCRIPTION:사업: 진주도시관리계획(용도지역\, 시설:주차
+ 장) 결정(변경)\n유형: 전략환경영향평가\n위치: 경상남
+ 도 진주시 이반성면 대천리 (대천길 34)\n기관: 낙동강유
+ 역환경청\n공람기간: 2026-08-28 ~ 2026-09-10\n의견 제출 마감:
+  2026-09-17\n\n의견은 EIASS 에서 본인인증 후 제출합니다.\nh
+ ttps://www.eiass.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:경상남도 진주시 이반성면 대천리 (대천길 34)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:진주도시관리계획(용도지역\, 시설:주차장) 결
+ 정(변경) 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:진주도시관리계획(용도지역\, 시설:주차장) 결
+ 정(변경) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:ME20260106-105433@alrimi
 DTSTAMP:20260826T000000Z
 DTSTART;VALUE=DATE:20261002
@@ -524,33 +605,6 @@ DESCRIPTION:울진군 생활폐기물 처리시설 설치사업 의견 제
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:HG20260480-105207@alrimi
-DTSTAMP:20260807T000000Z
-DTSTART;VALUE=DATE:20260821
-DTEND;VALUE=DATE:20260822
-SUMMARY:[의견 마감] 용산 AI\,ICT 콘텐츠산업 특정개발진흥
- 지구 결정(안)
-DESCRIPTION:사업: 용산 AI\,ICT 콘텐츠산업 특정개발진흥지구
-  결정(안)\n유형: 전략환경영향평가\n위치: 서울특별시 
- 용산구 한강로3가 (청파로 101)\n기관: 한강유역환경청\n
- 공람기간: 2026-08-07 ~ 2026-08-27\n의견 제출 마감: 2026-08-21\n\
- n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eia
- ss.go.kr/\n\n우리동네 개발사업 알리미
-LOCATION:서울특별시 용산구 한강로3가 (청파로 101)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:용산 AI\,ICT 콘텐츠산업 특정개발진흥지구 결정(
- 안) 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:용산 AI\,ICT 콘텐츠산업 특정개발진흥지구 결정(
- 안) 의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 UID:ND20260187-105232@alrimi
 DTSTAMP:20260805T000000Z
 DTSTART;VALUE=DATE:20260909
@@ -977,6 +1031,32 @@ DESCRIPTION:고창 명사십리 관광지 지정 의견 제출 오늘 마
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
+UID:GW2026B003-45803@alrimi
+DTSTAMP:20260828T000000Z
+DTSTART;VALUE=DATE:20260928
+DTEND;VALUE=DATE:20260929
+SUMMARY:[의견 마감] 원주태봉일반산업단지 조성사업
+DESCRIPTION:사업: 원주태봉일반산업단지 조성사업\n유형: 
+ 환경영향평가\n위치: 강원특별자치도 원주시 태장동 (치
+ 악로 2156)\n기관: 강원특별자치도\n공람기간: 2026-08-28 ~ 20
+ 26-09-28\n의견 제출 마감: 2026-09-28\n\n의견은 EIASS 에서 본
+ 인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 
+ 개발사업 알리미
+LOCATION:강원특별자치도 원주시 태장동 (치악로 2156)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:원주태봉일반산업단지 조성사업 의견 제출 마
+ 감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:원주태봉일반산업단지 조성사업 의견 제출 오
+ 늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:ME2026A009-45800@alrimi
 DTSTAMP:20260825T000000Z
 DTSTART;VALUE=DATE:20260930
@@ -1026,6 +1106,32 @@ ACTION:DISPLAY
 TRIGGER:-PT15H
 DESCRIPTION:구미 봉곡신도시지구 도시개발사업 의견 제출 
  오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:HG2026E005-45785@alrimi
+DTSTAMP:20260828T000000Z
+DTSTART;VALUE=DATE:20261007
+DTEND;VALUE=DATE:20261008
+SUMMARY:[의견 마감] 시흥장현(안산~가학간 도로) 개설공사
+DESCRIPTION:사업: 시흥장현(안산~가학간 도로) 개설공사\n유
+ 형: 환경영향평가\n위치: 경기도 시흥시 산현동 (금화로 
+ 204)\n기관: 시흥시\n공람기간: 2026-08-28 ~ 2026-09-28\n의견 제
+ 출 마감: 2026-10-07\n\n의견은 EIASS 에서 본인인증 후 제출
+ 합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알리
+ 미
+LOCATION:경기도 시흥시 산현동 (금화로 204)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:시흥장현(안산~가학간 도로) 개설공사 의견 제
+ 출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:시흥장현(안산~가학간 도로) 개설공사 의견 제
+ 출 오늘 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT

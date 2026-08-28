@@ -8,4 +8,31 @@ X-WR-CALNAME:강원특별자치도 고성군 현내면 개발사업 의견
 X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:ME20260101-105394@alrimi
+DTSTAMP:20260828T000000Z
+DTSTART;VALUE=DATE:20260911
+DTEND;VALUE=DATE:20260912
+SUMMARY:[의견 마감] 고성 평화경제특구 개발계획
+DESCRIPTION:사업: 고성 평화경제특구 개발계획\n유형: 전략
+ 환경영향평가\n위치: 강원특별자치도 고성군 현내면 죽
+ 정리 (이승만별장길 33)\n기관: 기후에너지환경부\n공람
+ 기간: 2026-08-28 ~ 2026-09-11\n의견 제출 마감: 2026-09-11\n\n의
+ 견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.g
+ o.kr/\n\n우리동네 개발사업 알리미
+LOCATION:강원특별자치도 고성군 현내면 죽정리 (이승만별
+ 장길 33)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:고성 평화경제특구 개발계획 의견 제출 마감 3
+ 일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:고성 평화경제특구 개발계획 의견 제출 오늘 마
+ 감
+END:VALARM
+END:VEVENT
 END:VCALENDAR

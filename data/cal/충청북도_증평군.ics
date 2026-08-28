@@ -7,4 +7,31 @@ X-WR-CALNAME:충청북도 증평군 개발사업 의견 마감
 X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:GG20260349-105442@alrimi
+DTSTAMP:20260828T000000Z
+DTSTART;VALUE=DATE:20260914
+DTEND;VALUE=DATE:20260915
+SUMMARY:[의견 마감] 증평군 화물자동차 공영차고지 조성 
+ 군관리계획 결정(변경)
+DESCRIPTION:사업: 증평군 화물자동차 공영차고지 조성 군관
+ 리계획 결정(변경)\n유형: 전략환경영향평가\n위치: 충청
+ 북도 증평군 증평읍 미암리 (하평로 3)\n기관: 금강유역
+ 환경청\n공람기간: 2026-08-28 ~ 2026-09-14\n의견 제출 마감: 20
+ 26-09-14\n\n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttp
+ s://www.eiass.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:충청북도 증평군 증평읍 미암리 (하평로 3)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:증평군 화물자동차 공영차고지 조성 군관리계
+ 획 결정(변경) 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:증평군 화물자동차 공영차고지 조성 군관리계
+ 획 결정(변경) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
 END:VCALENDAR

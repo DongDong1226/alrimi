@@ -7,4 +7,31 @@ X-WR-CALNAME:경상남도 개발사업 의견 마감
 X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:ND20260201-105339@alrimi
+DTSTAMP:20260828T000000Z
+DTSTART;VALUE=DATE:20260917
+DTEND;VALUE=DATE:20260918
+SUMMARY:[의견 마감] 진주도시관리계획(용도지역\, 시설:주
+ 차장) 결정(변경)
+DESCRIPTION:사업: 진주도시관리계획(용도지역\, 시설:주차
+ 장) 결정(변경)\n유형: 전략환경영향평가\n위치: 경상남
+ 도 진주시 이반성면 대천리 (대천길 34)\n기관: 낙동강유
+ 역환경청\n공람기간: 2026-08-28 ~ 2026-09-10\n의견 제출 마감:
+  2026-09-17\n\n의견은 EIASS 에서 본인인증 후 제출합니다.\nh
+ ttps://www.eiass.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:경상남도 진주시 이반성면 대천리 (대천길 34)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:진주도시관리계획(용도지역\, 시설:주차장) 결
+ 정(변경) 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:진주도시관리계획(용도지역\, 시설:주차장) 결
+ 정(변경) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
 END:VCALENDAR
