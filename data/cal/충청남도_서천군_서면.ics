@@ -7,29 +7,4 @@ X-WR-CALNAME:충청남도 서천군 서면 개발사업 의견 마감
 X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
-BEGIN:VEVENT
-UID:GG2026D001-45775@alrimi
-DTSTAMP:20260723T000000Z
-DTSTART;VALUE=DATE:20260828
-DTEND;VALUE=DATE:20260829
-SUMMARY:[의견 마감] 지방어항(월하성항) 정비사업
-DESCRIPTION:사업: 지방어항(월하성항) 정비사업\n유형: 환경
- 영향평가\n위치: 충청남도 서천군 서면 (월하성길 96)\n기
- 관: 충청남도\n공람기간: 2026-07-23 ~ 2026-08-21\n의견 제출 
- 마감: 2026-08-28\n\n의견은 EIASS 에서 본인인증 후 제출합니
- 다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알리미
-LOCATION:충청남도 서천군 서면 (월하성길 96)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:지방어항(월하성항) 정비사업 의견 제출 마감 3
- 일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:지방어항(월하성항) 정비사업 의견 제출 오늘 
- 마감
-END:VALARM
-END:VEVENT
 END:VCALENDAR

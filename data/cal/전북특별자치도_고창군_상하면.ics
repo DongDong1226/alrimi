@@ -8,31 +8,4 @@ X-WR-CALNAME:전북특별자치도 고창군 상하면 개발사업 의견
 X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
-BEGIN:VEVENT
-UID:JJ20260124-104937@alrimi
-DTSTAMP:20260720T000000Z
-DTSTART;VALUE=DATE:20260828
-DTEND;VALUE=DATE:20260829
-SUMMARY:[의견 마감] 고창 명사십리 관광지 지정
-DESCRIPTION:사업: 고창 명사십리 관광지 지정\n유형: 전략환
- 경영향평가\n위치: 전북특별자치도 고창군 상하면 용정
- 리 (명사십리로 282-7)\n기관: 전북지방환경청\n공람기간: 
- 2026-07-20 ~ 2026-08-21\n의견 제출 마감: 2026-08-28\n\n의견은 EIA
- SS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n
- 우리동네 개발사업 알리미
-LOCATION:전북특별자치도 고창군 상하면 용정리 (명사십리
- 로 282-7)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:고창 명사십리 관광지 지정 의견 제출 마감 3일 
- 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:고창 명사십리 관광지 지정 의견 제출 오늘 마
- 감
-END:VALARM
-END:VEVENT
 END:VCALENDAR
