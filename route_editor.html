@@ -685,6 +685,7 @@ function select(id){
   // 이미 그려 둔 것이 있으면 이어서 고칠 수 있게 불러온다.
   branches = [];
   fromSegments = false;
+  segBranchN = 0;
   const saved = ROUTES[String(current.id)];
   if(saved){
     // ★ 예전에는 flatLatLngs 로 **한 줄로 뭉개서** 읽었다 —
@@ -746,21 +747,19 @@ function redraw(){
        지금 그리는 갈래(진한 실선)와 구별은 되어야 하므로 **점선 + 살짝 연하게**로 둔다.
      ★ 그리고 **눌러서 다시 고칠 수 있다.** 예전에는 '마지막 갈래 되돌리기' 하나뿐이라
        두 번째 갈래를 고치려면 뒤엣것을 다 되돌려야 했다. */
-  branchLayers = (fromSegments ? [] : branches).map((b, i) => {
+  /* ★ 구간에서 온 갈래는 drawSegEnds() 가 그린다(같은 자리에 두 겹이 되면
+       어느 것을 눌러야 점이 생기는지 알 수 없다). 하지만 **손으로 그린 갈래는
+       여기서 반드시 그려야 한다** — 예전에는 구간표로 담은 뒤 손으로 그린 갈래가
+       화면에서 아예 사라져서 "이어서 그린 게 보이지도 않는다"는 말을 들었다. */
+  const skip = fromSegments ? segBranchN : 0;
+  branchLayers = branches.slice(skip).map((b, k) => {
+    const i = skip + k;
     const ln = L.polyline(b, { color:"#de3412", weight:5, opacity:.7, dashArray:"10 7" })
-      .addTo(map).bindTooltip(`갈래 ${i + 1} — 누르면 이 갈래를 고칩니다`, { sticky:true });
+      .addTo(map).bindTooltip(`갈래 ${i - segBranchN + 1} — 누르면 이 갈래를 고칩니다`,
+                              { sticky:true });
     ln.on("click", ev => {
       L.DomEvent.stopPropagation(ev);      // 지도 클릭(점 추가)으로 번지지 않게
-      if(fromSegments) return;
-      // 지금 그리던 것을 먼저 갈래로 넣고, 고를 갈래를 꺼낸다
-      const keep = pts.slice();
-      branches.splice(i, 1);
-      if(keep.length >= 2) branches.push(keep);
-      pts = b.slice();
-      redraw();
-      $("#msg").textContent =
-        `갈래 ${i + 1} 을 고치는 중입니다. 점을 끌어 옮기고, 눌러서 지웁니다. ` +
-        `다 되면 '갈래 마무리 · 새 갈래'를 누르세요.`;
+      editBranch(i);
     });
     return ln;
   });
@@ -936,6 +935,11 @@ async function geocodeAddr(raw, key){
    ============================================================ */
 let segEnds = [];          // [{ i, on, from:{pt,rough,addr}|null, to:{...}|null }]
 let fromSegments = false;  // 지금 노선이 구간 시점·종점에서 만들어진 것인가
+
+/* ★ branches 앞쪽 몇 개가 **구간에서 온 것**인가 (2026-08-30).
+   이게 없으면 `syncSegRoute()` 가 branches 를 통째로 새로 만들면서
+   **손으로 그린 갈래를 조용히 지워 버린다.** 실제로 그러고 있었다. */
+let segBranchN = 0;
 
 /* ============================================================
    구간 작업 임시저장 (2026-08-30)
@@ -1363,7 +1367,10 @@ function updateSegSum(){
    ★ 손으로 찍은 점(pts)은 건드리지 않는다 — 사람이 일부러 그린 것을 지우면 안 된다. */
 function syncSegRoute(){
   if(!fromSegments) return;
-  branches = segEnds.filter(x => x.on && x.from && x.to).map(sg => segLatLngs(sg));
+  const segLines = segEnds.filter(x => x.on && x.from && x.to).map(sg => segLatLngs(sg));
+  const hand = branches.slice(segBranchN);      // ★ 손으로 그린 갈래는 지킨다
+  branches = segLines.concat(hand);
+  segBranchN = segLines.length;
   redraw();
 }
 
@@ -2296,6 +2303,7 @@ $("#btnSegUse").addEventListener("click", () => {
   if((branches.length || pts.length >= 2) && !fromSegments &&
      !confirm("이미 그려 둔 노선이 있습니다. 구간 시점·종점으로 바꿀까요?")) return;
   branches = use.map(sg => segLatLngs(sg));
+  segBranchN = branches.length;
   pts = [];
   fromSegments = true;
   redraw();
@@ -2321,24 +2329,82 @@ $("#btnClear").addEventListener("click", () => { pts = []; redraw(); refreshBran
 /* ---------- 갈래 ----------
    두 갈래로 갈라지는 노선이 있다 (담당자 메모, 2026-08-17).
    '갈래 마무리'를 누르면 지금 그린 것을 갈래로 담고 새 갈래를 시작한다. */
+/* 한 갈래의 길이(km) */
+function branchKm(b){
+  let s = 0;
+  for(let i = 1; i < b.length; i++) s += haversineKm(b[i-1][0], b[i-1][1], b[i][0], b[i][1]);
+  return s;
+}
+
+/* 갈래 하나를 편집 상태로 꺼낸다. 지금 그리던 것은 갈래로 넣어 둔다. */
+function editBranch(i){
+  if(i < 0 || i >= branches.length) return;
+  const keep = pts.slice();
+  const got = branches[i];
+  branches.splice(i, 1);
+  if(i < segBranchN) segBranchN--;
+  if(keep.length >= 2) branches.push(keep);
+  pts = got.slice();
+  redraw(); refreshBranchUi();
+  $("#msg").textContent =
+    `갈래를 편집 상태로 꺼냈습니다 (${pts.length}점). 점을 끌어 옮기고 눌러서 지웁니다. ` +
+    `다 되면 '갈래 마무리 · 새 갈래'를 누르세요.`;
+}
+
+/* ★ 갈래를 **목록에서** 고르게 한다 (2026-08-30).
+   예전에는 `마지막 갈래 되돌리기` 하나뿐이라 **두 번째 갈래를 고치려면
+   뒤엣것을 다 되돌려야 했다.** 지도에서 선을 누르는 길도 뒀지만,
+   구간표로 담은 뒤에는 그 선이 안 그려져 누를 수가 없고 얇은 선은 정확히 누르기도 어렵다.
+   목록은 **언제나 있고 헷갈리지 않는다.** */
 function refreshBranchUi(){
   const el = $("#branchMsg");
   if(!el) return;
-  const n = branches.length;
-  el.innerHTML = n
-    ? `끝낸 갈래 <b>${n}개</b> · 지금 갈래 ${pts.length}점` +
-      ` <button type="button" id="btnBranchPop">마지막 갈래 되돌리기</button>`
-    : (pts.length ? `지금 갈래 ${pts.length}점` : "");
+  if(!branches.length && !pts.length){ el.innerHTML = ""; return; }
+
+  const rows = branches.map((b, i) => {
+    const seg = i < segBranchN;
+    return `<tr>
+      <td>${seg ? `구간 ${i + 1}` : `갈래 ${i - segBranchN + 1}`}</td>
+      <td class="n">${b.length}점</td>
+      <td class="n">${branchKm(b).toFixed(2)}km</td>
+      <td>
+        <button type="button" data-brzoom="${i}">보기</button>
+        ${seg ? `<span class="muted">구간 표에서 고칩니다</span>`
+              : `<button type="button" data-bredit="${i}">고치기</button>
+                 <button type="button" data-brdel="${i}" class="danger">지우기</button>`}
+      </td>
+    </tr>`;
+  }).join("");
+
+  el.innerHTML =
+    `<div style="width:100%">
+       <div class="row" style="margin:0 0 6px">
+         <b>지금 그리는 갈래 ${pts.length}점</b>
+         ${branches.length ? `<button type="button" id="btnBranchPop">마지막 갈래 되돌리기</button>` : ``}
+       </div>
+       ${branches.length ? `<div class="segwrap" style="max-height:190px">
+         <table class="segtbl">${rows}</table></div>` : ``}
+     </div>`;
+
+  el.querySelectorAll("[data-brzoom]").forEach(b => b.addEventListener("click", () => {
+    const g = branches[+b.dataset.brzoom];
+    if(g && g.length) map.fitBounds(L.latLngBounds(g).pad(0.3));
+  }));
+  el.querySelectorAll("[data-bredit]").forEach(b =>
+    b.addEventListener("click", () => editBranch(+b.dataset.bredit)));
+  el.querySelectorAll("[data-brdel]").forEach(b => b.addEventListener("click", () => {
+    const i = +b.dataset.brdel;
+    if(!confirm(`갈래 ${i - segBranchN + 1} 을 지웁니다. 되돌릴 수 없습니다. 계속할까요?`)) return;
+    branches.splice(i, 1);
+    redraw(); refreshBranchUi();
+    $("#msg").textContent = "갈래를 지웠습니다.";
+  }));
+
   const back = document.getElementById("btnBranchPop");
   if(back) back.addEventListener("click", () => {
     // 되돌릴 길을 반드시 둔다 — 잘못 마무리했을 때 처음부터 다시 하면 안 된다
     if(!branches.length) return;
-    // ★ 순서가 중요하다. 먼저 되돌릴 갈래를 꺼낸 **뒤에** 지금 그리던 것을 보관해야 한다.
-    //   반대로 하면 방금 넣은 것을 도로 꺼내 제자리걸음이 된다 (2026-08-17 시험에서 잡음).
-    const back = branches.pop();
-    if(pts.length >= 2) branches.push(pts);
-    pts = back;
-    redraw(); refreshBranchUi();
+    editBranch(branches.length - 1);
     $("#msg").textContent = "마지막 갈래를 다시 편집 상태로 되돌렸습니다.";
   });
 }
