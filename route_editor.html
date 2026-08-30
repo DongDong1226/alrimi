@@ -1424,12 +1424,15 @@ function loadPlanFromFile(file){
 function traceSegmentTryColors(sg){
   const off = segOfficialKm(sg.i);
   const tries = [];
-  if(samples.length) tries.push({ name:"고른 색", rgb:samples[0] });
+  if(samples.length) tries.push({ name:"고른 색", samples:samples.map(x => x.slice()) });
   BATCH_COLORS.forEach(c => tries.push(c));
 
   let best = null;
   for(const c of tries){
-    samples = [c.rgb.slice()];
+    // ★ 사람이 고른 색은 **누른 것을 전부** 쓴다.
+    //   예전에는 samples[0] 하나만 썼는데, 여러 곳을 누를수록 선을 더 잘 따라간다
+    //   (실측: 1번 누르면 점 2개 = 거의 직선, 3번 누르면 점 35개).
+    samples = c.samples ? c.samples.map(x => x.slice()) : [c.rgb.slice()];
     sg.mid = [];
     const err = traceSegmentAuto(sg);
     if(err) continue;
@@ -2576,6 +2579,16 @@ $("#btnBatchRun").addEventListener("click", async () => {
   renderBatchReport(rows, jobs.length);
 });
 
+/* ★ 길이만으로는 **모양이 없는 것**을 못 잡는다.
+   점이 두어 개뿐이면 사실상 직선인데, 길이는 우연히 맞을 수 있다
+   (실측: 색을 한 번만 누르면 점 2개에 86% — 통과해 버린다).
+   그래서 점 개수도 같이 본다. 1km 에 점 3개는 되어야 굽은 모양이라고 할 수 있다. */
+function tooFewPoints(sg){
+  const n = (sg.mid || []).length;
+  const off = segOfficialKm(sg.i);
+  return n < Math.max(3, Math.round((off || 1) * 3));
+}
+
 /* ★ 무엇이 됐고 무엇이 수상한지 **표로** 보여 준다.
    조용히 엉뚱한 선을 넣는 것이 이 도구에서 가장 위험하다 —
    그래서 '몇 개 했다'가 아니라 **구간마다 길이 비율**을 내놓는다. */
@@ -2585,7 +2598,10 @@ function renderBatchReport(rows, total){
     const off = segOfficialKm(r.job.segment);
     if(!off) return { cls:"", txt:"고시 연장 없음" };
     const p = Math.round(r.best.km / off * 100);
-    if(p >= 85 && p <= 130) return { cls:"ok", txt:p + "%" };
+    const thin = r.sg && tooFewPoints(r.sg);
+    if(p >= 85 && p <= 130) {
+      return thin ? { cls:"warn", txt:p + "% · 점 적음 ⚠" } : { cls:"ok", txt:p + "%" };
+    }
     if(p >= 70 && p <= 160) return { cls:"warn", txt:p + "% ⚠" };
     return { cls:"bad", txt:p + "% ⚠" };
   };
@@ -2596,10 +2612,13 @@ function renderBatchReport(rows, total){
     `${total}개 중 ${rows.length}개를 처리했습니다 — 길이가 맞는 것 ${good}개, ` +
     `봐야 할 것 ${bad}개.` +
     (batchStop ? " (멈춤)" : "") +
-    " 아래에서 ⚠ 인 것만 '보기'로 확인하세요.";
+    " 아래에서 ⚠ 인 것만 '보기'로 확인하세요." +
+    (rows.some(r => r.sg && tooFewPoints(r.sg))
+      ? " '점 적음' 은 굽은 모양이 거의 안 잡힌 것입니다 — 4번에서 노선 색을 두세 곳 더 누르고 다시 해 보세요."
+      : "");
 
   $("#batchReport").innerHTML = `<div class="segwrap"><table class="segtbl">
-    <tr><th>구간</th><th>하천</th><th>길이</th><th>고시</th><th>비교</th><th>쓴 색</th><th></th></tr>
+    <tr><th>구간</th><th>하천</th><th>길이</th><th>고시</th><th>점</th><th>비교</th><th>쓴 색</th><th></th></tr>
     ${rows.map(r => {
       const g = grade(r);
       const off = segOfficialKm(r.job.segment);
@@ -2610,6 +2629,7 @@ function renderBatchReport(rows, total){
         <td>${esc(r.job.name)}</td>
         <td class="n">${r.best ? r.best.km.toFixed(2) : "—"}</td>
         <td class="n">${off || "—"}${odd ? `<span class="warn" title="EIASS 에는 ${ek}km 로 적혀 있습니다 — 평가서 값을 씁니다"> ✱</span>` : ""}</td>
+        <td class="n">${r.sg ? (r.sg.mid || []).length : "—"}</td>
         <td class="n ${g.cls}">${g.txt}</td>
         <td>${esc((r.best && r.best.color) || "")}</td>
         <td>${r.best ? `<button type="button" data-batchzoom="${r.job.segment}">보기</button>` : ""}</td>
@@ -2650,6 +2670,8 @@ $("#btnSegAuto").addEventListener("click", () => {
   if(info.deg >= 25) bits.push(`⚠ 방향이 ${info.deg}° 틀어져 있습니다 — 도면이 북쪽 위가 맞는지 보세요`);
   if(ratio != null && (ratio < 85 || ratio > 130))
     bits.push("⚠ 길이가 많이 다릅니다 — 다른 선이 섞였는지 '보기'로 확인하세요");
+  if(tooFewPoints(sg))
+    bits.push("⚠ 점이 적어 굽은 모양이 거의 안 잡혔습니다 — 노선 색을 두세 곳 더 눌러 보세요");
   $("#segAutoMsg").textContent = bits.join(" · ");
 });
 
