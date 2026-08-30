@@ -414,18 +414,79 @@
       </div>
     </div>
 
-    <!-- 수집 현황 — 담당자가 가장 자주 볼 칸이라 맨 위에 두고 격자 전체 폭을 쓴다.
-         내용은 app.js 의 renderAdminFeed() 가 채운다. -->
-    <div class="adm-card adm-card--wide" id="admFeedCard">
-      <h3>날짜별로 새로 들어온 사업</h3>
-      <div class="inner" id="admFeed"></div>
-    </div>
+    <!-- ★ 아코디언 (2026-08-30). 카드 5개가 한 화면에 통째로 펼쳐져 있어
+         담당자가 무엇부터 봐야 할지 알 수 없었다.
 
-    <div class="adm-grid">
+         native <details>/<summary> 를 쓴다 —
+           · 자바스크립트 없이 열리고 닫힌다 (외부 라이브러리 금지 규칙과 맞는다)
+           · 키보드(Enter/Space)와 스크린리더가 **기본으로** 동작한다.
+             div 로 흉내 내면 aria-expanded·role·포커스를 전부 손으로 붙여야 하고
+             한 군데만 빠져도 키보드로 못 여는 칸이 생긴다
+           · 브라우저 찾기(Ctrl+F)가 닫힌 칸 안도 찾아 준다
 
-      <div class="adm-card">
-        <h3>지도 연동</h3>
-        <div class="inner">
+         여는 상태는 app.js 의 rememberAcc() 가 이 브라우저에 기억한다.
+         순서는 **담당자가 자주 보는 순서**다 — 설정값은 한 번 넣으면 잘 안 바꾼다. -->
+    <div class="adm-acc-list">
+
+      <!-- 노선 정리 — 담당자의 실제 작업. 그래서 맨 위이고 기본으로 열려 있다.
+           내용은 app.js 의 renderAdminRoutes() 가 채운다. -->
+      <details class="adm-acc" id="acc-routes" open>
+        <summary>
+          <span class="adm-acc-t">노선 정리</span>
+          <span class="adm-acc-badge" id="accRoutesBadge"></span>
+        </summary>
+        <div class="adm-acc-in">
+          <p class="hint">노선을 자동으로 찾지 못한 사업입니다.
+            하나씩 <b>직접 그리기</b>나 <b>안 그리기</b>를 고르면 이 목록에서 빠지고
+            아래 <b>정리 끝난 사업</b>으로 옮겨집니다. 다 고르면 이 칸이 비워집니다.</p>
+
+          <div id="admRoutes"></div>
+
+          <!-- 판단은 이 브라우저에 바로 남지만, 모두에게 보이려면 사람이 커밋해야 한다.
+               내용·단추는 app.js 의 renderDecSave() 가 채운다. -->
+          <div class="adm-dec-save" id="admDecSave" hidden></div>
+
+          <hr class="adm-sep">
+
+          <p class="hint"><b>도면이 있으면 더 빠릅니다.</b> 노선이 그려진 도면 그림을 넣고
+            알아볼 수 있는 곳 3~4군데만 짝지어 주면 선을 자동으로 따 옵니다.
+            사업개요의 연장과 견주는 <b>길이 검산</b>도 함께 나옵니다.</p>
+          <div class="adm-btn-row">
+            <!-- route_editor.html 은 반드시 **맨 위 폴더**에 있어야 배포된다
+                 (deploy.yml 이 맨 위 *.html 만 올린다) -->
+            <a class="btn btn--line" href="route_editor.html" target="_blank" rel="noopener"
+               id="btn-admin-editor">노선 그리기 도구 열기</a>
+            <button class="btn btn--ghost" type="button" id="btn-admin-route">지도에서 직접 그리기</button>
+          </div>
+        </div>
+      </details>
+
+      <!-- 정리 끝난 사업 — "따로 목록으로" 두는 칸이다.
+           남은 목록과 섞으면 무엇이 아직 할 일인지 다시 알 수 없게 된다. -->
+      <details class="adm-acc" id="acc-done">
+        <summary>
+          <span class="adm-acc-t">정리 끝난 사업</span>
+          <span class="adm-acc-badge" id="accDoneBadge"></span>
+        </summary>
+        <div class="adm-acc-in">
+          <p class="hint">직접 그렸거나 안 그리기로 한 사업입니다.
+            판단을 <b>되돌리면</b> 다시 위 목록으로 올라갑니다.</p>
+          <div id="admRoutesDone"></div>
+        </div>
+      </details>
+
+      <!-- 수집 현황 — 내용은 app.js 의 renderAdminFeed() 가 채운다. -->
+      <details class="adm-acc" id="acc-feed" open>
+        <summary>
+          <span class="adm-acc-t">날짜별로 새로 들어온 사업</span>
+          <span class="adm-acc-badge" id="accFeedBadge"></span>
+        </summary>
+        <div class="adm-acc-in" id="admFeed"></div>
+      </details>
+
+      <details class="adm-acc" id="acc-map">
+        <summary><span class="adm-acc-t">지도 연동</span></summary>
+        <div class="adm-acc-in">
           <div class="fld">
             <label for="a-vworld">VWorld 인증키</label>
             <p class="hint">배포된 사이트에는 키가 이미 심어져 있습니다(도메인 제한). 여기 넣는 값은 <b>이 브라우저에서만</b> 그 키를 대신합니다. 내 PC에서 열어볼 때 쓰세요. 비워두면 지도 자리에 안내 문구가 표시됩니다.</p>
@@ -447,11 +508,11 @@
             </div>
           </div>
         </div>
-      </div>
+      </details>
 
-      <div class="adm-card">
-        <h3>데이터</h3>
-        <div class="inner">
+      <details class="adm-acc" id="acc-data">
+        <summary><span class="adm-acc-t">데이터</span></summary>
+        <div class="adm-acc-in">
           <div class="fld">
             <label for="a-datapath">사업 데이터 파일 경로</label>
             <p class="hint">tools/build_data.py 가 만든 json 파일 위치입니다. 이 파일을 못 읽으면 화면 확인용 표본 데이터로 대신합니다.</p>
@@ -465,11 +526,11 @@
             <label class="toggle"><input type="checkbox" id="a-demo"> 표본 데이터일 때 상단에 안내 띠 표시</label>
           </div>
         </div>
-      </div>
+      </details>
 
-      <div class="adm-card">
-        <h3>문의처 · 기본값</h3>
-        <div class="inner">
+      <details class="adm-acc" id="acc-org">
+        <summary><span class="adm-acc-t">문의처 · 기본값</span></summary>
+        <div class="adm-acc-in">
           <div class="fld">
             <label for="a-org">운영 기관</label>
             <input id="a-org" type="text">
@@ -492,35 +553,7 @@
             <input id="a-pw" type="text" autocomplete="off">
           </div>
         </div>
-      </div>
-
-      <!-- 노선 그리기는 주민에게 보일 기능이 아니라서 지도 화면이 아니라 여기에 둔다 -->
-      <div class="adm-card">
-        <h3>노선 직접 그리기</h3>
-        <div class="inner">
-          <p class="hint">도로·철도처럼 노선을 자동으로 찾지 못한 사업은 지도에서 직접 그려 넣을 수 있습니다.
-            아래를 누르면 지도 화면으로 넘어가고, 목록에서 사업을 하나 고르면 그리기가 시작됩니다.
-            그린 노선은 이 브라우저에 저장되고, <b>JSON 복사</b>로 받아
-            <code>data/routes.json</code>에 넣으면 모두에게 보입니다.</p>
-          <button class="btn btn--line" type="button" id="btn-admin-route">지도에서 노선 그리기</button>
-
-          <!-- 그려야 할 사업을 짚어 준다. 내용은 app.js 의 renderAdminRoutes() 가 채운다.
-               ★ 환경영향평가는 EIASS 가 위치유형(선형/면형)을 주지 않아서, 이름으로만 짐작한
-                 후보가 섞인다. 그 사실을 화면에 반드시 밝힌다 — 자료에는 넣지 않는다. -->
-          <div id="admRoutes" style="margin-top:14px"></div>
-
-          <!-- 도면에서 반자동으로 따는 도구. 화면이 완전히 달라서(도면 칸 + 기준점 짝짓기)
-               이 페이지에 끼워 넣지 않고 별도 파일로 두고 링크만 건다.
-               route_editor.html 은 반드시 **맨 위 폴더**에 있어야 배포된다
-               (deploy.yml 이 맨 위 *.html 만 올린다). -->
-          <p class="hint" style="margin-top:14px">
-            <b>도면이 있으면 더 빠릅니다.</b> 노선이 그려진 도면 그림을 넣고
-            알아볼 수 있는 곳 3~4군데만 짝지어 주면 선을 자동으로 따 옵니다.
-            사업개요의 연장과 견주는 <b>길이 검산</b>도 함께 나옵니다.</p>
-          <a class="btn btn--line" href="route_editor.html" target="_blank" rel="noopener"
-             id="btn-admin-editor">노선 그리기 도구 열기</a>
-        </div>
-      </div>
+      </details>
 
     </div>
 

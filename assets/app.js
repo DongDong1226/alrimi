@@ -20,6 +20,7 @@ const DEFAULTS = {
   dataPath: "data/projects.json",
   regionPath: "data/regions.json",
   routePath: "data/routes.json",
+  decisionPath: "data/route_decisions.json",   // 노선을 그릴지 말지 정한 기록
   sidoPath: "data/sido.json",      // 시·도 경계 (미리 단순화해 둔 것)
   radiusKm: 5,
   showDemoBanner: true,
@@ -2897,6 +2898,85 @@ async function loadRoutes(){
   if(gisMap){ drawRoutes(); renderGisDetail(); }
 }
 
+/* ============================================================
+   노선 판단 — "직접 그릴 것인가 / 안 그릴 것인가"
+   (2026-08-30 추가)
+
+   ★ 왜 필요한가.
+     노선을 자동으로 못 찾은 사업 목록은 **줄어들지 않는다.** 담당자가 원문을 보고
+     "이건 도면이 없어 못 그린다"고 판단해도 그 결론을 적어 둘 데가 없어서,
+     다음에 들어와도 똑같은 사업을 처음부터 다시 살펴보게 된다.
+     그래서 **판단 자체를 자료로 남긴다.** 그리거나(routes.json) 안 그리기로 정하면
+     목록에서 빠지고, 둘 다 끝나면 목록이 비워진다.
+
+   ★ 저장 방식은 routes.json 과 **똑같다.** GitHub Pages 는 정적 파일이라
+     브라우저가 서버 파일을 못 쓴다. 쓰려면 GitHub 토큰이 필요한데 그것을 브라우저에
+     두면 **저장소 쓰기 권한을 공개하는 셈**이라 절대 안 된다.
+     흐름: 화면에서 판단 → JSON 내려받기 → data/route_decisions.json 에 덮어쓰기 → 커밋.
+
+   ★ 저장하는 것은 '안 그리기(skip)'뿐이다.
+     '직접 그림'은 routes.json 에 노선이 있으면 저절로 알 수 있으므로
+     따로 적지 않는다. 두 벌로 적으면 어긋난다.
+   ============================================================ */
+const LSDECIS = "wdn.routeDecisions";
+
+let fileDecisions = {};                    // data/route_decisions.json (모두에게 보이는 것)
+let localDecisions = lsGet(LSDECIS, {});   // 이 브라우저에서 방금 정한 것
+let routeDecisions = Object.assign({}, localDecisions);
+
+async function loadDecisions(){
+  try{
+    const res = await fetch(S.decisionPath, { cache:"no-store" });
+    if(!res.ok) throw new Error("HTTP " + res.status);
+    const json = await res.json();
+    fileDecisions = json.decisions || {};
+  }catch(e){
+    fileDecisions = {};   // 파일이 없는 게 정상이다 (아직 아무도 판단하지 않은 상태)
+  }
+  routeDecisions = Object.assign({}, fileDecisions, localDecisions);
+  renderAdminRoutes();
+}
+
+function decisionOf(p){
+  return routeDecisions[String(p.id)] || null;
+}
+
+/* 판단을 정하거나(status) 지운다(status = null). */
+function setDecision(id, status, note){
+  const key = String(id);
+  if(status){
+    localDecisions[key] = { status, note: note || "", at: todayStr() };
+  }else if(fileDecisions[key]){
+    // 파일에 있는 판단을 되돌리는 것 — '되돌림'을 남겨야 파일 값이 다시 살아나지 않는다
+    localDecisions[key] = { status:"none", note:"", at: todayStr() };
+  }else{
+    delete localDecisions[key];
+  }
+  lsSet(LSDECIS, localDecisions);
+  routeDecisions = Object.assign({}, fileDecisions, localDecisions);
+  renderAdminRoutes();
+}
+
+/* 내보낼 JSON. status 가 "none"(되돌림)인 것은 빼고 내보낸다. */
+function decisionsJson(){
+  const out = {};
+  Object.keys(routeDecisions).forEach(k => {
+    const d = routeDecisions[k];
+    if(d && d.status && d.status !== "none") out[k] = d;
+  });
+  return JSON.stringify({ decisions: out }, null, 2);
+}
+
+/* 아직 파일에 반영 안 된 판단이 몇 건인가 — 커밋해야 할 것이 있는지 알려 준다. */
+function uncommittedDecisions(){
+  return Object.keys(localDecisions).filter(k => {
+    const mine = localDecisions[k], theirs = fileDecisions[k];
+    const a = mine && mine.status !== "none" ? mine.status : null;
+    const b = theirs && theirs.status !== "none" ? theirs.status : null;
+    return a !== b;
+  });
+}
+
 function routeOf(p){
   const manual = manualRoutes[String(p.id)];
   /* ★ 구간표의 시점·종점을 곧게 이어 만든 노선은 따로 밝힌다 (2026-08-25).
@@ -3730,60 +3810,233 @@ function linearByName(p){
   return LINEAR_HINTS.filter(w => n.includes(w));
 }
 
+/* ---------- 관리자 · 노선 정리 ----------
+   후보를 세 갈래로 나누고, 각각 **판단이 끝났는지**로 다시 가른다.
+
+   판단이 끝난 것 =  ① 노선을 그렸다(routeOf) 또는 ② 안 그리기로 정했다(skip)
+   둘 다 아니면 '남은 것'이다. 다 정리하면 남은 칸이 비워진다.
+
+   ★ 남은 것과 끝난 것을 **한 목록에 섞지 않는다.** 섞으면 무엇이 아직 할 일인지
+     다시 알 수 없게 되어, 목록을 만든 뜻이 사라진다. */
+function routeCandidates(){
+  const all = PROJECTS.concat(CLOSED_PROJECTS);
+  const out = [];
+  all.forEach(p => {
+    const types = p.locationTypes || [];
+    let kind = null, hits = [];
+    if(types.includes("선형")){
+      kind = p.isRiver ? "river" : "linear";
+    }else if(!types.length){
+      hits = linearByName(p);
+      if(hits.length) kind = "guess";
+    }
+    if(!kind) return;
+
+    /* ★ 자동으로 찾아진 노선은 **애초에 그릴 대상이 아니었다.**
+       하천 도형(vworld-river)은 수집이 알아서 받아온 것이라 담당자가 판단한 적이 없다.
+       이걸 '정리 끝'에 넣으면 "직접 그림"이라고 잘못 말하게 되고,
+       담당자가 실제로 처리한 건수도 부풀려진다 (실측: 1건 판단했는데 12건으로 보였다). */
+    const r = routeOf(p);
+    const byHand = !!r && (r.source === "manual" || r.source === "segment-ends");
+    if(r && !byHand) return;                    // 자동으로 됐다 → 목록에 올리지 않는다
+
+    const d = decisionOf(p);
+    const skipped = !!(d && d.status === "skip");
+    out.push({ p, kind, hits, route:r, byHand, skipped,
+               done: byHand || skipped, note:(d && d.note) || "" });
+  });
+  return out;
+}
+
+/* 그린 노선이 아직 파일에 안 들어갔는지 (= 커밋해야 모두에게 보인다) */
+function routeUncommitted(p){
+  const k = String(p.id);
+  return !!localRoutes[k] && !fileRoutes[k];
+}
+
+const ADMRT_TITLE = {
+  river:  ["하천 사업인데 노선을 <b>자동으로 못 받아온 것</b>", true],
+  linear: ["EIASS 가 <b>선형</b>이라고 밝힌 사업 중 노선이 없는 것", false],
+  guess:  ["이름으로 보면 <b>선형일 수 있는</b> 사업", false]
+};
+
+function admRow(c, done){
+  const p = c.p;
+  const where = esc((p.where || "").split(" ").slice(0, 2).join(" "));
+  const hint = c.kind === "guess" && c.hits.length
+    ? ` · <b>이름으로 짐작</b>: ${esc(c.hits.join("·"))}` : "";
+
+  let tag = "";
+  if(done && c.byHand){
+    // 어떻게 넣었는지 그대로 말한다. 구간표로 만든 것은 직선이라 '직접 그린 것'과 다르다.
+    const how = c.route.source === "segment-ends" ? "구간표로 만듦" : "직접 그림";
+    tag = routeUncommitted(p)
+      ? `<span class="admrt-tag admrt-tag--uncommitted">${how} · 커밋 안 됨</span>`
+      : `<span class="admrt-tag admrt-tag--drawn">${how}</span>`;
+  }else if(done && c.skipped){
+    tag = `<span class="admrt-tag admrt-tag--skip">안 그리기로 함</span>`;
+  }
+
+  const acts = done
+    ? `<button class="btn btn--ghost btn--sm btn--pill" type="button" data-undo="${esc(p.id)}">되돌리기</button>`
+    : `<button class="btn btn--line btn--sm btn--pill" type="button" data-draw="${esc(p.id)}">직접 그리기</button>
+       <button class="btn btn--ghost btn--sm btn--pill" type="button" data-skip="${esc(p.id)}">안 그리기</button>`;
+
+  return `<div class="admrt-row${done ? " admrt-row--done" : ""}">
+      <div class="admrt-main">
+        ${tag}<button type="button" class="admrt-go" data-id="${esc(p.id)}">${esc(p.name)}</button>
+        <p class="admrt-note">${where} · ${esc(p.typeLabel || "")}${hint}${
+          c.note ? ` · 메모: ${esc(c.note)}` : ""}</p>
+      </div>
+      <div class="admrt-acts">${acts}</div>
+    </div>`;
+}
+
 function renderAdminRoutes(){
   const box = $("#admRoutes");
   if(!box || !box.classList) return;
 
-  const all = PROJECTS.concat(CLOSED_PROJECTS);
-  const todo = [];      // EIASS 가 '선형'이라고 밝혔는데 노선이 없는 것 (도로·철도 등)
-  const river = [];     // ★ 그중 하천 사업 — 자동으로 찾았어야 하는데 못 찾은 것
-  const maybe = [];     // 위치유형이 없어서 이름으로만 짐작되는 것
-  all.forEach(p => {
-    if(routeOf(p)) return;                       // 이미 그려졌거나 자동으로 찾은 것
-    const types = p.locationTypes || [];
-    // 하천 사업은 원래 자동으로 받아온다. 그런데도 비어 있으면 까닭이 따로 있으므로 나눠 보여준다.
-    if(types.includes("선형")) (p.isRiver ? river : todo).push(p);
-    else if(!types.length && linearByName(p).length) maybe.push({ p, hits:linearByName(p) });
-  });
+  const cand = routeCandidates();
+  const todo = cand.filter(c => !c.done);
+  const done = cand.filter(c => c.done);
 
-  const row = (p, note) => `<li>
-      <button type="button" class="admrt-go" data-id="${esc(p.id)}">${esc(p.name)}</button>
-      <span class="admrt-sub">${esc((p.where || "").split(" ").slice(0, 2).join(" "))}
-        · ${esc(p.typeLabel || "")}${note ? ` · <b>${esc(note)}</b>` : ""}</span>
-    </li>`;
-
-  box.innerHTML = `
-    ${river.length ? `<p class="admrt-h">하천 사업인데 노선을 <b>자동으로 못 받아온 것</b> — ${river.length}건</p>
-      <p class="hint hint--warn">하천 사업은 요약문에서 하천 이름을 찾아
-        국토정보플랫폼(VWorld) <b>하천망도</b>에서 실제 도형을 자동으로 받아옵니다.
+  // ── 남은 것 ──
+  const groups = ["river", "linear", "guess"].map(kind => {
+    const rows = todo.filter(c => c.kind === kind);
+    if(!rows.length) return "";
+    const [title, warn] = ADMRT_TITLE[kind];
+    return `<p class="admrt-h">${title} — ${rows.length}건</p>
+      ${kind === "river" ? `<p class="hint hint--warn">하천 사업은 보통 하천 이름으로
+        국토정보플랫폼(VWorld) <b>하천망도</b>에서 노선을 자동으로 받아옵니다.
         그런데 하천망도에는 <b>국가하천·지방하천만 있고 소하천은 들어 있지 않습니다.</b>
-        <b>소하천</b>만 다루는 사업은 다시 수집해도 자동으로는 영영 찾을 수 없습니다 —
-        아래 사업은 사람이 직접 그려야 합니다.</p>
-      <ul class="admrt">${river.map(p => row(p, "자동 조회 안 됨")).join("")}</ul>` : ``}
-
-    ${todo.length ? `<p class="admrt-h">EIASS 가 <b>선형</b>이라고 밝힌 사업 중 노선이 없는 것 — ${todo.length}건</p>
-      <ul class="admrt">${todo.map(p => row(p)).join("")}</ul>` : ``}
-
-    ${maybe.length ? `<p class="admrt-h">이름으로 보면 <b>선형일 수 있는</b> 사업 — ${maybe.length}건</p>
-      <p class="hint hint--warn">환경영향평가는 EIASS 가 위치유형을 주지 않습니다.
+        <b>소하천</b>만 다루는 사업은 다시 수집해도 자동으로는 영영 찾을 수 없습니다.</p>` : ``}
+      ${kind === "guess" ? `<p class="hint hint--warn">환경영향평가는 EIASS 가 위치유형을 주지 않습니다.
         아래는 <b>사업명만 보고 짐작한 것</b>이라 틀릴 수 있습니다 —
-        원문을 확인하고 판단하세요. <b>자료에는 넣지 않았고 주민 화면에도 나오지 않습니다.</b></p>
-      <ul class="admrt">${maybe.map(m => row(m.p, m.hits.join("·"))).join("")}</ul>` : ``}
+        원문을 확인하고 판단하세요. <b>자료에는 넣지 않았고 주민 화면에도 나오지 않습니다.</b></p>` : ``}
+      ${rows.map(c => admRow(c, false)).join("")}`;
+  }).join("");
 
-    ${(!river.length && !todo.length && !maybe.length)
-      ? `<p class="hint">노선을 그려야 할 사업이 지금은 없습니다.</p>` : ``}`;
+  box.innerHTML = todo.length ? groups : `<div class="admrt-clear">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+        stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"></path></svg>
+      정리가 끝났습니다. 판단이 필요한 사업이 없습니다.
+    </div>`;
 
-  // ★ 지도에 맨손으로 점을 찍게 하지 않는다.
-  //   **노선 그리기 도구**로 보낸다 — 거기에는 도면에서 반자동으로 따는 기능과
+  // ── 정리 끝난 것 (따로 목록) ──
+  const doneBox = $("#admRoutesDone");
+  if(doneBox && doneBox.classList){
+    doneBox.innerHTML = done.length
+      ? done.map(c => admRow(c, true)).join("")
+      : `<p class="hint">아직 정리한 사업이 없습니다.</p>`;
+  }
+
+  // ── 제목 옆 건수 ──
+  const badge = (sel, n, cls) => {
+    const el = $(sel);
+    if(!el || !el.classList) return;
+    el.textContent = n + "건";
+    el.className = "adm-acc-badge" + (cls ? " adm-acc-badge--" + cls : "");
+  };
+  badge("#accRoutesBadge", todo.length, todo.length ? "todo" : "done");
+  badge("#accDoneBadge", done.length, "");
+
+  renderDecSave();
+
+  // 사업 이름을 누르면 **노선 그리기 도구**로 간다.
+  // ★ 지도에 맨손으로 점을 찍게 하지 않는다 — 거기에는 도면에서 반자동으로 따는 기능과
   //   길이 검산이 있다. 맨손 그리기는 기준이 없어서 사실상 못 그린다.
-  box.querySelectorAll(".admrt-go").forEach(b => b.addEventListener("click", () => {
-    window.open(`route_editor.html?id=${encodeURIComponent(b.dataset.id)}`, "_blank", "noopener");
-  }));
+  const openEditor = id =>
+    window.open(`route_editor.html?id=${encodeURIComponent(id)}`, "_blank", "noopener");
+
+  [box, doneBox].forEach(root => {
+    if(!root || !root.querySelectorAll) return;
+    root.querySelectorAll("[data-id]").forEach(b =>
+      b.addEventListener("click", () => openEditor(b.dataset.id)));
+    root.querySelectorAll("[data-draw]").forEach(b =>
+      b.addEventListener("click", () => openEditor(b.dataset.draw)));
+    root.querySelectorAll("[data-skip]").forEach(b =>
+      b.addEventListener("click", () => {
+        // 왜 안 그리는지 한 줄 남길 수 있게 한다. 비워도 된다.
+        const why = prompt("이 사업을 안 그리는 까닭을 한 줄로 적어 두시겠어요?\n(비워 두어도 됩니다)", "");
+        if(why === null) return;                 // 취소
+        setDecision(b.dataset.skip, "skip", why.trim());
+      }));
+    root.querySelectorAll("[data-undo]").forEach(b =>
+      b.addEventListener("click", () => {
+        const p = findProject(b.dataset.undo);
+        if(p && routeOf(p)){          // 그려 둔 노선이 있으면 판단만 지워도 소용없다
+          alert("이 사업에는 그려 둔 노선이 있습니다.\n" +
+                "노선을 지우려면 '노선 그리기 도구'에서 지워 주세요.");
+          return;
+        }
+        setDecision(b.dataset.undo, null);
+      }));
+  });
+}
+
+/* 판단을 파일로 내보내는 칸. **커밋해야 모두에게 보인다**는 것을 분명히 알린다. */
+function renderDecSave(){
+  const box = $("#admDecSave");
+  if(!box || !box.classList) return;
+  const n = uncommittedDecisions().length;
+  box.hidden = false;
+  box.innerHTML = `
+    <p>${n
+      ? `이 브라우저에만 있는 판단이 <b>${n}건</b> 있습니다.`
+      : `파일과 같은 상태입니다.`}
+      판단을 모두에게 보이게 하려면 아래로 파일을 받아
+      <b>data/route_decisions.json</b> 에 덮어쓰고 커밋해야 합니다.
+      <br>(브라우저는 GitHub 에 직접 쓸 수 없습니다 — 그러려면 저장소 쓰기 권한을
+      공개해야 하기 때문입니다.)</p>
+    <div class="adm-btn-row">
+      <button class="btn btn--line btn--sm btn--pill" type="button" id="btnDecDown">JSON 내려받기</button>
+      <button class="btn btn--ghost btn--sm btn--pill" type="button" id="btnDecCopy">JSON 복사</button>
+      <span class="adm-dec-msg" id="decMsg"></span>
+    </div>`;
+
+  $("#btnDecDown").addEventListener("click", () => {
+    const blob = new Blob([decisionsJson()], { type:"application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "route_decisions.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    $("#decMsg").textContent = "받았습니다. data/route_decisions.json 에 덮어쓰세요.";
+  });
+  $("#btnDecCopy").addEventListener("click", async () => {
+    try{
+      await navigator.clipboard.writeText(decisionsJson());
+      $("#decMsg").textContent = "복사했습니다.";
+    }catch(e){
+      $("#decMsg").textContent = "복사가 막혔습니다 — '내려받기'를 쓰세요.";
+    }
+  });
+}
+
+/* 아코디언을 어디까지 열어 뒀는지 이 브라우저에 기억한다.
+   담당자가 매번 같은 칸을 다시 펼치지 않게 하려는 것뿐이라 localStorage 로 충분하다.
+   ★ 읽기·쓰기를 lsGet/lsSet 으로 감싼다 — 사생활 보호 창에서는 던질 수 있다. */
+const LSACC = "wdn.admAcc";
+
+function rememberAcc(){
+  const saved = lsGet(LSACC, null);
+  document.querySelectorAll("#admPanel .adm-acc").forEach(d => {
+    if(saved && Object.prototype.hasOwnProperty.call(saved, d.id)) d.open = !!saved[d.id];
+    // 이미 붙여 뒀으면 다시 붙이지 않는다 (fillAdmin 은 잠금을 풀 때마다 돈다)
+    if(d.dataset.accBound) return;
+    d.dataset.accBound = "1";
+    d.addEventListener("toggle", () => {
+      const now = lsGet(LSACC, {}) || {};
+      now[d.id] = d.open;
+      lsSet(LSACC, now);
+    });
+  });
 }
 
 function fillAdmin(){
   renderAdminFeed();
   renderAdminRoutes();
+  rememberAcc();
   $("#a-vworld").value      = S.vworldKey;
   $("#a-service-url").value = S.serviceUrl;
   $("#a-lon").value         = S.centerLon;
@@ -3877,6 +4130,7 @@ rememberScreen("#scr-onboard", false);
 applySettings();
 loadRegions();
 loadRoutes();
+loadDecisions();
 loadProjects();
 
 /* ============================================================

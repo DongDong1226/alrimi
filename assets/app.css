@@ -908,6 +908,80 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .fld-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .toggle{display:flex;align-items:center;gap:10px;font-size:var(--fs-body-s);font-weight:600;color:var(--ink)}
 .toggle input{width:17px;height:17px;accent-color:var(--primary)}
+/* ============================================================
+   관리자 아코디언 (2026-08-30)
+   카드 5개가 한 화면에 펼쳐져 있어 무엇부터 볼지 알 수 없었다.
+   native <details> 를 쓴다 — 여닫는 코드가 아예 없다.
+   ★ 색·모서리·그림자는 전부 tokens.css 변수다. 새 값을 만들지 않았다.
+   ============================================================ */
+.adm-acc-list{display:flex;flex-direction:column;gap:12px}
+.adm-acc{background:#fff;border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden}
+.adm-acc[open]{box-shadow:var(--sh-sm)}
+
+.adm-acc>summary{
+  display:flex;align-items:center;gap:10px;
+  padding:15px 20px;cursor:pointer;list-style:none;
+  font-size:var(--fs-h-xxs);font-weight:800;color:var(--ink);letter-spacing:-.01em;
+  user-select:none}
+/* 브라우저 기본 삼각형을 지운다 — 아래에서 우리 화살표를 그린다 */
+.adm-acc>summary::-webkit-details-marker{display:none}
+.adm-acc>summary::marker{content:""}
+.adm-acc>summary:hover{background:var(--bg-2)}
+/* ★ 키보드로 왔을 때 어디에 있는지 보여야 한다 (summary 는 기본 포커스 대상이다) */
+.adm-acc>summary:focus-visible{outline:2px solid var(--primary);outline-offset:-2px}
+.adm-acc[open]>summary{border-bottom:1px solid var(--line)}
+
+.adm-acc-t{flex:none}
+/* 화살표는 맨 오른쪽. 펼치면 아래를 향한다 */
+.adm-acc>summary::after{
+  content:"";margin-left:auto;flex:none;width:9px;height:9px;
+  border-right:2px solid var(--ink-4);border-bottom:2px solid var(--ink-4);
+  transform:rotate(-45deg);transition:transform .18s var(--ease)}
+.adm-acc[open]>summary::after{transform:rotate(45deg)}
+@media (prefers-reduced-motion:reduce){.adm-acc>summary::after{transition:none}}
+
+/* 제목 옆 건수. 할 일이 남았을 때만 눈에 띄게 한다 */
+.adm-acc-badge{font-size:var(--fs-body-xs);font-weight:700;color:var(--ink-3);
+  padding:2px 9px;border-radius:var(--r-pill);background:var(--bg-1);border:1px solid var(--line)}
+.adm-acc-badge--todo{color:#fff;background:var(--warn);border-color:var(--warn)}
+.adm-acc-badge--done{color:var(--eco);background:var(--eco-soft);border-color:transparent}
+.adm-acc-in{padding:18px 20px}
+.adm-sep{border:0;border-top:1px solid var(--line);margin:18px 0 14px}
+.adm-btn-row{display:flex;gap:8px;flex-wrap:wrap}
+
+/* 판단 내보내기 알림 — 커밋해야 모두에게 보인다는 것을 알린다 */
+.adm-dec-save{margin-top:14px;padding:13px 15px;border-radius:var(--r-sm);
+  background:var(--primary-tint);border:1px solid var(--primary-soft)}
+.adm-dec-save p{font-size:var(--fs-body-s);color:var(--ink-2);margin:0 0 10px}
+.adm-dec-save b{color:var(--ink)}
+.adm-dec-msg{font-size:var(--fs-body-xs);color:var(--eco);font-weight:700;margin-left:8px}
+
+/* 노선 목록 한 줄 — 사업명 + 판단 단추 */
+.admrt-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;
+  border-bottom:1px solid var(--line)}
+.admrt-row:last-child{border-bottom:0}
+.admrt-main{flex:1;min-width:0}
+.admrt-acts{display:flex;gap:6px;flex:none;padding-top:1px}
+.admrt-acts .btn{white-space:nowrap}
+.admrt-note{font-size:var(--fs-body-xs);color:var(--ink-3);margin:3px 0 0}
+/* 정리 끝난 줄은 한 단계 물러나 보이게 한다 */
+.admrt-row--done .admrt-go{color:var(--ink-2)}
+.admrt-tag{display:inline-block;font-size:var(--fs-body-xs);font-weight:700;
+  padding:1px 8px;border-radius:var(--r-pill);margin-right:6px}
+.admrt-tag--drawn{color:var(--eco);background:var(--eco-soft)}
+.admrt-tag--skip{color:var(--ink-3);background:var(--bg-1);border:1px solid var(--line)}
+.admrt-tag--uncommitted{color:var(--warn);background:var(--bg-1);border:1px solid var(--warn)}
+/* 다 끝났을 때 */
+.admrt-clear{display:flex;align-items:center;gap:9px;padding:14px 0;
+  font-size:var(--fs-body-s);font-weight:700;color:var(--eco)}
+.admrt-clear svg{width:18px;height:18px;flex:none}
+
+@media (max-width:640px){
+  .admrt-row{flex-direction:column;gap:8px}
+  .admrt-acts{width:100%}
+  .admrt-acts .btn{flex:1}
+}
+
 .adm-actions{display:flex;gap:10px;margin-top:24px;align-items:center}
 .adm-saved{font-size:var(--fs-body-s);font-weight:700;color:var(--eco);opacity:0;transition:.2s}
 .adm-saved.on{opacity:1}
