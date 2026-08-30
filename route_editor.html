@@ -202,9 +202,25 @@
         <div class="row">
           <button id="btnSegUse" class="primary">고른 구간을 노선으로 담기</button>
           <button id="btnSegSave">담고 이 사업에 저장</button>
-          <span class="muted" id="segSaveMsg"></span>
+          <span class="muted" id="segDraftMsg"></span>
+          <button id="btnSegDraftClear" class="danger" style="margin-left:auto">임시저장 지우기</button>
         </div>
+        <div class="row"><span class="muted" id="segSaveMsg"></span></div>
         <div class="row"><span class="muted" id="segSum"></span></div>
+
+        <!-- ★ 도면 한 장에 든 구간을 한꺼번에 따온다 (2026-08-30).
+             46구간을 손으로 다듬는 것이 무리라서 넣었다.
+             4번에서 도면을 올리고 기준점만 잡아 두면, 시작·종점은 우리가 이미 아는
+             좌표에서 자동으로 짚는다. -->
+        <div class="row">
+          <button id="btnTraceSegs">도면에 든 구간 모두 따오기</button>
+          <span class="muted" id="segTraceMsg"></span>
+        </div>
+        <p class="muted" style="margin:6px 0 0">
+          먼저 아래 <b>4. 도면에서 자동으로 따기</b>에서 도면 스크린샷을 올리고
+          <b>기준점 3~4곳</b>만 짝지어 주세요. 시작·종점은 <b>구간표 주소에서 자동으로</b> 짚습니다.
+          도면 밖에 있는 구간은 건너뜁니다 — 섬마다 도면을 바꿔 가며 눌러도 됩니다.
+        </p>
         <div class="segwrap"><table class="segtbl" id="segTable"></table></div>
         <p class="muted" style="margin:8px 0 0">
           <b>비교</b>는 <b>그린 길이 ÷ 고시 연장</b>입니다. 하천은 굽어 있으므로
@@ -897,6 +913,82 @@ async function geocodeAddr(raw, key){
 let segEnds = [];          // [{ i, on, from:{pt,rough,addr}|null, to:{...}|null }]
 let fromSegments = false;  // 지금 노선이 구간 시점·종점에서 만들어진 것인가
 
+/* ============================================================
+   구간 작업 임시저장 (2026-08-30)
+
+   ★ 왜 필요한가 — 담당자가 46구간을 손보다가 **하나만 어긋나도 처음부터** 해야 했다.
+     구간 작업(옮긴 시점·종점, 찍은 중간 점, 켜고 끈 체크)이 **화면 메모리에만** 있어서
+     새로 고치거나 다른 사업을 눌러 보고 오면 통째로 사라졌기 때문이다.
+     `restoreMidPoints()` 는 **저장한 노선의 중간 점**만 되살릴 뿐이라,
+     주소가 틀려서 손으로 옮겨 놓은 시점·종점은 다시 옛 자리로 돌아갔다.
+
+   그래서 **바꿀 때마다 자동으로** 이 브라우저에 적어 둔다. 단추를 누를 필요가 없다.
+   (노선 파일과는 다른 것이다 — 이건 '작업 중인 것'이고, 모두에게 보이려면
+    여전히 '담고 이 사업에 저장' → 6번 → 커밋을 거쳐야 한다)
+   ============================================================ */
+const LSSEG = "wdn.segDraft";
+
+function segDraftAll(){
+  try{ return JSON.parse(localStorage.getItem(LSSEG) || "{}") || {}; }
+  catch(e){ return {}; }
+}
+
+function saveSegDraft(){
+  if(!current || !segEnds.length) return;
+  const all = segDraftAll();
+  all[String(current.id)] = {
+    at: new Date().toISOString(),
+    segs: segEnds.map(sg => ({
+      i: sg.i,
+      on: sg.on,
+      from: sg.from ? sg.from.pt : null,
+      to:   sg.to   ? sg.to.pt   : null,
+      rough: [sg.from ? !!sg.from.rough : false, sg.to ? !!sg.to.rough : false],
+      mid: (sg.mid || []).map(p => p.slice())
+    }))
+  };
+  try{ localStorage.setItem(LSSEG, JSON.stringify(all)); }
+  catch(e){ /* 자리가 없으면 조용히 넘어간다 — 화면은 그대로 동작한다 */ }
+  showDraftMsg();
+}
+
+/* 임시저장을 지금 구간에 덮어씌운다. 되살린 구간 수를 돌려준다.
+   ★ 구간 번호(i)로 맞춘다 — 구간표 자체는 사업이 바뀌지 않는 한 그대로다. */
+function applySegDraft(){
+  if(!current) return 0;
+  const d = segDraftAll()[String(current.id)];
+  if(!d || !d.segs) return 0;
+  let n = 0;
+  d.segs.forEach(row => {
+    const sg = segEnds.find(x => x.i === row.i);
+    if(!sg) return;
+    let touched = false;
+    if(row.from && sg.from){ sg.from.pt = row.from.slice(); sg.from.rough = !!(row.rough||[])[0]; touched = true; }
+    if(row.to   && sg.to  ){ sg.to.pt   = row.to.slice();   sg.to.rough   = !!(row.rough||[])[1]; touched = true; }
+    if(row.mid && row.mid.length){ sg.mid = row.mid.map(p => p.slice()); touched = true; }
+    if(typeof row.on === "boolean" && sg.from && sg.to) sg.on = row.on;
+    if(touched) n++;
+  });
+  return n;
+}
+
+function clearSegDraft(){
+  const all = segDraftAll();
+  if(current) delete all[String(current.id)];
+  try{ localStorage.setItem(LSSEG, JSON.stringify(all)); }catch(e){}
+  showDraftMsg();
+}
+
+function showDraftMsg(){
+  const el = $("#segDraftMsg");
+  if(!el) return;
+  const d = current ? segDraftAll()[String(current.id)] : null;
+  if(!d){ el.textContent = ""; return; }
+  const t = new Date(d.at);
+  const two = n => String(n).padStart(2, "0");
+  el.textContent = `임시저장됨 ${two(t.getHours())}:${two(t.getMinutes())}`;
+}
+
 function clearGuides(){
   guideLayers.forEach(l => map.removeLayer(l));
   guideLayers = [];
@@ -931,13 +1023,19 @@ async function showGuides(){
   }
   $("#btnGuide").disabled = false;
 
-  const restored = restoreMidPoints();
+  /* ★ 되살리는 순서가 중요하다.
+       ① **임시저장**이 있으면 그것을 쓴다 — 옮긴 시점·종점까지 들어 있는 '작업 그대로'다.
+       ② 없으면 저장한 노선에서 **중간 점만** 되살린다(다른 PC 에서 커밋해 온 경우). */
+  const draftN = applySegDraft();
+  const restored = draftN ? 0 : restoreMidPoints();
 
   const okN = segEnds.filter(x => x.on).length;
   $("#guideMsg").textContent = (okN
     ? `${segs.length}구간 중 ${okN}구간의 시점·종점을 찾았습니다.`
     : "주소를 찾지 못했습니다. 원문을 보고 직접 찾아 그리세요.")
+    + (draftN ? ` 작업하던 구간 ${draftN}개를 그대로 되살렸습니다.` : "")
     + (restored ? ` 저장해 둔 중간 점 ${restored}개를 되살렸습니다.` : "");
+  showDraftMsg();
   $("#segResult").hidden = !okN;
   drawSegEnds();
   renderSegTable();
@@ -987,6 +1085,7 @@ function segChanged(){
   drawSegEnds();
   renderSegTable();
   syncSegRoute();      // 담아 둔 노선이 있으면 바로 따라 바뀐다
+  saveSegDraft();      // ★ 손댈 때마다 자동으로 남긴다 — 단추를 누를 필요가 없다
 }
 
 /* 동그란 점 하나 만들기 — 시점·종점·중간 점이 크기와 색만 다르다. */
@@ -1060,6 +1159,50 @@ function drawSegEnds(){
       guideLayers.push(m);
     });
   });
+}
+
+/* ============================================================
+   도면에서 구간별로 따오기 (2026-08-30)
+
+   ★ 왜 이제 되나 — 우리는 **각 구간의 시점·종점 좌표를 이미 알고 있다**(구간표 주소).
+     기준점을 한 번 잡아 두면 그 좌표를 **도면 위 픽셀 자리로 되돌릴 수 있으므로**,
+     담당자가 시작·종점을 손으로 짚을 필요가 없다.
+     그러면 한 장의 도면에 든 구간을 **한꺼번에** 따올 수 있다.
+
+   ★ 남는 위험은 그대로다 — 색을 잘못 고르거나 다른 하천이 이어 붙으면 엉뚱한 선이 된다.
+     그래서 결과를 **구간마다 길이 검산(비교 %)** 으로 바로 확인할 수 있게 두었다.
+     자동으로 되었다고 넘어가지 말 것.
+   ============================================================ */
+
+/* 좌표가 도면 안쪽인가 (가장자리 조금은 봐준다) */
+function inPlan(px){
+  if(!plan || !px) return false;
+  const m = 8;
+  return px[0] >= -m && px[1] >= -m && px[0] <= plan.w + m && px[1] <= plan.h + m;
+}
+
+/* 지도 좌표 → 도면 픽셀 */
+function llToImg(ll){
+  if(!invFn) return null;
+  const [X, Y] = toXY(ll);
+  return invFn(X, Y);
+}
+
+/* 구간 하나를 도면에서 따온다. 잘되면 null, 안 되면 까닭을 돌려준다. */
+function traceSegment(sg){
+  if(!plan) return "도면이 없습니다";
+  if(!fitFn || !invFn) return "기준점이 없습니다";
+  if(!sg.from || !sg.to) return "시점·종점 좌표가 없습니다";
+  const a = llToImg(sg.from.pt), b = llToImg(sg.to.pt);
+  if(!inPlan(a) || !inPlan(b)) return "이 도면 밖입니다";
+
+  const keepEnds = ends;
+  ends = [a, b];                    // 시작·종점을 자동으로 짚어 준다
+  traceTarget = sg;
+  let ok = false;
+  try{ ok = traceRoute(); }
+  finally{ traceTarget = null; ends = keepEnds; }
+  return ok ? null : ($("#traceMsg").textContent || "따오지 못했습니다");
 }
 
 /* 한 구간을 이루는 점 전부 — 시점 → (중간 점들) → 종점. */
@@ -1138,6 +1281,8 @@ function renderSegTable(){
       <td class="n">${off ? off.toFixed(2) : "—"}</td>
       <td class="n ${g.cls}">${bad ? `<span class="bad">못 찾음</span>` : g.txt}</td>
       <td>${bad ? "" : `<button type="button" data-segzoom="${sg.i}">보기</button>`}
+        ${bad || !plan ? "" : `<button type="button" data-segtrace="${sg.i}"
+                    title="지금 올린 도면에서 이 구간의 선을 따옵니다">도면</button>`}
         ${nMid ? `<button type="button" data-segflat="${sg.i}"
                     title="중간 점을 모두 지우고 다시 직선으로">직선 ${nMid}</button>` : ""}
         ${rough ? `<span class="warn" title="하천 시·종점이 아니라 동네 대표점입니다">리대표</span>` : ""}</td>
@@ -1161,6 +1306,15 @@ function renderSegTable(){
   $("#segTable").querySelectorAll("[data-segflat]").forEach(b => b.addEventListener("click", () => {
     const sg = segEnds.find(x => String(x.i) === b.dataset.segflat);
     if(sg){ sg.mid = []; segChanged(); }
+  }));
+  // 이 구간만 도면에서 따온다
+  $("#segTable").querySelectorAll("[data-segtrace]").forEach(b => b.addEventListener("click", () => {
+    const sg = segEnds.find(x => String(x.i) === b.dataset.segtrace);
+    if(!sg) return;
+    const err = traceSegment(sg);
+    $("#segTraceMsg").textContent = err
+      ? `${sg.i + 1}구간 — ${err}`
+      : `${sg.i + 1}구간을 도면에서 따왔습니다. 길이 비교를 꼭 확인하세요.`;
   }));
   updateSegSum();
 }
@@ -1324,6 +1478,8 @@ let trace = null;       // 추출한 경로 (도면 좌표)
 let ends = [];          // 시작·종점 (도면 좌표) — 비어 있으면 '가장 긴 경로'로 뽑는다
 let gcpMarkers = [];
 let fitFn = null, fitRms = null;
+let invFn = null;          // 지도 좌표 → 도면 픽셀 (fitFn 의 반대)
+let traceTarget = null;    // 따온 선을 넣을 구간 (없으면 예전처럼 '그리는 중인 갈래'로)
 
 const cv = $("#imgCanvas");
 const ctx = cv.getContext("2d");
@@ -1342,7 +1498,7 @@ function loadPlanImage(src){
     c.getContext("2d").drawImage(im, 0, 0, w, h);
     plan = { canvas:c, w, h };
     gcps = []; gcpPending = null; samples = []; roi = null; trace = null;
-    fitFn = null; fitRms = null;
+    fitFn = null; fitRms = null; invFn = null;
     $("#imgPane").hidden = false;
     $("#stage").classList.add("split");
     $("#planSteps").hidden = false;
@@ -1668,7 +1824,7 @@ $("#btnPlanReset").addEventListener("click", () => {
   gcps = []; gcpPending = null;
   samples = []; roi = null; roiDrag = null;
   trace = null; ends = [];
-  fitFn = null; fitRms = null;
+  fitFn = null; fitRms = null; invFn = null;
   setImgMode("pan");
   refreshGcpUi();
   renderSwatches();
@@ -1708,10 +1864,21 @@ function solve(A, b, n){
   return M.map((row, i) => row[n] / M[i][i]);
 }
 
+/* 기준점 짝을 지도 좌표로 바꿔 맞춘다 (도면 픽셀 → 웹메르카토르 XY). */
 function buildFit(pairs){
-  const n = pairs.length;
-  const P = pairs.map(g => g.img);
-  const Q = pairs.map(g => toXY(g.ll));
+  return fitPoints(pairs.map(g => g.img), pairs.map(g => toXY(g.ll)));
+}
+
+/* ★ 반대 방향 (지도 XY → 도면 픽셀). 같은 계산에 **짝을 뒤집어** 넣으면 된다.
+   이게 있어야 "이 구간의 시점이 도면 어디쯤인가"를 계산할 수 있고,
+   그러면 담당자가 시작·종점을 손으로 짚지 않아도 된다 (2026-08-30). */
+function buildFitInverse(pairs){
+  return fitPoints(pairs.map(g => toXY(g.ll)), pairs.map(g => g.img));
+}
+
+function fitPoints(P, Q){
+  const n = P.length;
+  const pairs = P;                 // 개수만 쓰는 자리라 그대로 둔다
   const A = [], b = [];
 
   if(n >= 4){
@@ -1752,7 +1919,7 @@ function buildFit(pairs){
 }
 
 function computeFit(){
-  fitFn = null; fitRms = null;
+  fitFn = null; fitRms = null; invFn = null;
   const el = $("#fitMsg");
   if(gcps.length < 2){
     el.textContent = `기준점 ${gcps.length}개 — 최소 2개, 3~4개를 권합니다.`;
@@ -1761,6 +1928,7 @@ function computeFit(){
   const f = buildFit(gcps);
   if(!f){ el.textContent = "기준점이 한 줄에 몰려 있어 계산할 수 없습니다. 흩어서 찍으세요."; return; }
   fitFn = f;
+  invFn = buildFitInverse(gcps);   // 구간 시점·종점을 도면 위 자리로 옮길 때 쓴다
 
   // 남는 오차를 미터로 환산해 보여 준다
   let sum = 0;
@@ -1780,9 +1948,11 @@ function computeFit(){
 }
 
 /* ---------- 선 픽셀 골라내기 → 가장 긴 경로 ---------- */
+/* 성공하면 true, 실패하면 false 를 돌려준다.
+   ★ 구간을 여러 개 돌릴 때 **어느 구간이 안 됐는지** 알려면 이 값이 필요하다. */
 function traceRoute(){
-  if(!plan){ return; }
-  if(!fitFn){ $("#traceMsg").textContent = "기준점을 먼저 2개 이상(권장 3~4개) 짝지어 주세요."; return; }
+  if(!plan){ return false; }
+  if(!fitFn){ $("#traceMsg").textContent = "기준점을 먼저 2개 이상(권장 3~4개) 짝지어 주세요."; return false; }
 
   const { w, h } = plan;
   const data = plan.canvas.getContext("2d").getImageData(0, 0, w, h).data;
@@ -1938,19 +2108,20 @@ function traceRoute(){
       $("#traceMsg").textContent =
         `시작·종점이 따온 선에서 ${Math.round(tooFar)}px 떨어져 있습니다 — ` +
         `선 위를 정확히 누르거나, 색·범위·'끊긴 틈 잇기'를 다시 보세요.`;
-      return;
+      return false;
     }
-    if(A.i === B.i){ $("#traceMsg").textContent = "시작과 종점이 같은 자리입니다."; return; }
+    if(A.i === B.i){ $("#traceMsg").textContent = "시작과 종점이 같은 자리입니다."; return false; }
     chain = A.i < B.i ? chain.slice(A.i, B.i + 1)
                       : chain.slice(B.i, A.i + 1).reverse();   // 시작 -> 종점 방향으로
     guided = true;
   }
 
   let pix = simplify(chain, cell * 1.2);
-  if(pix.length < 2){ $("#traceMsg").textContent = "경로가 너무 짧습니다."; return; }
+  if(pix.length < 2){ $("#traceMsg").textContent = "경로가 너무 짧습니다."; return false; }
   const leftover = pieces.length;
 
   applyTrace(pix, { gaps, leftover, blobs: blobs.length, guided });
+  return true;
 }
 
 /* 뽑은 픽셀 경로를 지도 좌표로 옮겨 '그리는 중인 갈래'에 넣는다.
@@ -1960,6 +2131,16 @@ function applyTrace(pix, info){
   info = info || {};
   trace = pix;
   const got = pix.map(([x, y]) => toLL(fitFn(x, y)));
+
+  /* ★ 구간에 넣는 중이면 그 구간의 **중간 점**으로 넣는다 (2026-08-30).
+     양 끝은 건드리지 않는다 — 시점·종점은 구간표 주소에서 온 값이고,
+     그것이 이 구간이 무엇인지 말해 주는 근거이기 때문이다. */
+  if(traceTarget){
+    traceTarget.mid = got.slice(1, -1).map(p => p.slice());
+    segChanged();
+    drawPlan();
+    return;
+  }
 
   if($("#appendMode").checked && pts.length >= 2){
     // 이미 그린 것의 가까운 쪽 끝에 이어 붙인다 (방향은 알아서 맞춘다)
@@ -2041,6 +2222,48 @@ $("#btnLayer").addEventListener("click", () => {
 $("#onlyTodo").addEventListener("change", renderList);
 $("#btnGuide").addEventListener("click", showGuides);
 $("#btnSegClear").addEventListener("click", clearGuides);
+
+/* 지금 올린 도면 안에 들어오는 구간을 차례로 따온다.
+   ★ 한 구간씩 화면을 갱신하며 돈다 — 46구간이면 몇십 초가 걸릴 수 있어서
+     "멈춘 것 같다"는 오해가 생기기 때문이다. */
+$("#btnTraceSegs").addEventListener("click", async () => {
+  if(!plan){ $("#segTraceMsg").textContent = "먼저 4번에서 도면을 올려 주세요."; return; }
+  if(!fitFn || !invFn){ $("#segTraceMsg").textContent = "먼저 4번에서 기준점을 3~4곳 짝지어 주세요."; return; }
+
+  const inside = segEnds.filter(sg => sg.on && sg.from && sg.to
+    && inPlan(llToImg(sg.from.pt)) && inPlan(llToImg(sg.to.pt)));
+  if(!inside.length){
+    $("#segTraceMsg").textContent =
+      "이 도면 안에 들어오는 구간이 없습니다. 기준점이 맞는지, 도면이 이 지역 것인지 보세요.";
+    return;
+  }
+
+  $("#btnTraceSegs").disabled = true;
+  const failed = [];
+  let ok = 0;
+  for(let k = 0; k < inside.length; k++){
+    const sg = inside[k];
+    $("#segTraceMsg").textContent = `따오는 중… ${k + 1}/${inside.length} (${sg.i + 1}구간)`;
+    await new Promise(r => setTimeout(r, 0));      // 화면이 갱신되게 한 박자 쉰다
+    const err = traceSegment(sg);
+    if(err) failed.push(`${sg.i + 1}구간(${err})`); else ok++;
+  }
+  $("#btnTraceSegs").disabled = false;
+
+  // ★ 무엇이 됐고 무엇이 안 됐는지 다 알린다. 조용히 반쪽만 되는 것이 가장 위험하다.
+  $("#segTraceMsg").textContent =
+    `${inside.length}구간 중 ${ok}구간을 따왔습니다.` +
+    (failed.length ? ` 못 한 것: ${failed.join(", ")}` : "") +
+    ` — 표의 비교 %를 꼭 확인하세요.`;
+});
+
+/* 임시저장을 지운다. 되돌릴 수 없으므로 한 번 묻는다. */
+$("#btnSegDraftClear").addEventListener("click", () => {
+  if(!confirm("이 사업의 임시저장을 지웁니다.\n" +
+              "옮긴 시점·종점과 찍은 중간 점이 모두 없어집니다. 계속할까요?")) return;
+  clearSegDraft();
+  $("#segSaveMsg").textContent = "임시저장을 지웠습니다. '구간 시점·종점 찾기'를 다시 누르면 처음 상태가 됩니다.";
+});
 
 /* 고른 구간을 노선으로 담는다 — 구간마다 시점→종점 직선 한 줄(갈래 하나)이 된다. */
 $("#btnSegUse").addEventListener("click", () => {
