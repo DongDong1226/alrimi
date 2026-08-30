@@ -189,7 +189,9 @@
       <p class="muted" style="margin:0 0 8px">
         구간표에 적힌 <b>시점·종점 주소</b>를 좌표로 바꿔 지도에 찍고, 그 둘을 <b>곧게 이어</b> 노선으로 씁니다.
         구간이 짧은 소하천에 알맞습니다. <b>실제로 굽은 모양은 반영되지 않습니다.</b><br>
-        찍힌 점은 <b>끌어서 옮길 수 있습니다</b> — 틀린 곳만 하나씩 고치면 됩니다.
+        찍힌 점은 <b>끌어서 옮길 수 있습니다</b> — 틀린 곳만 하나씩 고치면 됩니다.<br>
+        <b>선을 누르면 그 자리에 중간 점이 생깁니다.</b> 하천이 굽은 모양을 따라
+        몇 개만 찍어 주면 됩니다. 중간 점은 <b>끌어서 옮기고, 눌러서 지웁니다.</b>
       </p>
       <div class="row">
         <button id="btnGuide">구간 시점·종점 찾기</button>
@@ -199,13 +201,17 @@
       <div id="segResult" hidden>
         <div class="row">
           <button id="btnSegUse" class="primary">고른 구간을 노선으로 담기</button>
-          <span class="muted" id="segSum"></span>
+          <button id="btnSegSave">담고 이 사업에 저장</button>
+          <span class="muted" id="segSaveMsg"></span>
         </div>
+        <div class="row"><span class="muted" id="segSum"></span></div>
         <div class="segwrap"><table class="segtbl" id="segTable"></table></div>
         <p class="muted" style="margin:8px 0 0">
-          <b>비교</b>는 <b>시점~종점 직선 길이 ÷ 고시 연장</b>입니다. 하천은 굽어 있으므로
-          직선이 조금 짧은 것(60~110%)이 정상입니다. 주황·빨강은 <b>주소를 잘못 짚었을 수
-          있다</b>는 뜻이니 그 구간만 지도에서 점을 끌어 고치세요.
+          <b>비교</b>는 <b>그린 길이 ÷ 고시 연장</b>입니다. 하천은 굽어 있으므로
+          직선만 그었을 때 조금 짧은 것(60~110%)이 정상이고, 중간 점을 찍어 굽은 모양을
+          따라갈수록 100%에 가까워집니다. 주황·빨강은 <b>주소를 잘못 짚었을 수 있다</b>는
+          뜻이니 그 구간만 <b>보기</b>를 눌러 확인하세요.
+          잘못 찍었으면 <b>직선 n</b> 단추로 그 구간만 처음으로 되돌립니다.
         </p>
       </div>
     </div>
@@ -712,8 +718,10 @@ function redraw(){
   if(lineLayer){ map.removeLayer(lineLayer); lineLayer = null; }
 
   // 끝낸 갈래는 연하게 깔아 둔다 — 지금 그리는 갈래와 구별되어야 한다
+  // ★ 구간에서 만든 노선은 drawSegEnds() 가 이미 그리고 있다. 여기서 또 그리면
+  //   같은 자리에 두 겹이 되어 어느 것을 눌러야 점이 생기는지 알 수 없게 된다.
   branchLayers.forEach(l => map.removeLayer(l));
-  branchLayers = branches.map((b, i) =>
+  branchLayers = (fromSegments ? [] : branches).map((b, i) =>
     L.polyline(b, { color:"#de3412", weight:4, opacity:.35, dashArray:"7 5" })
       .addTo(map).bindTooltip(`갈래 ${i + 1}`));
 
@@ -808,13 +816,16 @@ function updateLength(){
      "많이 다릅니다"라고 겁을 주게 된다. 그래서 -40% ~ +10% 를 정상으로 본다. */
   const near = fromSegments ? (diff >= -40 && diff <= 10) : Math.abs(diff) <= 15;
   el.classList.add(near ? "ok" : "warn");
+  // ★ 중간 점을 찍어 다듬었으면 더 이상 '직선'이 아니다 — 문구를 바꿔 준다.
+  const flat = fromSegments && !segAnyMid();
   $("#lenCmp").textContent =
     `고시 ${off.toFixed(2)} km 대비 ${diff >= 0 ? "+" : ""}${diff.toFixed(0)}% ` +
     (near
-      ? (fromSegments ? "— 직선으로 이었으니 이 정도 짧은 것이 정상입니다" : "— 비슷합니다")
+      ? (flat ? "— 직선으로 이었으니 이 정도 짧은 것이 정상입니다"
+              : (Math.abs(diff) <= 15 ? "— 비슷합니다" : "— 이 정도 차이는 정상입니다"))
       : (fromSegments
           ? (diff > 0
-              ? "— 직선이 고시보다 깁니다. 시점·종점을 잘못 짚은 구간이 있는지 보세요"
+              ? "— 고시보다 깁니다. 시점·종점을 잘못 짚었거나 점을 너무 돌려 찍은 구간이 있는지 보세요"
               : "— 너무 짧습니다. 빠뜨린 구간이 없는지 보세요")
           : "— 많이 다릅니다. 빠뜨린 구간이 없는지 보세요"));
 }
@@ -911,15 +922,22 @@ async function showGuides(){
       i,
       on: !!(a && b),
       from: a ? { pt:a.pt, rough:a.rough, addr:segs[i].from } : null,
-      to:   b ? { pt:b.pt, rough:b.rough, addr:segs[i].to } : null
+      to:   b ? { pt:b.pt, rough:b.rough, addr:segs[i].to } : null,
+      // ★ 시점과 종점 **사이에** 사람이 찍어 넣는 점 (2026-08-30).
+      //   하천은 굽어 있는데 두 점만으로는 직선밖에 안 그려진다.
+      //   선을 누르면 그 자리에 하나 생기고, 끌어서 옮기고, 눌러서 지운다.
+      mid: []
     });
   }
   $("#btnGuide").disabled = false;
 
+  const restored = restoreMidPoints();
+
   const okN = segEnds.filter(x => x.on).length;
-  $("#guideMsg").textContent = okN
+  $("#guideMsg").textContent = (okN
     ? `${segs.length}구간 중 ${okN}구간의 시점·종점을 찾았습니다.`
-    : "주소를 찾지 못했습니다. 원문을 보고 직접 찾아 그리세요.";
+    : "주소를 찾지 못했습니다. 원문을 보고 직접 찾아 그리세요.")
+    + (restored ? ` 저장해 둔 중간 점 ${restored}개를 되살렸습니다.` : "");
   $("#segResult").hidden = !okN;
   drawSegEnds();
   renderSegTable();
@@ -929,49 +947,160 @@ async function showGuides(){
   if(all.length) map.fitBounds(L.latLngBounds(all).pad(0.2));
 }
 
+/* ★ 저장해 둔 노선에서 중간 점을 되살린다 (2026-08-30).
+
+   이게 없으면 이런 일이 벌어진다 — 담당자가 46구간에 중간 점을 찍어 다듬어 저장하고,
+   나중에 다시 들어와 '구간 시점·종점 찾기'를 누르면 **주소로만 다시 만들어져
+   중간 점이 통째로 사라진다.** 그대로 '담기'를 누르면 그 작업이 조용히 지워진다.
+
+   짝짓기는 **양 끝 좌표가 가까운 것**으로 한다. 순서로 맞추면 구간을 하나 빼 두었을 때
+   전부 어긋난다. 300m 안에 있을 때만 같은 구간으로 본다. */
+function restoreMidPoints(){
+  if(!current) return 0;
+  const saved = ROUTES[String(current.id)];
+  if(!saved || saved.note !== "segment-ends") return 0;
+
+  let n = 0;
+  splitLatLngs(saved).forEach(line => {
+    if(line.length < 3) return;                 // 중간 점이 없는 줄은 되살릴 것이 없다
+    const head = line[0], tail = line[line.length - 1];
+    let best = null, bestD = Infinity;
+    segEnds.forEach(sg => {
+      if(!sg.from || !sg.to || (sg.mid || []).length) return;
+      const d = haversineKm(head[0], head[1], sg.from.pt[0], sg.from.pt[1])
+              + haversineKm(tail[0], tail[1], sg.to.pt[0], sg.to.pt[1]);
+      if(d < bestD){ bestD = d; best = sg; }
+    });
+    if(best && bestD <= 0.6){                   // 양 끝 합쳐 600m(= 한쪽 300m) 안
+      best.mid = line.slice(1, -1).map(p => p.slice());
+      n += best.mid.length;
+    }
+  });
+  return n;
+}
+
 /* 시점(초록)·종점(남색)과 그 사이 미리보기 선을 그린다.
    ★ 점은 끌어서 옮길 수 있다 — 주소를 잘못 짚은 구간만 사람이 하나씩 고치면 된다. */
+/* 고친 뒤 화면을 한꺼번에 새로 그린다. 세 곳을 따로 부르다 빠뜨리면
+   지도와 표가 어긋난다(길이는 바뀌었는데 표는 그대로). */
+function segChanged(){
+  drawSegEnds();
+  renderSegTable();
+  syncSegRoute();      // 담아 둔 노선이 있으면 바로 따라 바뀐다
+}
+
+/* 동그란 점 하나 만들기 — 시점·종점·중간 점이 크기와 색만 다르다. */
+function segDot(pt, color, size, opacity){
+  return L.marker(pt, {
+    draggable:true,
+    icon:L.divIcon({
+      className:"", iconSize:[size, size], iconAnchor:[size/2, size/2],
+      html:`<div style="width:${size}px;height:${size}px;border-radius:50%;background:#fff;
+             border:3px solid ${color};opacity:${opacity}"></div>`
+    })
+  });
+}
+
 function drawSegEnds(){
   guideLayers.forEach(l => map.removeLayer(l));
   guideLayers = [];
   segEnds.forEach(sg => {
-    // 이미 노선으로 담았으면 그 선이 이미 그려져 있다 — 같은 자리에 두 겹으로 그리지 않는다.
-    if(sg.from && sg.to && !fromSegments){
-      guideLayers.push(L.polyline([sg.from.pt, sg.to.pt], {
-        color:"#1f8a5b", weight:3, opacity: sg.on ? .8 : .25, dashArray:"6 4"
-      }).addTo(map).bindTooltip(`${sg.i + 1}구간`));
-    }
+    if(!sg.from || !sg.to) return;
+    const pts = segLatLngs(sg);
+
+    /* ★ 선을 **항상** 그린다. 예전에는 노선으로 담은 뒤에는 안 그렸는데(두 겹 방지),
+       이제 이 선이 **중간 점을 찍어 넣는 자리**라 없으면 고칠 방법이 사라진다.
+       대신 redraw() 쪽에서 갈래를 안 그리게 해서 겹치지 않게 했다. */
+    const line = L.polyline(pts, {
+      color:"#1f8a5b", weight:4, opacity: sg.on ? .85 : .25,
+      dashArray: (sg.mid || []).length ? null : "6 4"   // 다듬은 구간은 실선으로 구별한다
+    }).addTo(map).bindTooltip(
+      `${sg.i + 1}구간 — 선을 누르면 그 자리에 점이 생깁니다`, { sticky:true });
+
+    line.on("click", ev => {
+      L.DomEvent.stopPropagation(ev);      // 지도 클릭(손으로 점 찍기)으로 번지지 않게
+      if(!sg.on) return;
+      const at = insertIndex(pts, ev.latlng);
+      sg.mid = (sg.mid || []);
+      sg.mid.splice(at - 1, 0, [ev.latlng.lat, ev.latlng.lng]);
+      segChanged();
+    });
+    guideLayers.push(line);
+
+    // ── 중간 점 — 끌어서 옮기고, 눌러서 지운다 (이 도구의 그리기 점과 같은 방식) ──
+    (sg.mid || []).forEach((pt, idx) => {
+      const m = segDot(pt, "#de3412", 13, sg.on ? 1 : .4).addTo(map)
+        .bindTooltip(`${sg.i + 1}구간 중간 점 ${idx + 1} — 끌어서 옮기고, 눌러서 지웁니다`);
+      m.on("dragend", ev => {
+        const ll = ev.target.getLatLng();
+        sg.mid[idx] = [ll.lat, ll.lng];
+        segChanged();
+      });
+      m.on("click", ev => {
+        L.DomEvent.stopPropagation(ev);
+        sg.mid.splice(idx, 1);
+        segChanged();
+      });
+      guideLayers.push(m);
+    });
+
+    // ── 시점·종점 ──
     [["from", "시점", "#1f8a5b"], ["to", "종점", "#0b3d91"]].forEach(pair => {
       const k = pair[0], label = pair[1], color = pair[2];
       const e = sg[k];
-      if(!e) return;
-      const m = L.marker(e.pt, {
-        draggable:true,
-        icon:L.divIcon({
-          className:"", iconSize:[16, 16], iconAnchor:[8, 8],
-          html:`<div style="width:16px;height:16px;border-radius:50%;background:#fff;
-                 border:3px solid ${color};opacity:${sg.on ? 1 : .4}"></div>`
-        })
-      }).addTo(map).bindTooltip(
+      const m = segDot(e.pt, color, 16, sg.on ? 1 : .4).addTo(map).bindTooltip(
         `${sg.i + 1}구간 ${label}${e.rough ? " · ⚠ 리 대표점(부정확)" : ""}<br>${esc(e.addr)}`,
         { permanent:false });
       m.on("dragend", ev => {
         const ll = ev.target.getLatLng();
         e.pt = [ll.lat, ll.lng];
         e.rough = false;            // 사람이 직접 짚었으니 더 이상 '대표점'이 아니다
-        drawSegEnds();
-        renderSegTable();
-        syncSegRoute();             // 담아 둔 노선이 있으면 바로 따라 바뀐다
+        segChanged();
       });
       guideLayers.push(m);
     });
   });
 }
 
-/* 한 구간의 시점~종점 직선 길이(km). 양끝을 못 찾았으면 null. */
-function segStraightKm(sg){
-  if(!sg.from || !sg.to) return null;
-  return haversineKm(sg.from.pt[0], sg.from.pt[1], sg.to.pt[0], sg.to.pt[1]);
+/* 한 구간을 이루는 점 전부 — 시점 → (중간 점들) → 종점. */
+function segLatLngs(sg){
+  if(!sg.from || !sg.to) return [];
+  return [sg.from.pt].concat(sg.mid || []).concat([sg.to.pt]);
+}
+
+/* 한 구간의 선 길이(km). 중간 점이 있으면 꺾인 길이를 다 더한다. */
+function segLineKm(sg){
+  const pts = segLatLngs(sg);
+  if(pts.length < 2) return null;
+  let sum = 0;
+  for(let i = 1; i < pts.length; i++){
+    sum += haversineKm(pts[i-1][0], pts[i-1][1], pts[i][0], pts[i][1]);
+  }
+  return sum;
+}
+
+/* 중간 점을 하나라도 찍은 구간이 있나 — 길이 검산 문구를 가르는 데 쓴다. */
+function segAnyMid(){
+  return segEnds.some(sg => sg.on && (sg.mid || []).length);
+}
+
+/* 누른 자리가 어느 두 점 사이인지 찾아, 거기에 끼워 넣을 자리를 돌려준다.
+   (이 규모에서는 위경도를 평면처럼 봐도 오차가 눈에 안 띈다) */
+function insertIndex(pts, ll){
+  let best = 1, bestD = Infinity;
+  const kx = Math.cos(ll.lat * Math.PI / 180);      // 경도 1도가 위도보다 짧은 것을 보정
+  for(let i = 1; i < pts.length; i++){
+    const [y1, x1] = pts[i-1], [y2, x2] = pts[i];
+    const ax = (x1 - ll.lng) * kx, ay = y1 - ll.lat;
+    const bx = (x2 - ll.lng) * kx, by = y2 - ll.lat;
+    const dx = bx - ax, dy = by - ay;
+    const len2 = dx*dx + dy*dy;
+    const t = len2 ? Math.max(0, Math.min(1, -(ax*dx + ay*dy) / len2)) : 0;
+    const px = ax + t*dx, py = ay + t*dy;
+    const d = px*px + py*py;
+    if(d < bestD){ bestD = d; best = i; }
+  }
+  return best;
 }
 
 /* 구간표에 적힌 연장 한 줄("1.75km")을 km 숫자로 읽는다. 못 읽으면 null. */
@@ -997,10 +1126,11 @@ function segGrade(r){
 
 function renderSegTable(){
   const rows = segEnds.map(sg => {
-    const st = segStraightKm(sg), off = segOfficialKm(sg.i);
+    const st = segLineKm(sg), off = segOfficialKm(sg.i);
     const g = segGrade(st != null && off ? st / off : null);
     const bad = !sg.from || !sg.to;
     const rough = (sg.from && sg.from.rough) || (sg.to && sg.to.rough);
+    const nMid = (sg.mid || []).length;
     return `<tr>
       <td><label><input type="checkbox" data-segon="${sg.i}" ${sg.on ? "checked" : ""}
         ${bad ? "disabled" : ""}> ${sg.i + 1}</label></td>
@@ -1008,12 +1138,14 @@ function renderSegTable(){
       <td class="n">${off ? off.toFixed(2) : "—"}</td>
       <td class="n ${g.cls}">${bad ? `<span class="bad">못 찾음</span>` : g.txt}</td>
       <td>${bad ? "" : `<button type="button" data-segzoom="${sg.i}">보기</button>`}
+        ${nMid ? `<button type="button" data-segflat="${sg.i}"
+                    title="중간 점을 모두 지우고 다시 직선으로">직선 ${nMid}</button>` : ""}
         ${rough ? `<span class="warn" title="하천 시·종점이 아니라 동네 대표점입니다">리대표</span>` : ""}</td>
     </tr>`;
   }).join("");
 
   $("#segTable").innerHTML =
-    `<tr><th>구간</th><th>직선</th><th>고시</th><th>비교</th><th></th></tr>${rows}`;
+    `<tr><th>구간</th><th>길이</th><th>고시</th><th>비교</th><th></th></tr>${rows}`;
 
   $("#segTable").querySelectorAll("[data-segon]").forEach(cb => cb.addEventListener("change", () => {
     const sg = segEnds.find(x => String(x.i) === cb.dataset.segon);
@@ -1022,7 +1154,13 @@ function renderSegTable(){
   }));
   $("#segTable").querySelectorAll("[data-segzoom]").forEach(b => b.addEventListener("click", () => {
     const sg = segEnds.find(x => String(x.i) === b.dataset.segzoom);
-    if(sg && sg.from && sg.to) map.fitBounds(L.latLngBounds([sg.from.pt, sg.to.pt]).pad(0.5));
+    const pts = sg ? segLatLngs(sg) : [];
+    if(pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.5));
+  }));
+  // 중간 점을 잘못 찍었을 때 그 구간만 처음(직선)으로 되돌린다
+  $("#segTable").querySelectorAll("[data-segflat]").forEach(b => b.addEventListener("click", () => {
+    const sg = segEnds.find(x => String(x.i) === b.dataset.segflat);
+    if(sg){ sg.mid = []; segChanged(); }
   }));
   updateSegSum();
 }
@@ -1030,13 +1168,16 @@ function renderSegTable(){
 function updateSegSum(){
   const use = segEnds.filter(x => x.on && x.from && x.to);
   let str = 0, off = 0;
+  let mids = 0;
   use.forEach(sg => {
-    str += segStraightKm(sg) || 0;
+    str += segLineKm(sg) || 0;
     off += segOfficialKm(sg.i) || 0;
+    mids += (sg.mid || []).length;
   });
   $("#segSum").textContent = use.length
-    ? `고른 ${use.length}구간 · 직선 합계 ${str.toFixed(2)} km` +
-      (off ? ` / 고시 합계 ${off.toFixed(2)} km` : "")
+    ? `고른 ${use.length}구간 · 길이 합계 ${str.toFixed(2)} km` +
+      (off ? ` / 고시 합계 ${off.toFixed(2)} km` : "") +
+      (mids ? ` · 중간 점 ${mids}개` : "")
     : "고른 구간이 없습니다.";
 }
 
@@ -1044,8 +1185,7 @@ function updateSegSum(){
    ★ 손으로 찍은 점(pts)은 건드리지 않는다 — 사람이 일부러 그린 것을 지우면 안 된다. */
 function syncSegRoute(){
   if(!fromSegments) return;
-  branches = segEnds.filter(x => x.on && x.from && x.to)
-    .map(sg => [sg.from.pt.slice(), sg.to.pt.slice()]);
+  branches = segEnds.filter(x => x.on && x.from && x.to).map(sg => segLatLngs(sg));
   redraw();
 }
 
@@ -1908,14 +2048,25 @@ $("#btnSegUse").addEventListener("click", () => {
   if(!use.length){ $("#msg").textContent = "고른 구간이 없습니다."; return; }
   if((branches.length || pts.length >= 2) && !fromSegments &&
      !confirm("이미 그려 둔 노선이 있습니다. 구간 시점·종점으로 바꿀까요?")) return;
-  branches = use.map(sg => [sg.from.pt.slice(), sg.to.pt.slice()]);
+  branches = use.map(sg => segLatLngs(sg));
   pts = [];
   fromSegments = true;
   redraw();
+  drawSegEnds();      // 갈래를 더 안 그리므로, 누를 수 있는 선을 다시 깔아 준다
   map.fitBounds(L.latLngBounds(branches.flat()).pad(0.15));
   $("#msg").textContent =
-    `${use.length}개 구간을 노선으로 담았습니다. 점을 끌어 고치면 노선도 바로 따라 바뀝니다. ` +
-    `'이 사업에 저장'을 누른 뒤 6번에서 파일로 저장하세요.`;
+    `${use.length}개 구간을 노선으로 담았습니다. ` +
+    `선을 누르면 그 자리에 점이 생기고, 점을 끌면 노선이 바로 따라 바뀝니다. ` +
+    `다 되면 '담고 이 사업에 저장'을 누르세요.`;
+});
+
+/* 담기 + 저장을 한 번에. 두 단계로 나뉘어 있어서 "담았는데 왜 저장이 안 되지"가 잦았다. */
+$("#btnSegSave").addEventListener("click", () => {
+  $("#btnSegUse").click();
+  if(!fromSegments) return;              // 담기가 취소됐으면 저장도 하지 않는다
+  $("#btnSave").click();
+  $("#segSaveMsg").textContent =
+    "저장했습니다. 6번에서 data/routes.json 으로 내보낸 뒤 커밋해야 모두에게 보입니다.";
 });
 $("#btnUndo").addEventListener("click", () => { pts.pop(); redraw(); });
 $("#btnClear").addEventListener("click", () => { pts = []; redraw(); refreshBranchUi(); });
