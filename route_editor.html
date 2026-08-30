@@ -212,50 +212,8 @@
              46구간을 손으로 다듬는 것이 무리라서 넣었다.
              4번에서 도면을 올리고 기준점만 잡아 두면, 시작·종점은 우리가 이미 아는
              좌표에서 자동으로 짚는다. -->
-        <!-- ★ 기준점 없이 따오기 (2026-08-30).
-             평가서에서 꺼낸 **하천별 도면**은 선 하나만 들어 있고, 그 선의 양 끝이
-             곧 그 구간의 시점·종점이다. 우리는 그 좌표를 이미 알고 있으므로
-             기준점을 짚지 않아도 변환이 정해진다. -->
-        <div class="row" style="align-items:flex-start">
-          <div style="flex:1;min-width:230px">
-            <label for="segAutoPick" class="muted" style="display:block;margin-bottom:4px">
-              도면 한 장 = 구간 하나 (기준점 없이)</label>
-            <select id="segAutoPick" style="width:100%"></select>
-          </div>
-          <button id="btnSegAuto" class="primary" style="margin-top:18px">이 구간 따오기</button>
-        </div>
-        <p class="muted" style="margin:6px 0 0" id="segAutoMsg"></p>
-        <p class="muted" style="margin:6px 0 0">
-          <b>쓰는 법</b> — ① 아래 <b>4. 도면</b>에 평가서에서 꺼낸 하천별 그림을 올린다
-          (<code>tools/plan_extract.py</code>) ② 4번의 <b>② 노선 색 고르기</b> →
-          <b>도면에서 선 위를 누르기</b> 로 노선 한가운데를 한 번 누른다
-          ③ 위에서 구간을 고르고 <b>이 구간 따오기</b>.
-          <b>기준점은 짚지 않아도 됩니다.</b>
-        </p>
-
-        <!-- ★ 일괄 따오기 (2026-08-30). 46구간짜리 사업 때문에 넣었다.
-             tools/plan_extract.py 가 만든 폴더를 통째로 고르면
-             manifest.json 의 '그림 ↔ 구간' 짝을 읽어 차례로 따온다. -->
-        <hr class="sep">
-        <h3>도면 폴더로 한꺼번에</h3>
-        <p class="muted" style="margin:0 0 8px">
-          <code>tools/plan_extract.py</code> 가 만든 <b>폴더를 통째로</b> 고르세요
-          (<code>manifest.json</code> 이 들어 있어야 합니다).
-          어느 그림이 몇 번 구간인지 그 파일에 적혀 있습니다.
-          <b>크롬·엣지에서 됩니다.</b>
-        </p>
         <div class="row">
-          <input type="file" id="batchPick" webkitdirectory directory multiple>
-          <button id="btnBatchRun" class="primary" disabled>모두 따오기</button>
-          <button id="btnBatchStop" class="danger" hidden>멈추기</button>
-        </div>
-        <p class="muted" style="margin:6px 0 0" id="batchMsg"></p>
-        <p class="warn" style="margin:4px 0 0;font-size:var(--fs-body-xs)" id="batchNote"></p>
-        <div id="batchReport"></div>
-
-        <hr class="sep">
-        <div class="row">
-          <button id="btnTraceSegs">기준점을 잡았다면 — 도면에 든 구간 모두 따오기</button>
+          <button id="btnTraceSegs">도면에 든 구간 모두 따오기</button>
           <span class="muted" id="segTraceMsg"></span>
         </div>
         <p class="muted" style="margin:6px 0 0">
@@ -1230,227 +1188,6 @@ function llToImg(ll){
   return invFn(X, Y);
 }
 
-/* ============================================================
-   ★ 기준점 없이 따오기 (2026-08-30)
-
-   평가서에는 하천마다 **위성사진 위에 노선을 그린 도면**이 한 장씩 있다
-   (`tools/plan_extract.py` 로 원본 해상도 그대로 꺼낸다).
-   그 도면에서 선을 따내면 **그 선의 양 끝이 곧 그 구간의 시점·종점**이다.
-   우리는 시점·종점 좌표를 구간표 주소에서 이미 알고 있으므로,
-   **두 쌍이면 닮음 변환(축척·회전·평행이동)이 정해진다** — 기준점을 짚을 필요가 없다.
-
-   ★ 어느 끝이 시점인지는 **방향으로 가른다.**
-     도면은 북쪽이 위다(그림마다 나침반이 있다). 그래서 픽셀에서의 a→b 방향과
-     지도에서의 시점→종점 방향이 대체로 같아야 한다. 두 방향 중 각도가 덜 틀어지는 쪽을 고른다.
-     길이로는 못 가른다 — **두 방향 다 길이가 똑같이 나오기 때문이다.**
-
-   ★ 검산은 그대로다. 양 끝은 정의상 시점·종점에 딱 붙으므로,
-     **틀리면 길이(굽은 정도)에서 드러난다** — 다른 하천이 이어 붙으면 길이가 확 튄다.
-   ============================================================ */
-function traceSegmentAuto(sg){
-  if(!plan) return "도면이 없습니다";
-  if(!sg.from || !sg.to) return "시점·종점 좌표가 없습니다";
-
-  const keepEnds = ends, keepFit = fitFn, keepRms = fitRms, keepTol = $("#tol").value;
-  ends = [];                                   // 전체 선을 따온다 ('가장 긴 경로')
-
-  /* ★ 허용범위를 자동으로 맞춘다 (2026-08-30).
-     실측에서 기본값 70 은 이 도면에 **너무 넓었다** — 위성사진의 밝은 것까지 같이 잡아
-     길이가 326%·1606% 로 튀었다. 같은 도면에 35~40 을 쓰면 87~103% 가 나온다.
-
-     그런데 우리는 **고시 연장이라는 정답을 알고 있다.** 그러니 몇 가지를 해 보고
-     **길이가 고시에 가장 가까운 것**을 고르면 된다. 사람이 손잡이를 돌릴 필요가 없다.
-     (고시 연장이 없으면 지금 값 그대로 한 번만 한다) */
-  const off = segOfficialKm(sg.i);
-  // ★ **좁은 것부터** 본다. 넓으면 픽셀을 많이 잡아 아주 느려지는데(위성사진의 밝은 것까지
-  //   따라가느라), 좁은 쪽이 대개 정답이라 첫 판에 끝난다.
-  const tries = off ? [25, 35, 45, 60] : [+keepTol];
-  let best = null;
-  for(const t of tries){
-    $("#tol").value = t;
-    const got = tracePixels();
-    if(!got) continue;
-    if(!off){ best = { r:got, tol:t, score:0 }; break; }
-    // 픽셀 경로가 얼마나 굽었나 = 길이 ÷ 양 끝 사이 거리. 이 값이 실제와 맞아야 한다.
-    let len = 0;
-    for(let i = 1; i < got.pix.length; i++){
-      len += Math.hypot(got.pix[i][0] - got.pix[i-1][0], got.pix[i][1] - got.pix[i-1][1]);
-    }
-    const span = Math.hypot(got.pix[got.pix.length-1][0] - got.pix[0][0],
-                            got.pix[got.pix.length-1][1] - got.pix[0][1]);
-    if(span < 1) continue;
-    const straightKm = haversineKm(sg.from.pt[0], sg.from.pt[1], sg.to.pt[0], sg.to.pt[1]);
-    const km = len / span * straightKm;         // 닮음 변환을 하면 이 길이가 된다
-    const score = Math.abs(km / off - 1);
-    if(!best || score < best.score) best = { r:got, tol:t, score, km };
-    if(score <= 0.15) break;          // 충분히 맞으면 더 넓혀 보지 않는다 (느려지기만 한다)
-  }
-  $("#tol").value = keepTol;
-  ends = keepEnds;
-  if(!best) return $("#traceMsg").textContent || "선을 따오지 못했습니다";
-  const r = best.r;
-
-  const a = r.pix[0], b = r.pix[r.pix.length - 1];
-  const [X1, Y1] = toXY(sg.from.pt), [X2, Y2] = toXY(sg.to.pt);
-  // 픽셀 y 도 웹메르카토르 Y 도 **아래로 갈수록 커진다** — 그래서 둘 다 그대로 견주면 된다.
-  const pixAng = Math.atan2(b[1] - a[1], b[0] - a[0]);
-  const mapAng = Math.atan2(Y2 - Y1, X2 - X1);
-  let diff = Math.abs(pixAng - mapAng);
-  while(diff > Math.PI) diff = Math.abs(diff - 2 * Math.PI);
-  const forward = diff < Math.PI / 2;           // 90도 안이면 a 가 시점
-
-  const pairs = forward
-    ? [{ img:a, ll:sg.from.pt }, { img:b, ll:sg.to.pt }]
-    : [{ img:a, ll:sg.to.pt },   { img:b, ll:sg.from.pt }];
-  const f = buildFit(pairs);
-  if(!f){ fitFn = keepFit; fitRms = keepRms; return "선의 양 끝이 같은 자리입니다"; }
-
-  fitFn = f; fitRms = null;                     // applyTrace 가 이 변환을 쓴다
-  traceTarget = sg;
-  try{ applyTrace(r.pix, r.info); }
-  finally{ traceTarget = null; fitFn = keepFit; fitRms = keepRms; }
-
-  /* ★ 도면의 선이 **종점 → 시점** 방향으로 그려져 있으면 중간 점도 그 순서로 들어온다.
-     중간 점은 반드시 **시점 → 종점** 순서여야 하므로 뒤집는다.
-     안 뒤집으면 노선이 종점에서 시작해 시점 쪽으로 갔다가 다시 돌아오는
-     **되돌아가는 선**이 된다 (실측: 길이 87% → 228%, 점 사이 간격 209m → 1286m). */
-  if(!forward && sg.mid && sg.mid.length) sg.mid.reverse();
-
-  // 얼마나 틀어졌는지 알려 준다. 90도에 가까우면 도면이 북쪽 위가 아닐 수 있다.
-  const deg = Math.round((forward ? diff : Math.PI - diff) * 180 / Math.PI);
-  sg.autoInfo = { deg, points: r.pix.length, reversed: !forward, tol: best.tol };
-  return null;
-}
-
-/* ============================================================
-   도면 폴더로 한꺼번에 따오기 (2026-08-30)
-
-   `tools/plan_extract.py` 가 만든 폴더를 통째로 고르면 `manifest.json` 의
-   '그림 ↔ 구간' 짝을 읽어 차례로 돈다. 46구간짜리 사업 때문에 만들었다.
-
-   ★ 선 색은 하천마다 다를 수 있다 — 범례가 금회(파랑)·신규(검정)·증가(빨강)·감소(초록)다.
-     그래서 **색도 함께 훑는다.** 사람이 고른 색을 먼저 써 보고, 길이가 안 맞으면
-     아래 기본 색들을 차례로 시도한다. 길이가 맞으면 거기서 그만둔다.
-   ★ 판단 기준은 언제나 **고시 연장과의 길이 비율**이다. 그것이 우리가 가진 유일한 정답이다.
-   ============================================================ */
-const BATCH_COLORS = [
-  { name:"금회(파랑)", rgb:[24, 24, 120] },
-  { name:"감소(초록)", rgb:[0, 176, 80] },
-  { name:"증가(빨강)", rgb:[200, 30, 30] },
-  { name:"신규(검정)", rgb:[30, 30, 30] }
-];
-
-function log2(msg){
-  const el = $("#batchNote");
-  if(el) el.textContent = msg;
-}
-
-let batchFiles = null;     // 파일이름 -> File
-let batchManifest = null;
-let batchStop = false;
-let segNames = {};         // 구간번호 -> 소하천 이름 (manifest 에서)
-
-/* 고른 폴더를 읽어 manifest 와 그림 파일을 챙긴다. */
-function readBatchFolder(fileList){
-  batchFiles = new Map();
-  batchManifest = null;
-  let mf = null;
-  for(const f of fileList){
-    const base = f.name;
-    if(base === "manifest.json") mf = f;
-    else if(/\.(png|jpg|jpeg)$/i.test(base)) batchFiles.set(base, f);
-  }
-  const msg = $("#batchMsg");
-  if(!mf){
-    msg.textContent = "그 폴더에 manifest.json 이 없습니다. tools/plan_extract.py 가 만든 폴더를 고르세요.";
-    $("#btnBatchRun").disabled = true;
-    return;
-  }
-  const rd = new FileReader();
-  rd.onload = () => {
-    try{ batchManifest = JSON.parse(rd.result); }
-    catch(e){ msg.textContent = "manifest.json 을 읽지 못했습니다."; return; }
-    const usable = (batchManifest.streams || []).filter(
-      x => x.segment != null && x.image && batchFiles.has(x.image));
-    // 표에 하천 이름을 붙여 둔다 — 어느 줄이 어느 하천인지 바로 알 수 있다
-    segNames = {}; segPlanKm = {};
-    let clash = 0;
-    (batchManifest.streams || []).forEach(x => {
-      if(x.segment == null) return;
-      segNames[x.segment] = x.name;
-      const pk = x.table && x.table.km;
-      if(pk != null){
-        segPlanKm[x.segment] = pk;
-        const ek = segEiassKm(x.segment);
-        if(ek != null && Math.abs(pk - ek) >= 0.02) clash++;
-      }
-    });
-    if(clash) log2(`평가서와 EIASS 의 연장이 다른 구간이 ${clash}개 있습니다 — ` +
-                   `평가서 값으로 검산합니다(평가서가 원본입니다).`);
-    renderSegTable();
-    $("#btnBatchRun").disabled = !usable.length;
-    msg.textContent = usable.length
-      ? `그림 ${batchFiles.size}장 · 구간과 짝지어진 것 ${usable.length}개. '모두 따오기'를 누르세요.`
-      : "구간과 짝지어진 그림이 없습니다. 먼저 '구간 시점·종점 찾기'를 눌러 두세요.";
-  };
-  rd.readAsText(mf);
-}
-
-/* 파일 하나를 도면으로 올린다. loadPlanImage 와 달리 **고른 색을 지우지 않는다.** */
-function loadPlanFromFile(file){
-  return new Promise(resolve => {
-    const url = URL.createObjectURL(file);
-    const im = new Image();
-    im.onload = () => {
-      const MAX = 2400;
-      const sc = Math.min(1, MAX / Math.max(im.width, im.height));
-      const w = Math.max(1, Math.round(im.width * sc));
-      const h = Math.max(1, Math.round(im.height * sc));
-      const c = document.createElement("canvas");
-      c.width = w; c.height = h;
-      c.getContext("2d").drawImage(im, 0, 0, w, h);
-      plan = { canvas:c, w, h };
-      gcps = []; gcpPending = null; roi = null; trace = null; ends = [];
-      fitFn = null; fitRms = null; invFn = null;
-      URL.revokeObjectURL(url);
-      resolve(true);
-    };
-    im.onerror = () => { URL.revokeObjectURL(url); resolve(false); };
-    im.src = url;
-  });
-}
-
-/* 한 구간을, 색을 바꿔 가며 따온다. 가장 잘 맞은 것을 남긴다. */
-function traceSegmentTryColors(sg){
-  const off = segOfficialKm(sg.i);
-  const tries = [];
-  if(samples.length) tries.push({ name:"고른 색", samples:samples.map(x => x.slice()) });
-  BATCH_COLORS.forEach(c => tries.push(c));
-
-  let best = null;
-  for(const c of tries){
-    // ★ 사람이 고른 색은 **누른 것을 전부** 쓴다.
-    //   예전에는 samples[0] 하나만 썼는데, 여러 곳을 누를수록 선을 더 잘 따라간다
-    //   (실측: 1번 누르면 점 2개 = 거의 직선, 3번 누르면 점 35개).
-    samples = c.samples ? c.samples.map(x => x.slice()) : [c.rgb.slice()];
-    sg.mid = [];
-    const err = traceSegmentAuto(sg);
-    if(err) continue;
-    const km = segLineKm(sg);
-    if(km == null) continue;
-    const score = off ? Math.abs(km / off - 1) : 0;
-    if(!best || score < best.score){
-      best = { score, color:c.name, mid:(sg.mid || []).map(p => p.slice()),
-               info:Object.assign({}, sg.autoInfo), km };
-    }
-    if(score <= 0.15) break;         // 충분히 맞으면 다른 색은 안 본다
-  }
-  if(!best){ sg.mid = []; return null; }
-  sg.mid = best.mid;
-  sg.autoInfo = Object.assign(best.info, { color: best.color });
-  return best;
-}
-
 /* 구간 하나를 도면에서 따온다. 잘되면 null, 안 되면 까닭을 돌려준다. */
 function traceSegment(sg){
   if(!plan) return "도면이 없습니다";
@@ -1510,29 +1247,13 @@ function insertIndex(pts, ll){
 }
 
 /* 구간표에 적힌 연장 한 줄("1.75km")을 km 숫자로 읽는다. 못 읽으면 null. */
-function segEiassKm(i){
+function segOfficialKm(i){
   const s = ((current && current.segments) || [])[i];
   const m = /([\d.]+)\s*(km|킬로|m)?/i.exec((s && s.length) || "");
   if(!m) return null;
   const v = parseFloat(m[1]);
   if(!isFinite(v)) return null;
   return (m[2] || "").toLowerCase() === "m" ? v / 1000 : v;
-}
-
-/* ★ 고시 연장은 **평가서 표를 먼저 믿는다** (2026-08-30).
-
-   EIASS 쪽 값이 틀린 경우가 실제로 있다 — 옹진군 3구간(동녁천)은
-   평가서가 0.58km 인데 EIASS 에는 **앞 구간(장봉천)의 1.29km 가 그대로 복사**돼 있다.
-
-   이게 왜 위험한가: 길이 검산이 **틀린 기준으로 돌면 나쁜 결과를 가려 준다.**
-   실제로 동녁천을 잘못 따왔는데(1.60km) EIASS 기준으로는 124% 라 '괜찮아 보였다'.
-   평가서 기준(0.58)으로 보면 276% 로 **바로 걸린다.**
-   평가서가 원본이므로 그쪽을 쓴다. */
-let segPlanKm = {};        // 구간번호 -> 평가서 표의 연장(km)
-
-function segOfficialKm(i){
-  const fromPlan = segPlanKm[i];
-  return (fromPlan != null) ? fromPlan : segEiassKm(i);
 }
 
 /* 직선/고시 비율을 등급으로 나눈다.
@@ -1548,7 +1269,6 @@ function segGrade(r){
 
 function renderSegTable(){
   const rows = segEnds.map(sg => {
-    const nm = segNames[sg.i];                 // manifest 에서 온 소하천 이름 (없을 수 있다)
     const st = segLineKm(sg), off = segOfficialKm(sg.i);
     const g = segGrade(st != null && off ? st / off : null);
     const bad = !sg.from || !sg.to;
@@ -1556,8 +1276,7 @@ function renderSegTable(){
     const nMid = (sg.mid || []).length;
     return `<tr>
       <td><label><input type="checkbox" data-segon="${sg.i}" ${sg.on ? "checked" : ""}
-        ${bad ? "disabled" : ""}> ${sg.i + 1}</label>${
-          nm ? `<div class="muted" style="font-size:var(--fs-body-xs)">${esc(nm)}</div>` : ""}</td>
+        ${bad ? "disabled" : ""}> ${sg.i + 1}</label></td>
       <td class="n">${st != null ? st.toFixed(2) : "—"}</td>
       <td class="n">${off ? off.toFixed(2) : "—"}</td>
       <td class="n ${g.cls}">${bad ? `<span class="bad">못 찾음</span>` : g.txt}</td>
@@ -1600,22 +1319,6 @@ function renderSegTable(){
   updateSegSum();
 }
 
-/* 구간 고르는 칸을 채운다. 이름이 없으므로 번호와 시점 주소로 알아보게 한다. */
-function fillSegAutoPick(){
-  const sel = $("#segAutoPick");
-  if(!sel || !sel.appendChild) return;
-  const keep = sel.value;
-  sel.innerHTML = segEnds.filter(sg => sg.from && sg.to).map(sg => {
-    const off = segOfficialKm(sg.i);
-    const mid = (sg.mid || []).length;
-    const where = String(sg.from.addr || "").replace(/\s+/g, " ")
-      .replace(/^.*?[가-힣]+면\s*/, "").slice(0, 22);
-    return `<option value="${sg.i}">${sg.i + 1}구간 · ${esc(where)}` +
-           `${off ? ` · ${off}km` : ""}${mid ? ` · 다듬음 ${mid}점` : ""}</option>`;
-  }).join("");
-  if(keep) sel.value = keep;
-}
-
 function updateSegSum(){
   const use = segEnds.filter(x => x.on && x.from && x.to);
   let str = 0, off = 0;
@@ -1625,7 +1328,6 @@ function updateSegSum(){
     off += segOfficialKm(sg.i) || 0;
     mids += (sg.mid || []).length;
   });
-  fillSegAutoPick();
   $("#segSum").textContent = use.length
     ? `고른 ${use.length}구간 · 길이 합계 ${str.toFixed(2)} km` +
       (off ? ` / 고시 합계 ${off.toFixed(2)} km` : "") +
@@ -2248,12 +1950,9 @@ function computeFit(){
 /* ---------- 선 픽셀 골라내기 → 가장 긴 경로 ---------- */
 /* 성공하면 true, 실패하면 false 를 돌려준다.
    ★ 구간을 여러 개 돌릴 때 **어느 구간이 안 됐는지** 알려면 이 값이 필요하다. */
-/* 도면에서 **픽셀 경로만** 뽑는다. 좌표 변환은 하지 않는다.
-   ★ 기준점 없이 따오는 길(traceSegmentAuto) 때문에 갈라 두었다 —
-     그쪽은 **선을 먼저 뽑고 그 양 끝으로 변환을 만든다.** 순서가 반대다.
-   성공하면 { pix, info }, 실패하면 null (까닭은 #traceMsg 에 적는다). */
-function tracePixels(){
-  if(!plan) return null;
+function traceRoute(){
+  if(!plan){ return false; }
+  if(!fitFn){ $("#traceMsg").textContent = "기준점을 먼저 2개 이상(권장 3~4개) 짝지어 주세요."; return false; }
 
   const { w, h } = plan;
   const data = plan.canvas.getContext("2d").getImageData(0, 0, w, h).data;
@@ -2285,7 +1984,7 @@ function tracePixels(){
   }
   if(hits < 30){
     $("#traceMsg").textContent = "그 색 픽셀을 거의 못 찾았습니다. 선 위를 다시 누르거나 허용범위를 넓혀 보세요.";
-    return null;
+    return;
   }
 
   // 덩어리(연결된 칸 묶음)를 **전부** 찾는다.
@@ -2409,28 +2108,19 @@ function tracePixels(){
       $("#traceMsg").textContent =
         `시작·종점이 따온 선에서 ${Math.round(tooFar)}px 떨어져 있습니다 — ` +
         `선 위를 정확히 누르거나, 색·범위·'끊긴 틈 잇기'를 다시 보세요.`;
-      return null;
+      return false;
     }
-    if(A.i === B.i){ $("#traceMsg").textContent = "시작과 종점이 같은 자리입니다."; return null; }
+    if(A.i === B.i){ $("#traceMsg").textContent = "시작과 종점이 같은 자리입니다."; return false; }
     chain = A.i < B.i ? chain.slice(A.i, B.i + 1)
                       : chain.slice(B.i, A.i + 1).reverse();   // 시작 -> 종점 방향으로
     guided = true;
   }
 
   let pix = simplify(chain, cell * 1.2);
-  if(pix.length < 2){ $("#traceMsg").textContent = "경로가 너무 짧습니다."; return null; }
+  if(pix.length < 2){ $("#traceMsg").textContent = "경로가 너무 짧습니다."; return false; }
   const leftover = pieces.length;
 
-  return { pix, info: { gaps, leftover, blobs: blobs.length, guided } };
-}
-
-/* 예전 그대로의 길 — 기준점을 잡아 두고 도면에서 따온다. */
-function traceRoute(){
-  if(!plan){ return false; }
-  if(!fitFn){ $("#traceMsg").textContent = "기준점을 먼저 2개 이상(권장 3~4개) 짝지어 주세요."; return false; }
-  const r = tracePixels();
-  if(!r) return false;
-  applyTrace(r.pix, r.info);
+  applyTrace(pix, { gaps, leftover, blobs: blobs.length, guided });
   return true;
 }
 
@@ -2532,148 +2222,6 @@ $("#btnLayer").addEventListener("click", () => {
 $("#onlyTodo").addEventListener("change", renderList);
 $("#btnGuide").addEventListener("click", showGuides);
 $("#btnSegClear").addEventListener("click", clearGuides);
-
-$("#batchPick").addEventListener("change", e => readBatchFolder(e.target.files));
-$("#btnBatchStop").addEventListener("click", () => { batchStop = true; });
-
-$("#btnBatchRun").addEventListener("click", async () => {
-  if(!batchManifest){ $("#batchMsg").textContent = "먼저 폴더를 고르세요."; return; }
-  if(!segEnds.length){
-    $("#batchMsg").textContent = "먼저 '구간 시점·종점 찾기'를 눌러 구간 좌표를 만들어 주세요.";
-    return;
-  }
-  const jobs = (batchManifest.streams || []).filter(
-    x => x.segment != null && x.image && batchFiles.has(x.image));
-
-  const keepSamples = samples.slice(), keepPlan = plan;
-  batchStop = false;
-  $("#btnBatchRun").disabled = true;
-  $("#btnBatchStop").hidden = false;
-
-  const rows = [];
-  for(let k = 0; k < jobs.length; k++){
-    if(batchStop) break;
-    const job = jobs[k];
-    const sg = segEnds.find(x => x.i === job.segment);
-    $("#batchMsg").textContent =
-      `따오는 중… ${k + 1}/${jobs.length} — ${job.name} (${job.segment + 1}구간)`;
-    await new Promise(r => setTimeout(r, 0));      // 화면이 갱신되게 한 박자 쉰다
-
-    if(!sg || !sg.from || !sg.to){
-      rows.push({ job, err:"구간 좌표가 없습니다" });
-      continue;
-    }
-    const ok = await loadPlanFromFile(batchFiles.get(job.image));
-    if(!ok){ rows.push({ job, err:"그림을 읽지 못했습니다" }); continue; }
-
-    samples = keepSamples.slice();
-    const best = traceSegmentTryColors(sg);
-    if(!best){ rows.push({ job, err:"선을 따오지 못했습니다" }); continue; }
-    rows.push({ job, sg, best });
-  }
-
-  samples = keepSamples; plan = keepPlan;
-  $("#btnBatchRun").disabled = false;
-  $("#btnBatchStop").hidden = true;
-  segChanged();
-  renderBatchReport(rows, jobs.length);
-});
-
-/* ★ 길이만으로는 **모양이 없는 것**을 못 잡는다.
-   점이 두어 개뿐이면 사실상 직선인데, 길이는 우연히 맞을 수 있다
-   (실측: 색을 한 번만 누르면 점 2개에 86% — 통과해 버린다).
-   그래서 점 개수도 같이 본다. 1km 에 점 3개는 되어야 굽은 모양이라고 할 수 있다. */
-function tooFewPoints(sg){
-  const n = (sg.mid || []).length;
-  const off = segOfficialKm(sg.i);
-  return n < Math.max(3, Math.round((off || 1) * 3));
-}
-
-/* ★ 무엇이 됐고 무엇이 수상한지 **표로** 보여 준다.
-   조용히 엉뚱한 선을 넣는 것이 이 도구에서 가장 위험하다 —
-   그래서 '몇 개 했다'가 아니라 **구간마다 길이 비율**을 내놓는다. */
-function renderBatchReport(rows, total){
-  const grade = r => {
-    if(r.err) return { cls:"bad", txt:"✗ " + r.err };
-    const off = segOfficialKm(r.job.segment);
-    if(!off) return { cls:"", txt:"고시 연장 없음" };
-    const p = Math.round(r.best.km / off * 100);
-    const thin = r.sg && tooFewPoints(r.sg);
-    if(p >= 85 && p <= 130) {
-      return thin ? { cls:"warn", txt:p + "% · 점 적음 ⚠" } : { cls:"ok", txt:p + "%" };
-    }
-    if(p >= 70 && p <= 160) return { cls:"warn", txt:p + "% ⚠" };
-    return { cls:"bad", txt:p + "% ⚠" };
-  };
-  const good = rows.filter(r => grade(r).cls === "ok").length;
-  const bad = rows.filter(r => grade(r).cls !== "ok").length;
-
-  $("#batchMsg").textContent =
-    `${total}개 중 ${rows.length}개를 처리했습니다 — 길이가 맞는 것 ${good}개, ` +
-    `봐야 할 것 ${bad}개.` +
-    (batchStop ? " (멈춤)" : "") +
-    " 아래에서 ⚠ 인 것만 '보기'로 확인하세요." +
-    (rows.some(r => r.sg && tooFewPoints(r.sg))
-      ? " '점 적음' 은 굽은 모양이 거의 안 잡힌 것입니다 — 4번에서 노선 색을 두세 곳 더 누르고 다시 해 보세요."
-      : "");
-
-  $("#batchReport").innerHTML = `<div class="segwrap"><table class="segtbl">
-    <tr><th>구간</th><th>하천</th><th>길이</th><th>고시</th><th>점</th><th>비교</th><th>쓴 색</th><th></th></tr>
-    ${rows.map(r => {
-      const g = grade(r);
-      const off = segOfficialKm(r.job.segment);
-      const ek = segEiassKm(r.job.segment);
-      const odd = (off != null && ek != null && Math.abs(off - ek) >= 0.02);
-      return `<tr>
-        <td class="n">${r.job.segment + 1}</td>
-        <td>${esc(r.job.name)}</td>
-        <td class="n">${r.best ? r.best.km.toFixed(2) : "—"}</td>
-        <td class="n">${off || "—"}${odd ? `<span class="warn" title="EIASS 에는 ${ek}km 로 적혀 있습니다 — 평가서 값을 씁니다"> ✱</span>` : ""}</td>
-        <td class="n">${r.sg ? (r.sg.mid || []).length : "—"}</td>
-        <td class="n ${g.cls}">${g.txt}</td>
-        <td>${esc((r.best && r.best.color) || "")}</td>
-        <td>${r.best ? `<button type="button" data-batchzoom="${r.job.segment}">보기</button>` : ""}</td>
-      </tr>`;
-    }).join("")}
-  </table></div>`;
-
-  $("#batchReport").querySelectorAll("[data-batchzoom]").forEach(b =>
-    b.addEventListener("click", () => {
-      const sg = segEnds.find(x => String(x.i) === b.dataset.batchzoom);
-      const pts = sg ? segLatLngs(sg) : [];
-      if(pts.length) map.fitBounds(L.latLngBounds(pts).pad(0.4));
-    }));
-}
-
-/* 기준점 없이 이 구간 따오기 */
-$("#btnSegAuto").addEventListener("click", () => {
-  const sg = segEnds.find(x => String(x.i) === $("#segAutoPick").value);
-  if(!sg){ $("#segAutoMsg").textContent = "구간을 고르세요."; return; }
-  if(!plan){ $("#segAutoMsg").textContent = "먼저 4번에 도면 그림을 올려 주세요."; return; }
-  if(!samples.length){
-    $("#segAutoMsg").textContent =
-      "4번의 '② 노선 색 고르기 → 도면에서 선 위를 누르기' 로 노선을 한 번 눌러 주세요 — " +
-      "어떤 색을 따올지 알아야 합니다.";
-    return;
-  }
-  const err = traceSegmentAuto(sg);
-  if(err){ $("#segAutoMsg").textContent = `${sg.i + 1}구간 — ${err}`; return; }
-
-  // ★ 무엇을 어떻게 했는지 다 알린다. 조용히 엉뚱한 선을 넣는 것이 가장 위험하다.
-  const info = sg.autoInfo || {};
-  const km = segLineKm(sg), off = segOfficialKm(sg.i);
-  const ratio = (km != null && off) ? Math.round(km / off * 100) : null;
-  const bits = [`${sg.i + 1}구간을 따왔습니다 · 중간 점 ${(sg.mid || []).length}개`];
-  if(ratio != null) bits.push(`길이 ${km.toFixed(2)}km / 고시 ${off}km = ${ratio}%`);
-  if(info.tol != null) bits.push(`허용범위 ${info.tol} 로 맞췄습니다`);
-  if(info.reversed) bits.push("도면의 선이 종점→시점 방향이라 뒤집어 넣었습니다");
-  if(info.deg >= 25) bits.push(`⚠ 방향이 ${info.deg}° 틀어져 있습니다 — 도면이 북쪽 위가 맞는지 보세요`);
-  if(ratio != null && (ratio < 85 || ratio > 130))
-    bits.push("⚠ 길이가 많이 다릅니다 — 다른 선이 섞였는지 '보기'로 확인하세요");
-  if(tooFewPoints(sg))
-    bits.push("⚠ 점이 적어 굽은 모양이 거의 안 잡혔습니다 — 노선 색을 두세 곳 더 눌러 보세요");
-  $("#segAutoMsg").textContent = bits.join(" · ");
-});
 
 /* 지금 올린 도면 안에 들어오는 구간을 차례로 따온다.
    ★ 한 구간씩 화면을 갱신하며 돈다 — 46구간이면 몇십 초가 걸릴 수 있어서

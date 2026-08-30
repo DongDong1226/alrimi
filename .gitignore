@@ -24,4 +24,5 @@ Thumbs.db
 # 윈도우에서 "> nul" 로 출력을 버릴 때 git-bash 가 진짜 파일로 만들어 버린 찌꺼기
 nul
 tools/_shots/
+# 평가서 PDF 에서 꺼낸 도면 그림 (용량이 커서 커밋하지 않는다)
 tools/_plans/
