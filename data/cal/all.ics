@@ -223,6 +223,33 @@ DESCRIPTION:김포 통진읍 환경기초시설 도시관리계획 결정(
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
+UID:ME20260104-105422@alrimi
+DTSTAMP:20260820T000000Z
+DTSTART;VALUE=DATE:20260908
+DTEND;VALUE=DATE:20260909
+SUMMARY:[의견 마감] 포항융합기술산업지구 개발계획 변경
+DESCRIPTION:사업: 포항융합기술산업지구 개발계획 변경\n유
+ 형: 전략환경영향평가\n위치: 경상북도 포항시 북구 흥
+ 해읍 대련리 (펜타시티단지로 61)\n기관: 기후에너지환경
+ 부\n공람기간: 2026-08-20 ~ 2026-09-08\n의견 제출 마감: 2026-09-
+ 08\n\n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://ww
+ w.eiass.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:경상북도 포항시 북구 흥해읍 대련리 (펜타시티단
+ 지로 61)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:포항융합기술산업지구 개발계획 변경 의견 제
+ 출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:포항융합기술산업지구 개발계획 변경 의견 제
+ 출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:HG20260530-105412@alrimi
 DTSTAMP:20260820T000000Z
 DTSTART;VALUE=DATE:20260903

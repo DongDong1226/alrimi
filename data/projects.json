@@ -10,10 +10,10 @@
   },
   "stats": {
     "underReview": {
-      "strat": 127,
+      "strat": 129,
       "main": 100,
       "small": 358,
-      "total": 585
+      "total": 587
     }
   },
   "projects": [
@@ -1295,6 +1295,43 @@
       "sourceViewPath": "/partcptn/choan/choanSperssView.do",
       "opinionEnd": "2026-09-25",
       "firstSeen": "2026-08-21"
+    },
+    {
+      "id": "ME20260104-105422",
+      "category": "strat",
+      "categoryLabel": "전략환경영향평가",
+      "name": "포항융합기술산업지구 개발계획 변경",
+      "org": "기후에너지환경부",
+      "tel": "044-201-7301",
+      "address": "경상북도 포항시 북구 흥해읍 대련리 (펜타시티단지로 61)",
+      "locationTypes": [
+        "면형"
+      ],
+      "segments": [],
+      "bizType": "지역개발 / 특정지역개발계획 (포항융합기술산업지구)",
+      "isRiver": false,
+      "lat": 36.05833394566112,
+      "lon": 129.3072417568713,
+      "periodStart": "2026-08-20",
+      "periodEnd": "2026-09-08",
+      "viewPlace": "대구경북경제자유구역청 지구개발2과 5층",
+      "briefPlace": "개별법에 따라 의견수렴",
+      "briefWhen": "개별법에 따라 의견수렴",
+      "opinionPeriod": "2026.08.20 ~ 2026.09.08",
+      "deptName": "지구개발2과",
+      "deptTel": "053-550-1842",
+      "summaryFileSeq": "3271573",
+      "summaryState": "ok",
+      "analysis": null,
+      "riverNames": [],
+      "routeGeom": null,
+      "routeSource": null,
+      "sourceBizCd": "ME20260104",
+      "sourceBizSeq": "105422",
+      "sourceStepCd": "A0",
+      "sourceViewPath": "/partcptn/choan/choanSperssView.do",
+      "opinionEnd": "2026-09-08",
+      "firstSeen": "2026-08-31"
     },
     {
       "id": "HG20260530-105412",
