@@ -10,10 +10,10 @@
   },
   "stats": {
     "underReview": {
-      "strat": 130,
-      "main": 100,
-      "small": 355,
-      "total": 585
+      "strat": 132,
+      "main": 101,
+      "small": 362,
+      "total": 595
     }
   },
   "projects": [
@@ -5798,6 +5798,43 @@
       "opinionEnd": "2026-09-18",
       "summaryState": "ok",
       "firstSeen": "2026-08-13"
+    },
+    {
+      "id": "JJ20260148-105302",
+      "category": "strat",
+      "categoryLabel": "전략환경영향평가",
+      "name": "정읍시 유기성폐자원 바이오가스화 및 소각시설 설치사업",
+      "org": "전북지방환경청",
+      "tel": "063-238-8883",
+      "address": "전북특별자치도 정읍시 덕천면 우덕리 (황토현로 885-34)",
+      "locationTypes": [
+        "면형"
+      ],
+      "segments": [],
+      "bizType": "폐기물 / 폐기물처리기본계획 (유기성폐자원 바이오가스화 및 소각시설)",
+      "isRiver": false,
+      "lat": 35.6146702880188,
+      "lon": 126.8445650781388,
+      "periodStart": "2026-08-11",
+      "periodEnd": "2026-09-10",
+      "viewPlace": "정읍시 환경정책과, 덕천면사무소, 농소동사무소",
+      "briefPlace": "정읍시 덕천면사무소(2층 회의실)",
+      "briefWhen": "2026년 8월 13일 목요일 14:00",
+      "opinionPeriod": "2026.08.11 ~ 2026.09.17",
+      "deptName": "정읍시 환경정책과",
+      "deptTel": "063-539-5711",
+      "summaryFileSeq": "3266624",
+      "summaryState": "ok",
+      "analysis": null,
+      "riverNames": [],
+      "routeGeom": null,
+      "routeSource": null,
+      "sourceBizCd": "JJ20260148",
+      "sourceBizSeq": "105302",
+      "sourceStepCd": "A0",
+      "sourceViewPath": "/partcptn/choan/choanSperssView.do",
+      "opinionEnd": "2026-09-17",
+      "firstSeen": "2026-09-01"
     },
     {
       "id": "DG20260254-105256",

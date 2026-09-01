@@ -35,4 +35,33 @@ DESCRIPTION:상두천 하천기본계획 재수립 및 실시설계 의견
  제출 오늘 마감
 END:VALARM
 END:VEVENT
+BEGIN:VEVENT
+UID:JJ20260148-105302@alrimi
+DTSTAMP:20260811T000000Z
+DTSTART;VALUE=DATE:20260917
+DTEND;VALUE=DATE:20260918
+SUMMARY:[의견 마감] 정읍시 유기성폐자원 바이오가스화 및
+  소각시설 설치사업
+DESCRIPTION:사업: 정읍시 유기성폐자원 바이오가스화 및 소
+ 각시설 설치사업\n유형: 전략환경영향평가\n위치: 전북
+ 특별자치도 정읍시 덕천면 우덕리 (황토현로 885-34)\n기
+ 관: 전북지방환경청\n공람기간: 2026-08-11 ~ 2026-09-10\n의견 
+ 제출 마감: 2026-09-17\n\n의견은 EIASS 에서 본인인증 후 제
+ 출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알
+ 리미
+LOCATION:전북특별자치도 정읍시 덕천면 우덕리 (황토현로 
+ 885-34)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:정읍시 유기성폐자원 바이오가스화 및 소각시
+ 설 설치사업 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:정읍시 유기성폐자원 바이오가스화 및 소각시
+ 설 설치사업 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
 END:VCALENDAR
