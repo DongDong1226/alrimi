@@ -8,6 +8,30 @@ X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
 BEGIN:VEVENT
+UID:ME20260085-105001@alrimi
+DTSTAMP:20260902T000000Z
+DTSTART;VALUE=DATE:20261009
+DTEND;VALUE=DATE:20261010
+SUMMARY:[의견 마감] 서울양재 공공주택지구
+DESCRIPTION:사업: 서울양재 공공주택지구\n유형: 전략환경
+ 영향평가\n위치: 서울특별시 서초구 우면동 (바우뫼로1
+ 길 35)\n기관: 기후에너지환경부\n공람기간: 2026-09-02 ~ 2026
+ -10-02\n의견 제출 마감: 2026-10-09\n\n의견은 EIASS 에서 본인
+ 인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개
+ 발사업 알리미
+LOCATION:서울특별시 서초구 우면동 (바우뫼로1길 35)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:서울양재 공공주택지구 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:서울양재 공공주택지구 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:GG20260349-105442@alrimi
 DTSTAMP:20260828T000000Z
 DTSTART;VALUE=DATE:20260914
@@ -231,7 +255,7 @@ SUMMARY:[의견 마감] 포항융합기술산업지구 개발계획 변경
 DESCRIPTION:사업: 포항융합기술산업지구 개발계획 변경\n유
  형: 전략환경영향평가\n위치: 경상북도 포항시 북구 흥
  해읍 대련리 (펜타시티단지로 61)\n기관: 기후에너지환경
- 부\n공람기간: 2026-08-20 ~ 2026-09-08\n의견 제출 마감: 2026-09-
+ 부\n공람기간: 2026-08-20 ~ 2026-09-21\n의견 제출 마감: 2026-09-
  08\n\n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://ww
  w.eiass.go.kr/\n\n우리동네 개발사업 알리미
 LOCATION:경상북도 포항시 북구 흥해읍 대련리 (펜타시티단
@@ -380,37 +404,6 @@ ACTION:DISPLAY
 TRIGGER:-PT15H
 DESCRIPTION:서낙동강수계 하천기본계획 의견 제출 오늘 마
  감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:WJ20260164-105456@alrimi
-DTSTAMP:20260818T000000Z
-DTSTART;VALUE=DATE:20260901
-DTEND;VALUE=DATE:20260902
-SUMMARY:[의견 마감] 봉학골 주차장 조성사업 음성 지역개
- 발사업구역 지정\, 사업시행자 지정 및 실시계획승인
-DESCRIPTION:사업: 봉학골 주차장 조성사업 음성 지역개발사
- 업구역 지정\, 사업시행자 지정 및 실시계획승인\n유형: 
- 전략환경영향평가\n위치: 충청북도 음성군 음성읍 용산
- 리 (용광로230번길 83-15)\n기관: 원주지방환경청\n공람기
- 간: 2026-08-18 ~ 2026-09-01\n의견 제출 마감: 2026-09-01\n\n의견
- 은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.k
- r/\n\n우리동네 개발사업 알리미
-LOCATION:충청북도 음성군 음성읍 용산리 (용광로230번길 83-
- 15)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:봉학골 주차장 조성사업 음성 지역개발사업구
- 역 지정\, 사업시행자 지정 및 실시계획승인 의견 제출 
- 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:봉학골 주차장 조성사업 음성 지역개발사업구
- 역 지정\, 사업시행자 지정 및 실시계획승인 의견 제출 
- 오늘 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
@@ -744,31 +737,6 @@ DESCRIPTION:현경 수양저수지 수질개선사업 의견 제출 오늘
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:HG20260472-105190@alrimi
-DTSTAMP:20260803T000000Z
-DTSTART;VALUE=DATE:20260818
-DTEND;VALUE=DATE:20260819
-SUMMARY:[의견 마감] 면목선 도시철도 건설사업
-DESCRIPTION:사업: 면목선 도시철도 건설사업\n유형: 전략환
- 경영향평가\n위치: 서울특별시 동대문구 전농동 (왕산로
-  205)\n기관: 한강유역환경청\n공람기간: 2026-08-03 ~ 2026-09-0
- 1\n의견 제출 마감: 2026-08-18\n\n의견은 EIASS 에서 본인인증
-  후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사
- 업 알리미
-LOCATION:서울특별시 동대문구 전농동 (왕산로 205)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:면목선 도시철도 건설사업 의견 제출 마감 3일 
- 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:면목선 도시철도 건설사업 의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 UID:DG20260245-105162@alrimi
 DTSTAMP:20260803T000000Z
 DTSTART;VALUE=DATE:20260907
@@ -846,32 +814,6 @@ DESCRIPTION:한강 고양권역 하천기본계획(변경) 의견 제출
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:GG20260171-104275@alrimi
-DTSTAMP:20260730T000000Z
-DTSTART;VALUE=DATE:20260901
-DTEND;VALUE=DATE:20260902
-SUMMARY:[의견 마감] 홍성 군관리계획(재정비) 결정(변경)
-DESCRIPTION:사업: 홍성 군관리계획(재정비) 결정(변경)\n유
- 형: 전략환경영향평가\n위치: 충청남도 홍성군 홍성읍 
- 오관리 (아문길 27)\n기관: 금강유역환경청\n공람기간: 202
- 6-07-30 ~ 2026-08-20\n의견 제출 마감: 2026-09-01\n\n의견은 EIASS 
- 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우
- 리동네 개발사업 알리미
-LOCATION:충청남도 홍성군 홍성읍 오관리 (아문길 27)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:홍성 군관리계획(재정비) 결정(변경) 의견 제출 
- 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:홍성 군관리계획(재정비) 결정(변경) 의견 제출 
- 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 UID:HG20260460-105155@alrimi
 DTSTAMP:20260729T000000Z
 DTSTART;VALUE=DATE:20260902
@@ -900,34 +842,6 @@ DESCRIPTION:포천 5군단 군관사 조성사업 일동 도시관리계획
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:HG20260459-105154@alrimi
-DTSTAMP:20260729T000000Z
-DTSTART;VALUE=DATE:20260902
-DTEND;VALUE=DATE:20260903
-SUMMARY:[의견 마감] 포천 5군단 군관사 조성사업 이동 도시
- 관리계획(지구단위계획 등) 결정(변경)
-DESCRIPTION:사업: 포천 5군단 군관사 조성사업 이동 도시관
- 리계획(지구단위계획 등) 결정(변경)\n유형: 전략환경영
- 향평가\n위치: 경기도 포천시 이동면 장암리 (성장로1289
- 번길 71)\n기관: 한강유역환경청\n공람기간: 2026-07-29 ~ 2026
- -08-26\n의견 제출 마감: 2026-09-02\n\n의견은 EIASS 에서 본인
- 인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개
- 발사업 알리미
-LOCATION:경기도 포천시 이동면 장암리 (성장로1289번길 71)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:포천 5군단 군관사 조성사업 이동 도시관리계획
- (지구단위계획 등) 결정(변경) 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:포천 5군단 군관사 조성사업 이동 도시관리계획
- (지구단위계획 등) 결정(변경) 의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 UID:HG20260465-105169@alrimi
 DTSTAMP:20260728T000000Z
 DTSTART;VALUE=DATE:20260902
@@ -952,32 +866,6 @@ ACTION:DISPLAY
 TRIGGER:-PT15H
 DESCRIPTION:인천가족공원 조성사업(3-4·5단계) 타당성조사 
  의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:ND20260178-105156@alrimi
-DTSTAMP:20260728T000000Z
-DTSTART;VALUE=DATE:20260901
-DTEND;VALUE=DATE:20260902
-SUMMARY:[의견 마감] 기장군 농어촌도로 기본계획
-DESCRIPTION:사업: 기장군 농어촌도로 기본계획\n유형: 전략
- 환경영향평가\n위치: 부산광역시 기장군 기장읍 신천리 
- (기장대로 560)\n기관: 낙동강유역환경청\n공람기간: 2026-0
- 7-28 ~ 2026-08-25\n의견 제출 마감: 2026-09-01\n\n의견은 EIASS 에
- 서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리
- 동네 개발사업 알리미
-LOCATION:부산광역시 기장군 기장읍 신천리 (기장대로 560)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:기장군 농어촌도로 기본계획 의견 제출 마감 3
- 일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:기장군 농어촌도로 기본계획 의견 제출 오늘 마
- 감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
@@ -1213,30 +1101,6 @@ ACTION:DISPLAY
 TRIGGER:-PT15H
 DESCRIPTION:345kV 신해남~신장성 송전선로 건설사업 의견 제
  출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:HG2026P001-45772@alrimi
-DTSTAMP:20260727T000000Z
-DTSTART;VALUE=DATE:20260901
-DTEND;VALUE=DATE:20260902
-SUMMARY:[의견 마감] 25-N-패키지시설사업(C084)
-DESCRIPTION:사업: 25-N-패키지시설사업(C084)\n유형: 환경영향
- 평가\n위치: 인천광역시 옹진군 연평면 (연평로 229)\n기
- 관: 한강유역환경청\n공람기간: 2026-07-27 ~ 2026-08-25\n의견 
- 제출 마감: 2026-09-01\n\n의견은 EIASS 에서 본인인증 후 제
- 출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알
- 리미
-LOCATION:인천광역시 옹진군 연평면 (연평로 229)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:25-N-패키지시설사업(C084) 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:25-N-패키지시설사업(C084) 의견 제출 오늘 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT

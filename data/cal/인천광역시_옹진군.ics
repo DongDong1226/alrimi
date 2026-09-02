@@ -34,28 +34,4 @@ DESCRIPTION:옹진군 소하천정비종합계획(재정비) 의견 제출
  오늘 마감
 END:VALARM
 END:VEVENT
-BEGIN:VEVENT
-UID:HG2026P001-45772@alrimi
-DTSTAMP:20260727T000000Z
-DTSTART;VALUE=DATE:20260901
-DTEND;VALUE=DATE:20260902
-SUMMARY:[의견 마감] 25-N-패키지시설사업(C084)
-DESCRIPTION:사업: 25-N-패키지시설사업(C084)\n유형: 환경영향
- 평가\n위치: 인천광역시 옹진군 연평면 (연평로 229)\n기
- 관: 한강유역환경청\n공람기간: 2026-07-27 ~ 2026-08-25\n의견 
- 제출 마감: 2026-09-01\n\n의견은 EIASS 에서 본인인증 후 제
- 출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알
- 리미
-LOCATION:인천광역시 옹진군 연평면 (연평로 229)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:25-N-패키지시설사업(C084) 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:25-N-패키지시설사업(C084) 의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
 END:VCALENDAR

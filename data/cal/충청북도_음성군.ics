@@ -7,35 +7,4 @@ X-WR-CALNAME:충청북도 음성군 개발사업 의견 마감
 X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
-BEGIN:VEVENT
-UID:WJ20260164-105456@alrimi
-DTSTAMP:20260818T000000Z
-DTSTART;VALUE=DATE:20260901
-DTEND;VALUE=DATE:20260902
-SUMMARY:[의견 마감] 봉학골 주차장 조성사업 음성 지역개
- 발사업구역 지정\, 사업시행자 지정 및 실시계획승인
-DESCRIPTION:사업: 봉학골 주차장 조성사업 음성 지역개발사
- 업구역 지정\, 사업시행자 지정 및 실시계획승인\n유형: 
- 전략환경영향평가\n위치: 충청북도 음성군 음성읍 용산
- 리 (용광로230번길 83-15)\n기관: 원주지방환경청\n공람기
- 간: 2026-08-18 ~ 2026-09-01\n의견 제출 마감: 2026-09-01\n\n의견
- 은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.k
- r/\n\n우리동네 개발사업 알리미
-LOCATION:충청북도 음성군 음성읍 용산리 (용광로230번길 83-
- 15)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:봉학골 주차장 조성사업 음성 지역개발사업구
- 역 지정\, 사업시행자 지정 및 실시계획승인 의견 제출 
- 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:봉학골 주차장 조성사업 음성 지역개발사업구
- 역 지정\, 사업시행자 지정 및 실시계획승인 의견 제출 
- 오늘 마감
-END:VALARM
-END:VEVENT
 END:VCALENDAR
