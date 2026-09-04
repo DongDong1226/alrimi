@@ -1,7 +1,11 @@
 /* ============================================================
    TOKENS — eiass.css 원본 (--dscale 만 1 → 0.7 로 조정)
    ============================================================ */
-@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css");
+/* ★ **dynamic-subset** 을 쓴다 (2026-09-04). 통짜 폰트는 2.0MB 로
+   휴대폰 첫 방문 전송량의 83% 를 차지했다. dynamic-subset 은 글자 묶음마다
+   @font-face 를 나눠 두어 **화면에 실제로 나온 글자의 조각만** 받는다.
+   글꼴 이름('Pretendard Variable')·굵기·모양은 그대로라 다른 코드는 안 건드려도 된다. */
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css");
 
 :root{
   --p10:#b9c6f2; --p20:#97aaeb; --p30:#6784e2; --p40:#496cdd;

@@ -58,7 +58,7 @@
   ============================================================================
 -->
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet" href="assets/leaflet-1.9.4.css">
 <link rel="stylesheet" href="assets/tokens.css">
 <style>
   /* 담당자용 도구라 꾸미지 않는다. 색·글꼴은 tokens.css 의 변수만 쓴다. */
@@ -411,7 +411,7 @@
 <!-- 배포할 때 deploy.yml 이 VWorld 키를 심어 주는 파일. 그래서 배포 사이트에서는
      키를 따로 넣지 않아도 지도가 나온다. (내 PC 에서는 비어 있으니 위 칸에 넣는다) -->
 <script src="assets/config.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="assets/leaflet-1.9.4.js"></script>
 <script>
 /* ============================================================
    상태
@@ -563,10 +563,10 @@ function drawBaseLayer(){
    자료 읽기
    ============================================================ */
 async function loadAll(){
-  const pj = await fetch("data/projects.json", { cache:"no-store" }).then(r => r.json());
+  const pj = await fetch("data/projects.json", { cache:"no-cache" }).then(r => r.json());
   PROJECTS = pj.projects || [];
   try{
-    const rj = await fetch("data/routes.json", { cache:"no-store" }).then(r => r.json());
+    const rj = await fetch("data/routes.json", { cache:"no-cache" }).then(r => r.json());
     fileRoutes = rj.routes || {};
   }catch(e){
     fileRoutes = {};   // 파일이 없는 것이 정상이다 (아직 아무도 안 그린 상태)

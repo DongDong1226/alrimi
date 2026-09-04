@@ -693,7 +693,7 @@ function distText(p){
 async function loadProjects(){
   let list = [];
   try{
-    const res = await fetch(S.dataPath, { cache:"no-store" });
+    const res = await fetch(S.dataPath, { cache:"no-cache" });
     if(!res.ok) throw new Error("HTTP " + res.status);
     const json = await res.json();
     if(Array.isArray(json.projects) && json.projects.length) list = json.projects;
@@ -892,7 +892,7 @@ let hoodShortName = "";   // 화면에 크게 쓰는 짧은 이름 (예: 미사�
 
 async function loadRegions(){
   try{
-    const res = await fetch(S.regionPath, { cache:"no-store" });
+    const res = await fetch(S.regionPath, { cache:"no-cache" });
     if(!res.ok) throw new Error("HTTP " + res.status);
     const json = await res.json();
     REGIONS = json.regions && Object.keys(json.regions).length ? json.regions : FALLBACK_REGIONS;
@@ -2894,9 +2894,14 @@ let fileRoutes = {};
 let localRoutes = lsGet(LSROUTES, {});
 let manualRoutes = Object.assign({}, localRoutes);
 
+/* ★ 자료는 `no-cache` 로 받는다 (2026-09-04). `no-store` 가 아니다.
+     no-store : 저장을 아예 안 해서 **새로 고칠 때마다 100KB 를 다시 내려받는다.**
+     no-cache : 저장은 하되 **쓸 때마다 바뀌었는지 물어본다.** 안 바뀌었으면 304(0바이트).
+   낡은 자료를 볼 위험은 **둘 다 0** 이고, 헛되이 쓰는 양만 사라진다.
+   (GitHub Pages 가 ETag·Last-Modified 를 주는 것을 확인했다) */
 async function loadRoutes(){
   try{
-    const res = await fetch(S.routePath, { cache:"no-store" });
+    const res = await fetch(S.routePath, { cache:"no-cache" });
     if(!res.ok) throw new Error("HTTP " + res.status);
     const json = await res.json();
     fileRoutes = json.routes || {};
@@ -2935,7 +2940,7 @@ let routeDecisions = Object.assign({}, localDecisions);
 
 async function loadDecisions(){
   try{
-    const res = await fetch(S.decisionPath, { cache:"no-store" });
+    const res = await fetch(S.decisionPath, { cache:"no-cache" });
     if(!res.ok) throw new Error("HTTP " + res.status);
     const json = await res.json();
     fileDecisions = json.decisions || {};
