@@ -2634,7 +2634,7 @@ function openBriefDetail(id){
         설명회 목록으로
       </button>
     </div>
-    <h2 class="h-l" style="margin:2px 0 14px">${esc(p.name)}</h2>
+    <h2 class="h-l bd-ttl">${esc(p.name)}</h2>
     ${detailBodyHtml(p)}`;
   showBriefPane("detail");
   const back = $("#btn-brief-to-list");

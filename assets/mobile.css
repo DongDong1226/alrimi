@@ -450,6 +450,10 @@ body.m .modal-ft .btn{width:100%}
 .m-saved-body{padding:14px 16px calc(var(--m-tabh) + var(--m-safe) + 20px);overflow-y:auto;flex:1}
 .m-sec-t{font-size:var(--fs-h-s);margin:0 0 6px}
 .m-saved-body .saved-note{font-size:var(--fs-body-xs);color:var(--ink-3);line-height:1.7;margin:0 0 14px}
+/* 설명회 상세 카드 — 좁은 화면에서는 좌우 여백이 이미 16px 이라 카드 안쪽을 줄인다.
+   (색·테두리는 app.css 의 #briefDetail 규칙을 그대로 물려받는다 — 여기서는 배치만) */
+.m-saved-body #briefDetail{padding:16px 15px 20px}
+.m-saved-body #briefDetail .bd-ttl{font-size:var(--fs-h-m);margin:0 0 14px}
 .m-saved-body .m-cards{display:flex;flex-direction:column;gap:12px}
 .m-saved-body .saved-div{display:flex;align-items:center;justify-content:space-between;
   gap:10px;margin:22px 0 6px;flex-wrap:wrap}
