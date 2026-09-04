@@ -4329,7 +4329,20 @@ document.addEventListener("mousedown", e => {
 });
 addEventListener("keydown", e => { if(e.key === "Escape") closeSelPop(); });
 addEventListener("resize", closeSelPop);
-addEventListener("scroll", closeSelPop, true);
+/* 뒤 화면이 스크롤되면 목록을 닫는다 — 목록은 `position:fixed` 라 한 번 잡은 자리에
+   그대로 떠 있어서, 뒤가 밀리면 엉뚱한 칸에 붙어 있는 것처럼 보인다.
+
+   ★ 단 **목록 안에서 굴린 것은 닫지 않는다** (2026-09-04에 고침).
+   `capture:true` 로 듣기 때문에 **목록 자신의 스크롤까지 여기로 들어온다.**
+   그래서 시·도처럼 항목이 많은 칸(17개, 목록보다 333px 넘침)은
+   **굴리는 순간 목록이 사라져 아래쪽 항목을 아예 고를 수 없었다.**
+   위 `mousedown` 에 이미 같은 종류의 함정을 막아 둔 것과 같은 이유다 —
+   `capture` 로 문서 전체를 들을 때는 **내 것과 남의 것을 반드시 갈라야 한다.** */
+addEventListener("scroll", e => {
+  const t = e.target;
+  if(selPop.el && t && t.nodeType === 1 && selPop.el.contains(t)) return;
+  closeSelPop();
+}, true);
 
 /* 주소에 ?admin=1 이 있으면 관리자 화면으로 바로 간다.
    ★ 반드시 시작 코드 **뒤**여야 한다 — 앞에서 부르면 위 줄들이 첫 화면으로 되돌린다. */

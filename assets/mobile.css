@@ -40,6 +40,15 @@ body.m .wrap{width:calc(100% - 28px)}
   padding:34px 20px calc(28px + var(--m-safe));display:flex;flex-direction:column;gap:18px}
 .m-onb-top{text-align:center}
 .m-onb .brand-logo{justify-content:center;margin-bottom:20px}
+/* ★ 히어로 로고는 **흰 글자**여야 한다 (2026-09-04에 고침).
+   `app.css` 의 `.onb .brand-logo b, .onb .brand-logo span{color:#fff}` 와 같은 규칙인데,
+   여기서는 **배치만 베끼고 색을 빼먹어서** 남색 히어로 위에 남색 글자가 얹혀 있었다.
+   실측(그려진 픽셀에서): 배경 rgb(26,52,85) 위에서
+     '알리미'(#003675) 대비 **1.07** · '우리동네 개발'(--primary) **1.74** — 둘 다 기준 미달.
+     흰색으로 하면 **12.60**. (본문 기준 4.5 / 큰 글씨 3)
+   ★ `mobile.css` 는 배치만 덮어써야 한다는 규칙을 여기서 어겼던 것이다 —
+     `.onb` 규칙을 베낄 때는 **색까지 같이** 봐야 한다. */
+.m-onb .brand-logo b,.m-onb .brand-logo span{color:#fff}
 .m-onb h1{font-size:var(--fs-h-l);font-weight:800;line-height:1.34;letter-spacing:-.03em;color:#fff}
 .m-onb-sub{margin-top:10px;font-size:var(--fs-body-s);color:#bcd0fb;line-height:1.6}
 
