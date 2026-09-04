@@ -1517,12 +1517,30 @@ function show(id, push = true){
    화면을 바꿀 때마다 방문 기록을 하나 남겨 두면 뒤로가기가 앞 화면으로 돌아온다.
    push=false 는 '뒤로가기로 되돌아온 경우'라 기록을 새로 남기지 않는다. */
 function rememberScreen(id, push){
-  const cur = history.state && history.state.screen;
-  if(!history.state){
-    history.replaceState({ screen:id }, "");     // 첫 진입 — 지금 기록에 표시만 해 둔다
-  }else if(push && cur !== id){
-    history.pushState({ screen:id }, "");
+  const st = history.state;
+  if(!st || !st.screen){
+    // 첫 진입 — 지금 기록에 표시만 해 둔다. i 는 '우리가 쌓은 깊이'다.
+    history.replaceState({ screen:id, i:0 }, "");
+  }else if(push && st.screen !== id){
+    history.pushState({ screen:id, i:(st.i || 0) + 1 }, "");
   }
+}
+
+/* '돌아가기' 단추 — 기록을 **새로 쌓지 않고** 브라우저 뒤로가기와 같게 움직인다.
+
+   ★ 예전에는 그냥 `show("#scr-home")` 를 불렀다. 그러면 기록이 하나 더 쌓여서
+     **설명회 → 돌아가기 → 뒤로가기 를 누르면 설명회로 다시 들어갔다**(2026-09-04 제보).
+     첫 화면까지 가려면 뒤로가기를 세 번 눌러야 했다.
+     같은 문제가 **네 곳**에 있었다 — 설명회 · 지도 · 관심사업 · 관리자.
+
+   ★ `history.back()` 만 부르면 안 된다. 우리가 쌓은 기록이 없을 때(주소에 `?admin=1` 을
+     넣어 바로 들어온 경우) **사이트를 벗어난다.** 그래서 깊이(`i`)를 보고 가른다. */
+function goBackScreen(fallbackId){
+  const i = (history.state && history.state.i) || 0;
+  if(i > 0){ history.back(); return; }   // popstate 가 화면을 바꿔 준다
+  // 기록이 없다 — 기록을 쌓지 말고 지금 자리를 바꾼다
+  show(fallbackId, false);
+  history.replaceState({ screen:fallbackId, i:0 }, "");
 }
 
 addEventListener("popstate", e => {
@@ -1531,7 +1549,10 @@ addEventListener("popstate", e => {
   if(open.length){
     open.forEach(m => closeModal(m));
     const now = $$(".screen").find(s => s.classList.contains("on"));
-    if(now) history.pushState({ screen:"#" + now.id }, "");   // 물러난 기록을 도로 채운다
+    // 물러난 기록을 도로 채운다. ★ `i` 를 빠뜨리면 깊이가 0 이 되어
+    //   그 뒤로 '돌아가기' 가 뒤로가기 대신 fallback 을 타게 된다.
+    const back = (history.state && history.state.i) || 0;
+    if(now) history.pushState({ screen:"#" + now.id, i: back + 1 }, "");
     return;
   }
   // 화면 표시가 없는 기록(#projects 같은 본문 이동)은 건드리지 않는다
@@ -2641,7 +2662,7 @@ function openBriefDetail(id){
   if(back !== NO_EL) back.focus();   // 키보드로 눌러 들어왔으면 초점도 따라간다
 }
 
-$("#btn-brief-back").addEventListener("click", () => show("#scr-home"));
+$("#btn-brief-back").addEventListener("click", () => goBackScreen("#scr-home"));
 /* '설명회 목록으로' — 상세를 그릴 때마다 새로 만들어지는 단추이므로
    그 칸에 **위임해서** 듣는다 (매번 다시 붙이면 리스너가 쌓인다). */
 $("#briefDetail").addEventListener("click", e => {
@@ -2841,7 +2862,7 @@ function syncSavedUi(){
   if($("#scr-saved").classList.contains("on")) renderSaved();
 }
 
-$("#btn-saved-back").addEventListener("click", () => show("#scr-home"));
+$("#btn-saved-back").addEventListener("click", () => goBackScreen("#scr-home"));
 
 $("#btn-saved-clear-closed").addEventListener("click", () => {
   const { closed } = savedBuckets();
@@ -3631,7 +3652,7 @@ function openMapScreen(focusId){
 $("#btn-openmap").addEventListener("click", () => openMapScreen());
 $("#btn-map-back").addEventListener("click", () => {
   setRouteArmed(false);   // 지도를 떠나면 그리기 모드도 함께 끝난다
-  show("#scr-home");
+  goBackScreen("#scr-home");
   renderMiniMap();
 });
 $$("[data-mapscope]").forEach(b => b.addEventListener("click", () => {
@@ -3876,7 +3897,7 @@ function enterAdmin(){
   setTimeout(() => $("#admPw").focus(), 60);
 }
 $("#btn-admin-enter").addEventListener("click", enterAdmin);
-$("#btn-admin-exit").addEventListener("click", () => show("#scr-onboard"));
+$("#btn-admin-exit").addEventListener("click", () => goBackScreen("#scr-onboard"));
 
 /* ★ 관리자 화면으로 가는 길이 **첫 화면 맨 아래 단추 하나뿐**이었다.
    동네를 고르는 순간 그 화면이 숨겨져 단추가 0×0 이 되고, 새로 고치기 전에는
