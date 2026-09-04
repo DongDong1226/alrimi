@@ -458,6 +458,7 @@ const NO_EL = {
   addEventListener(){}, removeEventListener(){},
   focus(){}, click(){}, remove(){}, scrollIntoView(){}, insertAdjacentHTML(){},
   setAttribute(){}, getAttribute(){ return null; }, appendChild(){},
+  toggleAttribute(){}, removeAttribute(){}, isConnected:false,
   closest(){ return null; },
   querySelector(){ return NO_EL; }, querySelectorAll(){ return []; }
 };
@@ -1564,19 +1565,59 @@ $("#btn-hood-apply").addEventListener("click", async () => {
 /* ============================================================
    모달
    ============================================================ */
-let lastFocus = null;
+/* ★ 모달을 열면 **뒤에 있는 것을 전부 `inert` 로 잠근다** (2026-09-04).
+   예전에는 X 단추로 초점만 옮겨 놓았다. 그래서 Tab 을 네댓 번 누르면
+   **초점이 뒤 화면으로 빠져나가** 키보드만 쓰는 주민은 **모달을 닫을 수도 없었다.**
+   (Esc 를 아는 사람은 괜찮지만, 그것을 전제로 만들면 안 된다.)
+
+   `inert` 는 그 안의 모든 것을 **초점·클릭·스크린리더에서 통째로** 뺀다.
+   손으로 포커스 트랩을 만들면 '초점 가능한 요소' 목록을 우리가 관리해야 해서
+   나중에 칸을 하나 더할 때마다 새는데, 이 방식은 **빠뜨릴 자리가 없다.**
+   `<body>` 바로 아래만 훑으므로 화면을 더해도 저절로 적용된다.
+   ★ `inert` 를 모르는 옛 브라우저에서는 아무 일도 안 일어난다 — 예전과 같아질 뿐 더 나빠지지 않는다. */
+function lockBehind(m){
+  Array.from(document.body.children).forEach(el => {
+    if(el.tagName === "SCRIPT") return;
+    el.toggleAttribute("inert", el !== m);
+  });
+}
+function unlockAll(){
+  Array.from(document.body.children).forEach(el => el.removeAttribute("inert"));
+}
+
+/* ★ 초점을 되돌릴 자리는 **쌓아서** 기억한다.
+   상세 모달 안에 '의견 제출' 단추가 있어서 **모달이 겹쳐 열린다.**
+   한 칸만 기억하면 안쪽 모달을 열 때 그 값이 덮여, 닫을 때 초점이
+   `<body>` 로 떨어진다 — 스크린리더가 **아무것도 읽지 않는 상태**가 된다. */
+let focusStack = [];
 function openModal(id){
-  lastFocus = document.activeElement;
   const m = $("#" + id);
+  if(m === NO_EL) return;    // 이 화면에 없는 모달 — 잠그면 화면 전체가 먹통이 된다
+  focusStack.push(document.activeElement);
   m.hidden = false;
   document.body.style.overflow = "hidden";
+  lockBehind(m);
   const x = m.querySelector(".modal-x");
   if(x) x.focus();
 }
 function closeModal(m){
   m.hidden = true;
-  document.body.style.overflow = "";
-  if(lastFocus) lastFocus.focus();
+  // 아래에 겹쳐 있던 모달이 있으면 **그것을** 다시 살린다 (화면 전체를 풀어 버리면 안 된다)
+  const under = $$(".modal").find(x => x !== m && !x.hidden);
+  if(under) lockBehind(under);
+  else { unlockAll(); document.body.style.overflow = ""; }
+
+  const back = focusStack.pop();
+  if(back && back.isConnected) back.focus();
+  // 되돌릴 자리가 사라졌거나(목록을 다시 그린 경우) 잠긴 곳이면 초점이 body 로 떨어진다.
+  // 그대로 두면 키보드가 문서 맨 위로 되돌아가므로 갈 곳을 정해 준다.
+  if(document.activeElement === document.body){
+    const t = under ? under.querySelector(".modal-x") : $$(".screen").find(sc => sc.classList.contains("on"));
+    if(t && t !== NO_EL){
+      if(!under){ t.setAttribute("tabindex", "-1"); }
+      t.focus();
+    }
+  }
 }
 $$("[data-modal]").forEach(b => b.addEventListener("click", () => openModal(b.dataset.modal)));
 $$(".modal").forEach(m => {

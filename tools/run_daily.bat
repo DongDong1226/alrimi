@@ -3,13 +3,16 @@ chcp 65001 >nul
 REM ============================================================
 REM  매일 자동 실행되는 파일 (윈도우 작업 스케줄러에 등록해서 쓴다)
 REM
-REM  왜 GitHub 서버가 아니라 이 PC 에서 도는가:
-REM    EIASS 가 해외 IP 를 막고 있어서 GitHub 서버(미국)에서는
-REM    www.eiass.go.kr 에 아예 연결이 안 된다(ConnectTimeout, 확인함).
-REM    그래서 한국에 있는 이 컴퓨터가 자료를 받아 GitHub 에 올려 준다.
+REM  ★ 평소 수집은 이 파일이 아니라 .github/workflows/collect.yml 이 한다
+REM    (한국 시간 00:10 / 07:00 / 13:00, 자동). 이 파일은 **급할 때 손으로 돌리는 길**이다.
+REM
+REM  ★ 예전에 여기 적혀 있던 "EIASS 가 해외 IP 를 막는다"는 **사실이 아니다.**
+REM    전 세계 20개 노드 중 17곳에서 정상으로 붙었다(미국 LA 0.49초 포함).
+REM    GitHub 러너에서만 유독 안 붙던 것이고, 그건 2026-08-15 에 **서울 중계**로 풀었다.
+REM    이 PC 에서 돌리는 이유는 '차단' 때문이 아니라 **직접 붙어서 더 빠르기** 때문이다.
 REM
 REM  하는 일:
-REM    1) EIASS 에서 자료 수집  -> data\projects.json
+REM    1) EIASS 에서 자료 수집  -> data\projects.json + data\cal\*.ics
 REM    2) 바뀐 게 있으면 GitHub 에 올린다
 REM    3) 올리면 GitHub 이 알아서 사이트를 다시 배포한다
 REM
@@ -18,6 +21,7 @@ REM
 REM  ※ 이 파일은 반드시 CRLF 줄바꿈으로 저장해야 한다.
 REM    LF 로 저장하면 윈도우 cmd 가 읽다 말고 조용히 끝난다(창이 깜빡이고 닫힌다).
 REM    .gitattributes 에서 *.bat 를 CRLF 로 고정해 두었다.
+
 REM
 REM  ※ echo 같은 내장 명령은 ERRORLEVEL 을 0 으로 되돌리지 않는다.
 REM    그래서 명령마다 바로 다음 줄에서 %ERRORLEVEL% 을 확인한다.
@@ -37,10 +41,28 @@ if %ERRORLEVEL% neq 0 (
   goto :done
 )
 
-REM ---------- 2) 바뀐 게 있는지 확인 ----------
-REM  git diff --quiet 은 '다른 게 없으면 0, 있으면 1' 로 끝난다.
+REM ---------- 2) 올릴 것을 담고, 바뀐 게 있는지 확인 ----------
 echo [2/3] 바뀐 자료가 있는지 확인 중...
-git diff --quiet -- data/projects.json
+git add data/projects.json >> "%LOG%" 2>&1
+if %ERRORLEVEL% neq 0 (
+  call :fail "git add 에 실패했습니다."
+  goto :done
+)
+
+REM  ★ 지역별 캘린더(.ics)도 반드시 함께 올린다 — collect.yml 과 같아야 한다.
+REM    빠뜨리면 주민이 구독한 주소의 내용이 **영영 안 바뀐다.** 새 사업이 떠도
+REM    캘린더에는 안 들어오는데, 화면에는 아무 표시도 안 나서 아무도 모른다.
+REM    (collect.yml 에서 이미 한 번 빠뜨려 겪은 함정이다)
+REM    -A 를 쓰는 이유: 사업이 끝나 **없어진 지역 파일까지** 반영해야 한다.
+git add -A data/cal >> "%LOG%" 2>&1
+if %ERRORLEVEL% neq 0 (
+  call :fail "캘린더(data\cal) 를 담는 데 실패했습니다."
+  goto :done
+)
+
+REM  git diff --cached --quiet 은 '담긴 것이 없으면 0, 있으면 1' 로 끝난다.
+REM  ★ projects.json 하나만 보지 않는다 — 캘린더만 바뀌는 날이 있을 수 있다.
+git diff --cached --quiet
 if %ERRORLEVEL% equ 0 (
   echo [안내] 바뀐 자료가 없어 올리지 않습니다. >> "%LOG%"
   echo.
@@ -50,12 +72,6 @@ if %ERRORLEVEL% equ 0 (
 
 REM ---------- 3) GitHub 에 올리기 ----------
 echo [3/3] GitHub 에 올리는 중...
-git add data/projects.json >> "%LOG%" 2>&1
-if %ERRORLEVEL% neq 0 (
-  call :fail "git add 에 실패했습니다."
-  goto :done
-)
-
 git commit -m "데이터 갱신 %date%" >> "%LOG%" 2>&1
 if %ERRORLEVEL% neq 0 (
   call :fail "커밋에 실패했습니다."

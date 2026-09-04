@@ -115,6 +115,13 @@ button{cursor:pointer}
   box-shadow:0 20px 50px rgba(6,16,44,.34);border:1px solid rgba(255,255,255,.5)}
 .searchbar svg.lead-ico{width:21px;height:21px;color:var(--primary);flex:none}
 .searchbar input{flex:1;border:0;outline:0;background:transparent;font-size:var(--fs-body-m);color:var(--ink);min-width:0}
+/* ★ 위에서 `outline:0` 으로 지운 초점 표시를 되돌린다 (2026-09-04).
+   테두리를 없애려고 outline 을 껐는데, 그 바람에 **전역 `:focus-visible` 규칙까지 같이 꺼졌다.**
+   키보드만 쓰는 주민은 지금 어느 칸에 있는지 **눈으로 알 수 없었다.**
+   ★ 색은 전역 규칙의 옅은 링이 아니라 `--primary` 를 그대로 쓴다 — 이 칸들은 **흰 바탕** 위라
+     옅은 링은 재 보니 **2.72:1** 로 초점 표시 기준(3:1)에 못 미친다. `--primary` 는 7.24:1 이다.
+     (전역 규칙 자체도 흰 카드 위에서 같은 약점이 있다 — 그건 디자인 결정이라 손대지 않았다) */
+.searchbar input:focus-visible{outline:3px solid var(--primary);outline-offset:2px;border-radius:4px}
 .searchbar input::placeholder{color:var(--ink-4)}
 
 /* ============================================================
@@ -143,6 +150,11 @@ button{cursor:pointer}
 .setcell input,.setcell select{width:100%;border:0;outline:0;background:transparent;
   font-size:var(--fs-body-m);font-weight:700;color:var(--ink);padding:2px 0;
   appearance:none;cursor:pointer;text-overflow:ellipsis}
+/* ★ 초점 표시 — 위 줄의 `outline:0` 이 전역 규칙까지 꺼 버린다 (윗 주석 참고).
+   `outline-offset` 을 음수로 두어 **칸 안쪽에** 그린다 — 세 칸이 1px 선으로 붙어 있어서
+   밖으로 내밀면 옆 칸과 흰 알약 테두리를 넘어간다. */
+.setcell input:focus-visible,.setcell select:focus-visible{
+  outline:2px solid var(--primary);outline-offset:-1px;border-radius:4px}
 .setcell input{cursor:text;font-weight:600}
 .setcell input::placeholder{color:var(--ink-4);font-weight:400}
 .setcell.sel::after{content:"";position:absolute;right:18px;bottom:13px;width:8px;height:8px;
