@@ -237,6 +237,32 @@ CATEGORIES = {
 OUT_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "projects.json")
 
 
+# ============================================================
+# 날짜 — **반드시 한국 시간으로 판단한다** (2026-09-04)
+#
+# ★ 왜 이게 중요한가
+#   GitHub 러너는 **UTC** 로 돈다. 그래서 date.today() 는 한국보다 하루 늦다.
+#   공람이 끝난 사업의 AI 해석을 지우려고 **한국 0시 10분**(= UTC 15:10) 수집을
+#   따로 걸어 두었는데, 그 시각의 UTC 날짜는 아직 **어제**라 view_closed() 가
+#   False 를 내고 **해석이 안 지워졌다.**
+#
+#   실측(공람 종료 2026-09-01 사업):
+#     한국 09-02 00:10 (UTC 09-01 15:10) → 안 지움
+#     한국 09-02 07:00 (UTC 09-01 22:00) → 안 지움
+#     한국 09-02 13:00 (UTC 09-02 04:00) → 비로소 지움
+#   → 한국시간 **00:00~13:00 약 13시간** 동안 data/projects.json 에 해석이 남았다.
+#     그 파일은 주소만 알면 누구나 내려받는다. 화면 잠금과는 다른 문제다.
+#
+#   ★ 새로 '오늘'을 구하는 코드를 쓸 때는 date.today() 를 쓰지 말고 반드시 이것을 쓸 것.
+# ============================================================
+KST = datetime.timezone(datetime.timedelta(hours=9))
+
+
+def today_kst():
+    """한국 날짜. 러너가 어느 시간대에 있든 같은 값을 준다."""
+    return datetime.datetime.now(KST).date()
+
+
 def log(msg):
     """윈도우 명령창은 한글 코드페이지(cp949)를 쓰는 경우가 있어서,
     표시할 수 없는 문자가 섞이면 프로그램이 죽는다. 그런 문자는 물음표로 바꿔서라도 계속 진행한다."""
@@ -1269,7 +1295,7 @@ def refresh_cached(cached, item, vworld_key, skip_geocode, category_key, delay,
     · AI 해석: 다시 하지 않는다. 한 번 실패한 요약문은 내일도 실패할 가능성이 크고,
       매일 다시 부르면 그만큼 비용이 계속 나간다. 전부 다시 받으려면 --full 을 쓴다.
     """
-    today = today or datetime.date.today()   # 안 넘겨주면 오늘로 (날짜 비교에서 터지지 않게)
+    today = today or today_kst()   # 안 넘겨주면 오늘로 (날짜 비교에서 터지지 않게)
 
     if item.get("period_start"):
         cached["periodStart"] = item["period_start"]
@@ -1389,7 +1415,7 @@ def refresh_cached(cached, item, vworld_key, skip_geocode, category_key, delay,
 # 전체 흐름
 # ============================================================
 def build(args):
-    today = datetime.date.today()
+    today = today_kst()
     # .env 나 Secret 에 붙여넣을 때 앞뒤 공백·줄바꿈이 섞이는 일이 흔하다.
     # 공백이 하나만 붙어도 VWorld 가 INVALID_KEY 로 거부하므로 반드시 걷어낸다.
     vworld_key = os.environ.get("VWORLD_KEY", "").strip()
@@ -1580,7 +1606,7 @@ def build(args):
     # **기준은 공람 종료일이 아니라 의견제출 마감일이다.**
     # 환경영향평가법 시행령 제38조에 따라 공람이 끝난 뒤 7일 이내까지 의견을 낼 수 있어서,
     # 공람 종료일로 끊으면 아직 의견을 낼 수 있는 사업이 파일에서 빠져 화면에 안 뜬다.
-    end_day = datetime.date.today()
+    end_day = today_kst()
 
     def still_open(p):
         if not p["periodStart"] or not p["periodEnd"]:

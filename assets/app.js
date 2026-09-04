@@ -589,7 +589,16 @@ function normalizeProject(p){
     viewOpen,                   // 공람 기간 안인가 (환경영향분석은 이때만 보여준다)
     opinionEnd: oEndStr,        // 의견 제출 마감일 (없으면 null)
     dist: null,                 // 우리 집 좌표가 정해진 뒤 계산한다
-    periodStart: p.periodStart || null,   // '새로 올라온 사업' 판단에 쓴다
+    periodStart: p.periodStart || null,   // '새로 올라온 사업' 판단에 쓸 **대비책**
+    /* ★ 이 두 줄이 빠져 있어서 안전장치가 통째로 죽어 있었다 (2026-09-04에 잡음).
+         · firstSeen    — 없으면 isNewProject()·renderAdminFeed() 가 공람 시작일로 되돌아간다.
+                          CLAUDE.md 가 경고한 "가장 급한 사업이 가장 조용히 들어온다" 가 재현된다.
+         · summaryState — 없으면 eiaSection() 의 '읽지 못했다' 분기가 절대 안 돌아,
+                          스캔본을 "요약문에 내용이 없습니다"라고 **사실과 다르게** 말한다.
+       자료에는 46건 전부 들어 있는데 화면에서만 0건이었다.
+       ★ 여기 없는 키를 화면 코드에서 쓰면 조용히 undefined 가 된다 — 새 값을 쓸 때 이 목록부터 볼 것. */
+    firstSeen: p.firstSeen || null,       // 우리가 그 사업을 처음 본 날
+    summaryState: p.summaryState || null, // ok / scanned(사진) / none(요약문 없음)
     period: (p.periodStart && p.periodEnd) ? `${p.periodStart} ~ ${p.periodEnd}` : "정보 없음",
     where: p.address || "위치 정보 없음",
     org: p.org || "기관 정보 없음",
