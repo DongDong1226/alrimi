@@ -8,6 +8,121 @@ X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
 BEGIN:VEVENT
+UID:HG20260561-105537@alrimi
+DTSTAMP:20260904T000000Z
+DTSTART;VALUE=DATE:20261021
+DTEND;VALUE=DATE:20261022
+SUMMARY:[의견 마감] 이천시 모가면 원두리\, 소고리 일원 
+ ㈜이레본 부지증설사업을 위한 도시관리계획 (변경)결
+ 정
+DESCRIPTION:사업: 이천시 모가면 원두리\, 소고리 일원 ㈜이
+ 레본 부지증설사업을 위한 도시관리계획 (변경)결정\n유
+ 형: 전략환경영향평가\n위치: 경기도 이천시 모가면 원
+ 두리 (공원로 288-170)\n기관: 한강유역환경청\n공람기간: 2
+ 026-09-04 ~ 2026-10-14\n의견 제출 마감: 2026-10-21\n\n의견은 EIAS
+ S 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n
+ 우리동네 개발사업 알리미
+LOCATION:경기도 이천시 모가면 원두리 (공원로 288-170)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:이천시 모가면 원두리\, 소고리 일원 ㈜이레본 
+ 부지증설사업을 위한 도시관리계획 (변경)결정 의견 제
+ 출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:이천시 모가면 원두리\, 소고리 일원 ㈜이레본 
+ 부지증설사업을 위한 도시관리계획 (변경)결정 의견 제
+ 출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:HG20260553-105511@alrimi
+DTSTAMP:20260904T000000Z
+DTSTART;VALUE=DATE:20261014
+DTEND;VALUE=DATE:20261015
+SUMMARY:[의견 마감] 일산 노후계획도시 아파트16구역(강촌1
+ \,2백마1\,2단지) 통합재건축사업
+DESCRIPTION:사업: 일산 노후계획도시 아파트16구역(강촌1\,2
+ 백마1\,2단지) 통합재건축사업\n유형: 전략환경영향평가\
+ n위치: 경기도 고양시 일산동구 마두동 (강촌로 151)\n기
+ 관: 한강유역환경청\n공람기간: 2026-09-04 ~ 2026-10-07\n의견 
+ 제출 마감: 2026-10-14\n\n의견은 EIASS 에서 본인인증 후 제
+ 출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알
+ 리미
+LOCATION:경기도 고양시 일산동구 마두동 (강촌로 151)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:일산 노후계획도시 아파트16구역(강촌1\,2백마1\,
+ 2단지) 통합재건축사업 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:일산 노후계획도시 아파트16구역(강촌1\,2백마1\,
+ 2단지) 통합재건축사업 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:YS20260233-105240@alrimi
+DTSTAMP:20260904T000000Z
+DTSTART;VALUE=DATE:20261014
+DTEND;VALUE=DATE:20261015
+SUMMARY:[의견 마감] 영산강 하류권역(함평천 등) 하천기본
+ 계획 약식전략환경영향평가서
+DESCRIPTION:사업: 영산강 하류권역(함평천 등) 하천기본계
+ 획 약식전략환경영향평가서\n유형: 전략환경영향평가\n
+ 위치: 전남광주통합특별시 함평군 대동면 용성리 (구룡
+ 동길 32-3)\n기관: 영산강유역환경청\n공람기간: 2026-09-04 ~
+  2026-10-07\n의견 제출 마감: 2026-10-14\n\n의견은 EIASS 에서 
+ 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동
+ 네 개발사업 알리미
+LOCATION:전남광주통합특별시 함평군 대동면 용성리 (구룡
+ 동길 32-3)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:영산강 하류권역(함평천 등) 하천기본계획 약식
+ 전략환경영향평가서 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:영산강 하류권역(함평천 등) 하천기본계획 약식
+ 전략환경영향평가서 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:ND20260134-104731@alrimi
+DTSTAMP:20260903T000000Z
+DTSTART;VALUE=DATE:20261013
+DTEND;VALUE=DATE:20261014
+SUMMARY:[의견 마감] 2035 양산시 도시·주거환경정비기본계
+ 획
+DESCRIPTION:사업: 2035 양산시 도시·주거환경정비기본계획\n
+ 유형: 전략환경영향평가\n위치: 경상남도 양산시 남부동
+  (중앙로 39)\n기관: 낙동강유역환경청\n공람기간: 2026-09-0
+ 3 ~ 2026-10-06\n의견 제출 마감: 2026-10-13\n\n의견은 EIASS 에서
+  본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동
+ 네 개발사업 알리미
+LOCATION:경상남도 양산시 남부동 (중앙로 39)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:2035 양산시 도시·주거환경정비기본계획 의견 
+ 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:2035 양산시 도시·주거환경정비기본계획 의견 
+ 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:ME20260085-105001@alrimi
 DTSTAMP:20260902T000000Z
 DTSTART;VALUE=DATE:20261009
@@ -275,14 +390,14 @@ END:VEVENT
 BEGIN:VEVENT
 UID:ME20260104-105422@alrimi
 DTSTAMP:20260820T000000Z
-DTSTART;VALUE=DATE:20260908
-DTEND;VALUE=DATE:20260909
+DTSTART;VALUE=DATE:20260921
+DTEND;VALUE=DATE:20260922
 SUMMARY:[의견 마감] 포항융합기술산업지구 개발계획 변경
 DESCRIPTION:사업: 포항융합기술산업지구 개발계획 변경\n유
  형: 전략환경영향평가\n위치: 경상북도 포항시 북구 흥
  해읍 대련리 (펜타시티단지로 61)\n기관: 기후에너지환경
  부\n공람기간: 2026-08-20 ~ 2026-09-21\n의견 제출 마감: 2026-09-
- 08\n\n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://ww
+ 21\n\n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://ww
  w.eiass.go.kr/\n\n우리동네 개발사업 알리미
 LOCATION:경상북도 포항시 북구 흥해읍 대련리 (펜타시티단
  지로 61)
@@ -297,33 +412,6 @@ ACTION:DISPLAY
 TRIGGER:-PT15H
 DESCRIPTION:포항융합기술산업지구 개발계획 변경 의견 제
  출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:HG20260530-105412@alrimi
-DTSTAMP:20260820T000000Z
-DTSTART;VALUE=DATE:20260903
-DTEND;VALUE=DATE:20260904
-SUMMARY:[의견 마감] 여주 도시관리계획(용도지역\, 도시지
- 역 외 지역) 결정(변경)
-DESCRIPTION:사업: 여주 도시관리계획(용도지역\, 도시지역 
- 외 지역) 결정(변경)\n유형: 전략환경영향평가\n위치: 경
- 기도 여주시 홍문동 (세종로 1)\n기관: 한강유역환경청\n
- 공람기간: 2026-08-20 ~ 2026-09-03\n의견 제출 마감: 2026-09-03\n\
- n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eia
- ss.go.kr/\n\n우리동네 개발사업 알리미
-LOCATION:경기도 여주시 홍문동 (세종로 1)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:여주 도시관리계획(용도지역\, 도시지역 외 지
- 역) 결정(변경) 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:여주 도시관리계획(용도지역\, 도시지역 외 지
- 역) 결정(변경) 의견 제출 오늘 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
@@ -840,31 +928,6 @@ DESCRIPTION:한강 고양권역 하천기본계획(변경) 의견 제출
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ME20260086-105086@alrimi
-DTSTAMP:20260727T000000Z
-DTSTART;VALUE=DATE:20260903
-DTEND;VALUE=DATE:20260904
-SUMMARY:[의견 마감] 광양(Ⅳ) 공업용수도사업
-DESCRIPTION:사업: 광양(Ⅳ) 공업용수도사업\n유형: 전략환경
- 영향평가\n위치: 전남광주통합특별시 순천시 상사면 용
- 계리 (상사호길 553)\n기관: 기후에너지환경부\n공람기간:
-  2026-07-27 ~ 2026-08-25\n의견 제출 마감: 2026-09-03\n\n의견은 EI
- ASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n
- 우리동네 개발사업 알리미
-LOCATION:전남광주통합특별시 순천시 상사면 용계리 (상사
- 호길 553)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:광양(Ⅳ) 공업용수도사업 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:광양(Ⅳ) 공업용수도사업 의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 UID:HG20260499-105294@alrimi
 DTSTAMP:20260722T000000Z
 DTSTART;VALUE=DATE:20260921
@@ -889,6 +952,31 @@ ACTION:DISPLAY
 TRIGGER:-PT15H
 DESCRIPTION:옹진군 소하천정비종합계획(재정비) 의견 제출 
  오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:HG2026O004-45805@alrimi
+DTSTAMP:20260904T000000Z
+DTSTART;VALUE=DATE:20261015
+DTEND;VALUE=DATE:20261016
+SUMMARY:[의견 마감] 과천자원정화센터 현대화사업
+DESCRIPTION:사업: 과천자원정화센터 현대화사업\n유형: 환
+ 경영향평가\n위치: 경기도 과천시 갈현동 (구리안로 177)\
+ n기관: 경기도\n공람기간: 2026-09-04 ~ 2026-10-08\n의견 제출 
+ 마감: 2026-10-15\n\n의견은 EIASS 에서 본인인증 후 제출합니
+ 다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:경기도 과천시 갈현동 (구리안로 177)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:과천자원정화센터 현대화사업 의견 제출 마감 3
+ 일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:과천자원정화센터 현대화사업 의견 제출 오늘 
+ 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT

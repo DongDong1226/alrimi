@@ -7,4 +7,31 @@ X-WR-CALNAME:경상남도 양산시 남부동 개발사업 의견 마감
 X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:ND20260134-104731@alrimi
+DTSTAMP:20260903T000000Z
+DTSTART;VALUE=DATE:20261013
+DTEND;VALUE=DATE:20261014
+SUMMARY:[의견 마감] 2035 양산시 도시·주거환경정비기본계
+ 획
+DESCRIPTION:사업: 2035 양산시 도시·주거환경정비기본계획\n
+ 유형: 전략환경영향평가\n위치: 경상남도 양산시 남부동
+  (중앙로 39)\n기관: 낙동강유역환경청\n공람기간: 2026-09-0
+ 3 ~ 2026-10-06\n의견 제출 마감: 2026-10-13\n\n의견은 EIASS 에서
+  본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동
+ 네 개발사업 알리미
+LOCATION:경상남도 양산시 남부동 (중앙로 39)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:2035 양산시 도시·주거환경정비기본계획 의견 
+ 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:2035 양산시 도시·주거환경정비기본계획 의견 
+ 제출 오늘 마감
+END:VALARM
+END:VEVENT
 END:VCALENDAR

@@ -7,4 +7,32 @@ X-WR-CALNAME:경기도 고양시 일산동구 개발사업 의견 마감
 X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:HG20260553-105511@alrimi
+DTSTAMP:20260904T000000Z
+DTSTART;VALUE=DATE:20261014
+DTEND;VALUE=DATE:20261015
+SUMMARY:[의견 마감] 일산 노후계획도시 아파트16구역(강촌1
+ \,2백마1\,2단지) 통합재건축사업
+DESCRIPTION:사업: 일산 노후계획도시 아파트16구역(강촌1\,2
+ 백마1\,2단지) 통합재건축사업\n유형: 전략환경영향평가\
+ n위치: 경기도 고양시 일산동구 마두동 (강촌로 151)\n기
+ 관: 한강유역환경청\n공람기간: 2026-09-04 ~ 2026-10-07\n의견 
+ 제출 마감: 2026-10-14\n\n의견은 EIASS 에서 본인인증 후 제
+ 출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알
+ 리미
+LOCATION:경기도 고양시 일산동구 마두동 (강촌로 151)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:일산 노후계획도시 아파트16구역(강촌1\,2백마1\,
+ 2단지) 통합재건축사업 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:일산 노후계획도시 아파트16구역(강촌1\,2백마1\,
+ 2단지) 통합재건축사업 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
 END:VCALENDAR

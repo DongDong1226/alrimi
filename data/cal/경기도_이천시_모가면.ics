@@ -7,4 +7,35 @@ X-WR-CALNAME:경기도 이천시 모가면 개발사업 의견 마감
 X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:HG20260561-105537@alrimi
+DTSTAMP:20260904T000000Z
+DTSTART;VALUE=DATE:20261021
+DTEND;VALUE=DATE:20261022
+SUMMARY:[의견 마감] 이천시 모가면 원두리\, 소고리 일원 
+ ㈜이레본 부지증설사업을 위한 도시관리계획 (변경)결
+ 정
+DESCRIPTION:사업: 이천시 모가면 원두리\, 소고리 일원 ㈜이
+ 레본 부지증설사업을 위한 도시관리계획 (변경)결정\n유
+ 형: 전략환경영향평가\n위치: 경기도 이천시 모가면 원
+ 두리 (공원로 288-170)\n기관: 한강유역환경청\n공람기간: 2
+ 026-09-04 ~ 2026-10-14\n의견 제출 마감: 2026-10-21\n\n의견은 EIAS
+ S 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n
+ 우리동네 개발사업 알리미
+LOCATION:경기도 이천시 모가면 원두리 (공원로 288-170)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:이천시 모가면 원두리\, 소고리 일원 ㈜이레본 
+ 부지증설사업을 위한 도시관리계획 (변경)결정 의견 제
+ 출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:이천시 모가면 원두리\, 소고리 일원 ㈜이레본 
+ 부지증설사업을 위한 도시관리계획 (변경)결정 의견 제
+ 출 오늘 마감
+END:VALARM
+END:VEVENT
 END:VCALENDAR
