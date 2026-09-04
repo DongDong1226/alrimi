@@ -563,7 +563,18 @@ function normalizeProject(p){
   const viewEnd = p.periodEnd ? new Date(p.periodEnd + "T00:00:00") : null;
   const oEndStr = opinionEndOf(p);
   const oEnd = oEndStr ? new Date(oEndStr + "T00:00:00") : null;
+  /* ★ 마감일은 **늦은 쪽**을 쓴다 (2026-09-04).
+     EIASS 가 의견 마감을 공람 종료보다 **이르게** 적어 놓는 사업이 실제로 있다
+     (면목선 도시철도 — 공람 ~09-01 인데 의견기간이 ~08-18 로 적혀 있다).
+     환경영향평가법 시행령 제38조는 **공람이 끝난 뒤 7일 이내**까지 의견을 받게 하므로,
+     공람 종료일은 반드시 의견 마감 이전일 수 없다. 즉 EIASS 쪽 표기가 틀린 것이다.
+     지어내는 것이 아니라 **두 값 중 늦은 쪽을 고르는 것**이고, 주민에게 안전한 방향이다. */
   const deadline = oEnd && viewEnd ? new Date(Math.max(oEnd, viewEnd)) : (oEnd || viewEnd);
+  const ymd = d => {
+    const q = n => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${q(d.getMonth() + 1)}-${q(d.getDate())}`;
+  };
+  const deadlineStr = deadline ? ymd(deadline) : null;
 
   const started = !start || today >= start;
   const ended = deadline && today > deadline;
@@ -587,7 +598,13 @@ function normalizeProject(p){
     stage, dday,
     viewClosed,                 // 공람은 끝났지만 의견은 낼 수 있는 상태
     viewOpen,                   // 공람 기간 안인가 (환경영향분석은 이때만 보여준다)
-    opinionEnd: oEndStr,        // 의견 제출 마감일 (없으면 null)
+    /* ★ 화면·캘린더·정렬이 **모두 이 값 하나**를 쓴다 (2026-09-04).
+       예전에는 D-n 은 늦은 쪽(deadline)을, 캘린더(calDeadline)는 opinionEnd 를 봐서
+       **같은 사업에 서로 다른 날짜**가 나갔다 — 면목선이 "D-2" 인데 캘린더 일정은
+       12일 지난 08-18 로 만들어져 **미리 알림이 영영 안 울렸다.**
+       원문(opinionPeriod)은 그대로 두므로 자료를 고치는 것이 아니다. */
+    opinionEnd: deadlineStr,    // 의견 제출 마감일 (없으면 null)
+    opinionEndRaw: oEndStr,     // EIASS 가 적어 준 값 그대로 (어긋남을 확인할 때만 쓴다)
     dist: null,                 // 우리 집 좌표가 정해진 뒤 계산한다
     periodStart: p.periodStart || null,   // '새로 올라온 사업' 판단에 쓸 **대비책**
     /* ★ 이 두 줄이 빠져 있어서 안전장치가 통째로 죽어 있었다 (2026-09-04에 잡음).
@@ -651,7 +668,12 @@ function recomputeDistances(){
   // 동네를 안 정했으면 기준 좌표는 설정 기본값(하남 근처)일 뿐인데,
   // 그걸로 거리를 재면 "우리 집에서 19.7km" 같은 **거짓말**이 화면에 뜬다.
   // 거리를 아예 비워 두면 반경 판정·정렬·표시가 전부 조용히 빠진다.
-  if(isNation(currentHood)){
+  /* ★ 단, **GPS 로 실제 자리를 잡았으면 거리를 잰다** (2026-09-04).
+     '지금 내 위치로 보기' 가 좌표는 얻었는데 주소를 못 찾으면 동네가 '전국' 그대로다.
+     그때 여기서 거리를 지워 버리면 반경 판정이 전부 거짓이 되어 **사업이 0건**만 나왔다 —
+     화면은 "주소는 못 찾아 반경으로만 봅니다"라고 해 놓고 반경으로도 아무것도 안 보였다.
+     HOME.gps 가 켜져 있으면 기준 좌표가 설정 기본값이 아니라 **진짜 서 있는 자리**다. */
+  if(!hasHome()){
     PROJECTS.forEach(p => { p.dist = null; p.routeDist = null; p.nearDist = null; });
     return;
   }
@@ -817,6 +839,15 @@ function sidoNames(sido){ return [sido].concat(SIDO_ALIAS[sido] || []); }
 function isNation(h){ return !h || !h.sido || h.sido === ALL_SIDO; }
 function hoodSgg(h){ return (h && h.sgg && h.sgg !== ANY) ? h.sgg : ""; }
 function hoodDong(h){ return (h && h.dong && h.dong !== ANY) ? h.dong : ""; }
+
+/* ★ '우리 집'이 정해졌나 (2026-09-04).
+   `isNation()` 은 **동네 이름이 전국인가**를 보는 것이고, 이것은 **기준 좌표가 진짜인가**를 본다.
+   두 질문이 대부분 같은 답이라 여태 `isNation()` 하나로 써 왔는데, 어긋나는 경우가 있다 —
+   `지금 내 위치로 보기` 가 **좌표는 얻었는데 주소를 못 찾은** 때다(동네가 '전국'으로 남는다).
+   그때 `isNation()` 으로 판단하면 진짜 서 있는 자리를 두고도 거리를 안 재서
+   **반경 안 사업이 0건**이 되고, 반경 단추가 **선택된 채로 잠기는** 모순까지 생겼다.
+   ★ 거리·반경·지도 마커는 반드시 이것을 쓴다. 라벨·경계·캘린더 지역은 `isNation()` 이 맞다. */
+function hasHome(){ return !isNation(currentHood) || !!HOME.gps; }
 
 function hoodLabel(h, short){
   if(isNation(h)) return "전국";
@@ -1616,16 +1647,25 @@ function scopeWhere(scope){
 
 /* 범위에 따라 제목·라벨·강조를 맞춘다. */
 function renderScope(){
-  const nation = isNation(currentHood);
+  /* ★ 단추를 잠그는 기준이 **둘이다** — 둘이 필요한 것이 다르기 때문이다 (2026-09-04).
+       · `구역 안` → **행정구역**이 있어야 뜻이 있다        (isNation)
+       · `반경`    → **우리 집 좌표**만 있으면 된다         (hasHome)
+     하나로 묶어 잠그면 반드시 한쪽이 틀린다 — 예전에는 `isNation` 하나로 잠갔는데,
+     `지금 내 위치로 보기` 가 좌표만 얻고 주소를 못 찾으면 동네가 '전국'으로 남아서
+     `반경`이 **선택된 채 눌리지 않는** 상태가 됐다.
+     ★ `반경` 잠금은 `recomputeDistances()` 와 **반드시 같은 기준**이어야 한다. */
+  const noRegion = isNation(currentHood);   // 구역 안 — 고를 구역이 없다
+  const noHome = !hasHome();                // 반경   — 기준이 될 자리가 없다
+  const lockFor = v => v === "region" ? noRegion : v === "near" ? noHome : false;
   $$("[data-scope]").forEach(b => {
     b.classList.toggle("on", b.dataset.scope === homeScope);
-    // 전국을 보는 중이면 '동네 안'·'반경'은 고를 것이 없으므로 잠근다
-    if(b.dataset.scope !== "all") b.disabled = nation;
+    b.disabled = lockFor(b.dataset.scope);
   });
   $$("[data-mapscope]").forEach(b => {
     b.classList.toggle("on", b.dataset.mapscope === mapScope);
-    if(b.dataset.mapscope !== "all") b.disabled = nation;
+    b.disabled = lockFor(b.dataset.mapscope);
   });
+  const nation = noRegion;   // 아래 라벨은 '행정구역이 있나'를 본다
   const rBtn = $("#scopeRegionBtn");
   if(rBtn) rBtn.textContent = nation ? "우리 동네 안" : `${hoodShort(currentHood)} 안`;
 
@@ -1713,6 +1753,18 @@ function eiaSection(p){
     return { title:"환경영향분석", hint:"읽지 못함", body:`
       <p class="eia-src">${why}
         <b>내용이 없다는 뜻이 아닙니다.</b> 평가서 초안은 EIASS 원문에서 직접 확인해 주세요.</p>` };
+  }
+
+  /* ★ '요약문은 읽었는데 해석이 통째로 없다' = **해석을 만들지 못한 것**이다 (2026-09-04).
+     이 경우가 코드에 아예 없어서 "요약문에 내용이 없습니다"로 나갔다 — 사실과 다르다.
+     8개 항목이 **전부** 비어 있는 평가서 요약문은 현실에 없다. 만드는 데 실패한 것이다.
+     실제로 2026-08-30 에 Anthropic 키가 만료돼 공람 중인 4건이 엿새 동안 이 상태였다.
+     ★ 앞의 두 분기(scanned/none)를 지나온 뒤에 와야 한다 — 못 읽은 것이 먼저다. */
+  if(readNothing && p.summaryState === "ok"){
+    return { title:"환경영향분석", hint:"만들지 못함", body:`
+      <p class="eia-src">요약문은 읽었지만 <b>쉬운 말로 옮기는 데 실패했습니다.</b>
+        <b>내용이 없다는 뜻이 아닙니다.</b> 곧 다시 시도합니다 —
+        그 사이에는 평가서 초안을 EIASS 원문에서 직접 확인해 주세요.</p>` };
   }
 
   const rows = has.map(({ f, v }, i) => {
@@ -3083,7 +3135,7 @@ let boundLayer = null, miniBoundLayer = null;
    ※ 한때 '경계가 있으면 무조건 숨김'으로 만들었다가 되돌렸다 —
      반경을 직접 골라도 원이 안 나와서 5km 가 얼마인지 알 수 없었다. */
 function showRadiusCircle(scope){
-  return !isNation(currentHood) && scope === "near";
+  return hasHome() && scope === "near";
 }
 
 function drawBoundary(){
@@ -3114,7 +3166,7 @@ function renderGisMarkers(fit = true){
 
   // 동네를 안 정했으면(전국) '우리 집'도 반경 원도 그리지 않는다.
   // 설정 기본 좌표를 우리 집인 양 찍으면 엉뚱한 동네에 깃발이 꽂힌다.
-  if(!isNation(currentHood)){
+  if(hasHome()){
     gisHomeMarker = L.marker([HOME.lat, HOME.lon], { icon:markerIcon("home"), zIndexOffset:1000 })
       .addTo(gisMap).bindTooltip(esc(HOME.label || "우리 집"));
     nameMarker(gisHomeMarker, `우리 집 · ${HOME.label || "기준 위치"}`);
@@ -3159,7 +3211,7 @@ function renderGisMarkers(fit = true){
    그래서 **지금 보고 있는 범위 그 자체**에 맞춘다:
      동네 안 → 경계에            반경 → 우리 집 ± 반경        전국 → 사업 전체 */
 function fitGisView(rows){
-  const nation = isNation(currentHood);
+  const nation = !hasHome();
   const home = [HOME.lat, HOME.lon];
 
   if(!nation && mapScope === "region" && boundLayer){
@@ -3199,7 +3251,7 @@ function gisItemHtml(p){
    나누는 기준은 지금 고른 범위를 따른다.
    전국을 보는 중이면 동네가 정해져 있는지에 따라 구역/반경 중 알맞은 쪽으로 나눈다. */
 function localTest(){
-  if(isNation(currentHood)) return null;
+  if(!hasHome()) return null;
   if(mapScope !== "all") return scopeTest(mapScope);
   return (hoodDong(currentHood) || hoodSgg(currentHood)) ? inHood : isNearby;
 }
@@ -3643,7 +3695,7 @@ function renderMiniMap(){
 
   // 미리보기 지도라 마커를 키보드로 고를 수 없게 한다.
   // (이 지도 전체가 '크게 보기' 단추라서, 안에 또 단추가 있으면 헷갈린다)
-  const nation = isNation(currentHood);
+  const nation = !hasHome();
   if(!nation){
     miniLayers.push(L.marker([HOME.lat, HOME.lon],
       { icon:markerIcon("home"), keyboard:false }).addTo(miniMap));

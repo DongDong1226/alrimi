@@ -691,10 +691,24 @@ function select(id){
     // ★ 예전에는 flatLatLngs 로 **한 줄로 뭉개서** 읽었다 —
     //   그러면 갈래가 있는 노선을 열자마자 갈래가 사라진다.
     const segs = splitLatLngs(saved);
-    pts = segs.pop() || [];
-    branches = segs;
     // 구간 시점·종점으로 만든 노선이면 그 표시를 되살린다 (저장할 때 다시 붙이려고).
     fromSegments = saved.note === "segment-ends";
+    if(fromSegments){
+      /* ★ 구간에서 온 노선은 **모든 줄이 구간 몫**이다 (2026-09-04에 잡음).
+         예전에는 여기서도 마지막 줄을 pts 로 떼어 내고 `segBranchN = 0` 으로 두었다.
+         그래서 저장해 둔 46구간 노선을 다시 열어 '찾기' 를 누른 뒤 **점을 하나만 끌면**
+         syncSegRoute() 가 `branches.slice(0)` 을 '손으로 그린 갈래'로 착각해
+         **노선이 통째로 두 벌(46 + 45 = 91줄)이 됐다.** 화면에는 같은 자리에 겹쳐
+         그려지니 눈으로는 알 수 없고, 그대로 저장하면 파일까지 두 벌이 된다.
+         떼어 낸 pts 도 drawSegEnds() 가 그리는 선과 두 겹이 되는 원인이었다. */
+      branches = segs;
+      segBranchN = segs.length;
+      pts = [];
+    }else{
+      pts = segs.pop() || [];
+      branches = segs;
+      segBranchN = 0;
+    }
   }
 
   $("#detailBox").hidden = false;
@@ -751,7 +765,13 @@ function redraw(){
        어느 것을 눌러야 점이 생기는지 알 수 없다). 하지만 **손으로 그린 갈래는
        여기서 반드시 그려야 한다** — 예전에는 구간표로 담은 뒤 손으로 그린 갈래가
        화면에서 아예 사라져서 "이어서 그린 게 보이지도 않는다"는 말을 들었다. */
-  const skip = fromSegments ? segBranchN : 0;
+  /* ★ 건너뛰는 기준은 '구간에서 온 노선인가'가 아니라
+       **drawSegEnds() 가 지금 그 선을 그리고 있나** 다 (2026-09-04).
+     `fromSegments` 만 보면, 저장한 구간 노선을 열었지만 아직 '구간 시점·종점 찾기'를
+     누르지 않은 동안(= segEnds 가 비어 있는 동안) **노선이 아예 안 보인다** —
+     여기서도 안 그리고 drawSegEnds() 도 그릴 것이 없기 때문이다. */
+  const segDrawn = fromSegments && segEnds.some(x => x.from && x.to);
+  const skip = segDrawn ? segBranchN : 0;
   branchLayers = branches.slice(skip).map((b, k) => {
     const i = skip + k;
     const ln = L.polyline(b, { color:"#de3412", weight:5, opacity:.7, dashArray:"10 7" })
@@ -2435,10 +2455,24 @@ $("#btnSave").addEventListener("click", () => {
 
 $("#btnDelete").addEventListener("click", () => {
   if(!current) return;
+  /* ★ 되돌릴 수 없으므로 한 번 묻는다. 이 도구의 다른 지우기(갈래·임시저장)와 같은 방식이다.
+     46구간을 다듬어 놓고 이 단추를 잘못 누르면 그 작업이 그대로 사라진다. */
+  const nLines = branches.length + (pts.length >= 2 ? 1 : 0);
+  if(nLines && !confirm(`이 사업에 그려 둔 노선(${nLines}줄)을 지웁니다.`
+                        + "\n되돌릴 수 없습니다. 계속할까요?")) return;
   delete ROUTES[String(current.id)];
   persistRoutes();
+  /* ★ 그리던 상태를 **전부** 비운다 (2026-09-04에 잡음).
+     예전에는 `pts` 만 비워서 `branches`·`segBranchN`·`fromSegments` 가 그대로 남았다.
+     그래서 '지우기' 를 누른 뒤 '저장' 을 누르면 **지웠다던 갈래가 다시 저장되고**,
+     구간 안내선도 지도에 남아 있어 담당자는 무엇이 지워진 것인지 알 수 없었다. */
   pts = [];
+  branches = [];
+  segBranchN = 0;
+  fromSegments = false;
+  clearGuides();
   redraw();
+  refreshBranchUi();
   $("#msg").textContent = "이 사업의 노선을 지웠습니다. 6번에서 저장해야 파일에도 반영됩니다.";
   renderList();
 });
