@@ -317,9 +317,14 @@ function renderCalSub(){
       <a class="btn btn--primary btn--sm btn--pill" href="${esc(webcal)}">아이폰 · 캘린더 구독</a>
       <button class="btn btn--line btn--sm btn--pill" type="button" id="btnCalCopy">주소 복사</button>
       <a class="btn btn--ghost btn--sm btn--pill" href="${esc(google)}" target="_blank" rel="noopener">구글 캘린더로 구독 ↗</a>`
+      /* ★ PC 는 단추를 **하나만** 둔다 (2026-09-04). 실제로 되는 길이 구글 하나뿐인데
+           단추가 둘이면 어느 것을 눌러야 하는지 고민하게 된다.
+         ★ 다만 '주소 복사'를 **없애지는 않는다** — 아래 설명글 속 작은 링크로 내렸다.
+           없애면 구글 계정이 없거나 네이버·아웃룩·삼성 캘린더를 쓰는 주민은
+           **PC 에서 등록할 길이 아예 사라진다.** 갤럭시 주민은 폰만으로는 등록이 안 되어
+           결국 PC 에서 해야 하므로, 이 길이 막히면 대안이 없다. */
       : `
-      <a class="btn btn--primary btn--sm btn--pill" href="${esc(google)}" target="_blank" rel="noopener">구글 캘린더로 구독 ↗</a>
-      <button class="btn btn--ghost btn--sm btn--pill" type="button" id="btnCalCopy">주소 복사</button>`}
+      <a class="btn btn--primary btn--sm btn--pill" href="${esc(google)}" target="_blank" rel="noopener">구글 캘린더로 구독 ↗</a>`}
     </div>
     <!-- ★ 2026-08-25 정정. 예전에는 "갤럭시는 구글 캘린더로 구독이 가장 쉽습니다"라고
          적혀 있었는데 **사실이 아니다** — 구글 캘린더 앱에는 'URL로 추가'가 없고(PC 웹에만 있다),
@@ -331,9 +336,13 @@ function renderCalSub(){
          <b>갤럭시</b> — <b>폰에서는 등록이 안 됩니다.</b> 구글 캘린더 앱과 삼성 캘린더가
          주소 구독을 지원하지 않기 때문입니다. <b>주소 복사</b>를 눌러 두었다가
          <b>PC에서 한 번만</b> 등록하면, 그 뒤로는 폰 캘린더에 저절로 나타나고 알림도 옵니다.`
-      : `누르면 구글 캘린더에 <b>이 지역 달력이 추가</b>됩니다. 등록해 두면 새 사업이 저절로 들어옵니다.<br>
-         <b>갤럭시를 쓰신다면 여기 PC에서 등록하세요</b> — 폰 캘린더에 저절로 나타납니다.
-         네이버·아웃룩 등 다른 캘린더는 <b>주소 복사</b> 후 그 캘린더의 <b>URL로 추가</b>에 붙여넣으세요.`}</p>`;
+      : `한 번 누르면 끝입니다. <b>갤럭시를 쓰셔도 여기 PC에서 등록하면</b> 폰 캘린더에 저절로 나타납니다.<br>
+         네이버·아웃룩 등 다른 캘린더를 쓰신다면
+         <button class="cal-inline" type="button" id="btnCalCopy">주소 복사</button> 후
+         그 캘린더의 <b>URL로 추가</b>에 붙여넣으세요.`}</p>
+    <!-- ★ 복사 결과는 **따로 있는 줄**에 쓴다. 위 설명글 안에 '주소 복사' 링크가 들어 있어서,
+         거기에 결과를 덮어쓰면 링크가 사라져 **다시 복사할 수 없게 된다.** -->
+    <p class="cal-h cal-h--sub" id="calCopyMsg" hidden></p>`;
 
   // 위 칸을 바꾸면 아래 칸은 '전체'로 되돌린다.
   // (다른 시·도의 시·군·구나, 다른 시·군·구의 읍·면·동이 남으면 없는 파일을 가리키게 된다)
@@ -347,15 +356,17 @@ function renderCalSub(){
     setCalRegion({ sido:$("#calSido").value, sgg:$("#calSgg").value, dong:e.target.value });
   });
   $("#btnCalCopy").addEventListener("click", async () => {
+    const out = $("#calCopyMsg");
+    out.hidden = false;
     try{
       await navigator.clipboard.writeText(url);
       // ★ "캘린더 앱의 'URL로 추가'" 라고만 하면 안 된다 — 구글 캘린더 앱과 삼성 캘린더에는
       //   그 메뉴가 아예 없다(구글은 PC 웹에만 있다). 어디에 넣어야 하는지를 밝힌다.
-      $("#calSubMsg").textContent = isPhone
+      out.textContent = isPhone
         ? "주소를 복사했습니다. PC에서 구글 캘린더를 열어 '다른 캘린더 +' → 'URL로 추가'에 붙여넣으세요. 그러면 폰 캘린더에도 저절로 나타납니다."
         : "주소를 복사했습니다. 캘린더의 'URL로 추가'에 붙여넣으세요 (구글 캘린더는 '다른 캘린더 +' → 'URL로 추가').";
     }catch(e){
-      $("#calSubMsg").textContent = url;   // 복사가 막히면 눈으로 보고 옮길 수 있게 보여 준다
+      out.textContent = url;   // 복사가 막히면 눈으로 보고 옮길 수 있게 보여 준다
     }
   });
 }
@@ -1746,8 +1757,12 @@ $$("[data-scope]").forEach(b =>
 $$("[data-nav]").forEach(el => el.addEventListener("click", e => {
   const kind = el.dataset.nav;
   if(kind === "map"){ openMapScreen(); return; }
-  // '내가 담은 사업'은 본문 이동이 아니라 **화면 전환**이다 (지도로 보기와 같은 방식).
+  // '관심 사업과 알림'은 본문 이동이 아니라 **화면 전환**이다 (지도로 보기와 같은 방식).
   if(kind === "saved"){ show("#scr-saved"); renderSaved(); return; }
+  /* ★ 주민 설명회 안내도 **따로 있는 화면**이다 (2026-09-04).
+     예전에는 홈 안의 한 섹션이라 메뉴를 누르면 홈 아래로 스크롤만 했다 —
+     설명회는 '언제 어디로 가면 되나'를 보러 오는 자리라 화면을 따로 두는 것이 맞다. */
+  if(kind === "participate"){ e.preventDefault(); openBriefScreen(); return; }
   if(kind === "near" || kind === "all"){
     e.preventDefault();
     // '우리 동네 사업' 메뉴는 지금 고른 동네에 맞는 범위로 보여준다.
@@ -2582,7 +2597,25 @@ function briefRowsHtml(p, b){
 }
 bindProjectActions("#openList");
 bindPager("#projPager", "#projPerPage", "proj", render, "#projects");
-bindPager("#openPager", "#openPerPage", "open", renderOpenList, "#participate");
+/* 설명회 화면을 연다. 목록은 자료를 읽을 때 이미 그려져 있지만,
+   범위를 바꾼 뒤 들어올 수 있으니 한 번 다시 그린다. */
+function openBriefScreen(){
+  show("#scr-brief");
+  resetPages();          // 다른 화면에서 넘겨 둔 페이지가 남아 있으면 1쪽부터 보여준다
+  renderOpenList();
+  // 스크롤은 화면 안쪽 칸이 한다 (데스크톱 .saved-body / 휴대폰 .m-saved-body).
+  const body = document.querySelector("#scr-brief .saved-body, #scr-brief .m-saved-body");
+  if(body) body.scrollTop = 0;
+}
+$("#btn-brief-back").addEventListener("click", () => show("#scr-home"));
+
+/* ★ 페이지를 넘기면 **목록 맨 위**로 올린다.
+   예전 앵커는 `#participate`(홈 안의 섹션)였는데 그 섹션이 화면으로 빠져나갔다.
+   없는 칸을 가리키면 $() 가 NO_EL 을 주어 **조용히 아무 일도 안 한다** — 그러면
+   6쪽으로 넘겼을 때 목록 아래쪽에 그대로 머물러 무엇이 바뀌었는지 알 수 없다.
+   ★ `.gis-top`(위쪽 띠)을 가리켜서도 안 된다 — 그것은 스크롤되는 칸 **밖**에 있어서
+     scrollIntoView 가 아무것도 움직이지 못한다. 스크롤 칸 **안**에 있는 `#openList` 를 쓴다. */
+bindPager("#openPager", "#openPerPage", "open", renderOpenList, "#openList");
 
 /* 사업 상세 모달 */
 /* 마감일을 캘린더에 넣는 칸. 기기마다 편한 길이 달라 **두 가지를 다** 준다. */
@@ -2668,13 +2701,20 @@ function renderSaved(){
     ? `담아 둔 사업 ${open.length + closed.length}건`
     : "아직 담아 둔 사업이 없습니다";
 
-  // 이 목록이 기기에 묶여 있다는 것은 반드시 알려야 한다.
-  // 모르면 폰에서 담고 PC에서 열었을 때 "사라졌다"고 생각한다.
+  /* 문구는 짧게, 그러나 **기기에 묶여 있다는 사실은 반드시** 남긴다.
+     모르면 폰에서 담고 PC 에서 열었을 때 "사라졌다"고 여긴다 — 고칠 수 있는 문제가 아니라
+     계정이 없어서 생기는 구조적 한계이므로, 화면이 밝히는 것 말고는 방법이 없다. */
+  const gone = missing ? ` EIASS 목록에서 내려간 사업 ${missing}건은 빼고 보여드립니다.` : "";
   $("#savedNote").innerHTML = SAVED_IDS.length
-    ? `사업 카드의 <b>별표</b>를 눌러 담은 목록입니다.
-       <b>이 목록은 지금 쓰고 있는 기기(브라우저)에만 저장됩니다</b> — 다른 기기에서는 보이지 않고,
-       브라우저 기록을 지우면 함께 지워집니다.${missing ? `<br>자료가 더 이상 제공되지 않는 사업 ${missing}건은 표시하지 않았습니다.` : ""}`
-    : "";
+    ? `마감이 가까운 순서입니다.
+       <b>이 기기에만 저장</b>되어 다른 기기에서는 보이지 않고, 브라우저 기록을 지우면 사라집니다.${gone}`
+    /* ★ 담은 것이 없을 때는 **이 화면에서 할 수 있는 두 가지**를 알려 준다.
+       '별표를 어떻게 누르나'는 아래 빈 상자가 이미 말하므로 여기서 되풀이하지 않는다
+       (예전에 같은 문장이 화면에 두 번 나왔다).
+       아래 구독 칸을 가리키는 것이 이 화면 이름('관심 사업과 알림')과도 맞는다. */
+    : `관심 있는 사업은 <b>별표(☆)</b>로 담아 두고,
+       아래에서 <b>새 사업 알림</b>을 캘린더로 받을 수 있습니다.
+       담은 목록은 <b>이 기기에만</b> 저장됩니다.${gone}`;
 
   // 담은 사업의 마감일을 **한 번에** 캘린더에 넣는 칸.
   // 여기가 가장 쓸모 있는 자리다 — 담아 둔 이유가 '마감을 놓치지 않는 것'이기 때문이다.

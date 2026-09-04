@@ -656,6 +656,13 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .cal-link b{color:var(--ink)}
 .cal-link-go{margin-left:auto;flex:none;font-weight:700;color:var(--eco);white-space:nowrap}
 .cal-link:hover{border-color:var(--eco)}
+/* 설명글 **속에 섞이는** 작은 글자 단추 — 구독 칸의 '주소 복사'.
+   단추로 두면 실제로 되는 길(구글)과 나란히 놓여 헷갈리므로 글 속으로 내렸다.
+   색·굵기는 모두 기존 토큰이다. */
+.cal-inline{display:inline;background:none;border:0;padding:0;font:inherit;font-weight:700;
+  color:var(--primary);text-decoration:underline;text-underline-offset:2px;cursor:pointer}
+.cal-inline:hover{color:var(--p70)}
+.cal-inline:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:3px}
 /* 좁은 화면에서는 두 줄로 눕힌다 — 한 줄에 다 넣으면 글자가 짓눌린다 */
 @media (max-width:560px){
   .cal-link{flex-wrap:wrap;gap:6px 10px}

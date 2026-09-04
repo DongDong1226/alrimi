@@ -27,11 +27,15 @@
     // 지금 홈에 있는 것처럼 보여 헷갈린다.
     const savedEl = q("#scr-saved");
     const savedOn = !!savedEl && savedEl.classList.contains("on");
+    // 설명회도 이제 따로 있는 화면이다 (2026-09-04). 그 화면에서는 '설명회' 탭에 불이 들어온다.
+    const briefEl = q("#scr-brief");
+    const briefOn = !!briefEl && briefEl.classList.contains("on");
     qa("[data-tab]").forEach(b => {
       const k = b.dataset.tab;
       const on = k === "map"   ? mapOn
         : k === "saved" ? savedOn
-        : k === "home"  ? (!mapOn && !onboard && !savedOn)
+        : k === "brief" ? briefOn
+        : k === "home"  ? (!mapOn && !onboard && !savedOn && !briefOn)
         : false;
       b.classList.toggle("on", on);
     });
@@ -42,22 +46,28 @@
     if(kind === "map"){ openMapScreen(); syncTabs(); return; }
     if(kind === "hood"){ openModal("m-hood"); return; }
     if(kind === "guide"){ openModal("m-guide"); return; }
-    // 관심목록 — app.js 가 두 화면 공용으로 처리한다 (머리말 별표와 같은 길)
+    // 관심·알림 — app.js 가 두 화면 공용으로 처리한다 (머리말 별표와 같은 길)
     if(kind === "saved"){
       const star = q('[data-nav="saved"]');
       if(star) star.click();
       syncTabs();
       return;
     }
+    /* 설명회 — 화면 전환이다 (2026-09-04). 예전에는 홈 아래로 스크롤만 했다.
+       판단·이동은 app.js 의 [data-nav] 처리 한 곳에 있으므로 그것을 대신 눌러 준다.
+       **여기에 화면 전환 코드를 따로 쓰면 두 벌이 된다.** */
+    if(kind === "brief"){
+      const menu = q('[data-nav="participate"]');
+      if(menu) menu.click();
+      else if(typeof openBriefScreen === "function") openBriefScreen();
+      syncTabs();
+      return;
+    }
 
-    // 홈·설명회는 같은 화면의 다른 자리로 간다
+    // 홈으로
     if(!q("#scr-home").classList.contains("on")) show("#scr-home");
     syncTabs();
-    if(kind === "brief"){
-      q("#participate").scrollIntoView({ behavior:"smooth", block:"start" });
-    }else{
-      scrollTo({ top:0, behavior:"smooth" });
-    }
+    scrollTo({ top:0, behavior:"smooth" });
   }));
 
   /* 화면이 바뀌면 탭 표시도 따라간다.
