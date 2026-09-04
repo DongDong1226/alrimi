@@ -113,16 +113,20 @@ body.m .wrap{width:calc(100% - 28px)}
    푸터가 그 몫까지 가지면 남색이 탭 막대까지 이어진다. */
 .m-main{padding-bottom:0}
 
-/* 홈 화면 위쪽 띠 — 데스크톱의 히어로에 해당한다. 같은 사진을 쓴다.
-   여기는 띠가 얇아 사진이 조금만 보이므로 덮개를 조금 더 진하게 해 글자를 확실히 살린다. */
-.m-lead{color:#fff;padding:22px 16px 20px;
-  background:
-    linear-gradient(165deg,rgba(20,45,95,.88) 0%,rgba(12,30,89,.82) 100%),
-    var(--p90) url("https://images.unsplash.com/photo-1763688506555-c73c1b944080?auto=format&fit=crop&w=900&q=72") center/cover no-repeat}
-.m-lead h1{font-size:var(--fs-h-m);font-weight:800;line-height:1.35;letter-spacing:-.03em;color:#fff}
-.m-lead h1 .hl{color:#9fc0ff}
-.m-search{display:flex;align-items:center;gap:8px;background:#fff;border-radius:var(--r-pill);
-  padding:6px 6px 6px 14px;margin-top:16px}
+/* ============================================================
+   홈 화면 위쪽 (검색 칸)
+   ============================================================
+   ★ 배경 사진을 없앴다 (2026-09-04, 사용자 요청). 첫 화면(.m-onb)에는 사진이 남아 있지만,
+     홈은 **자료를 읽는 화면**이라 사진 위 흰 글자가 아래 흰 카드들과 겉돌았다.
+   ★ 사진을 없애면 그 위에 있던 것들이 전부 안 보이게 된다 — 함께 바꾼 것:
+     흰 글자 → 짙은 글자 / 강조색 `#9fc0ff` → `--primary` /
+     검색창(흰 배경이었다) → 연회색 + 테두리 / 낱말 칩(반투명 흰색) → 흰 바탕용.
+     (`app.css` 의 데스크톱 히어로는 사진을 그대로 쓰므로 건드리지 않았다) */
+.m-lead{padding:18px 16px 18px;background:var(--bg);color:var(--ink-2)}
+.m-lead h1{font-size:var(--fs-h-m);font-weight:800;line-height:1.35;letter-spacing:-.03em;color:var(--navy)}
+.m-lead h1 .hl{color:var(--primary)}
+.m-search{display:flex;align-items:center;gap:8px;background:var(--bg-1);border-radius:var(--r-pill);
+  border:1px solid var(--line-2);padding:6px 6px 6px 14px;margin-top:14px}
 .m-search .lead-ico{width:18px;height:18px;color:var(--ink-4);flex:none}
 .m-search input{flex:1;min-width:0;border:0;outline:0;font-size:16px;background:transparent}
 /* ★ 데스크톱과 같은 이유로 초점 표시를 되돌린다 (2026-09-04, app.css 의 주석 참고).
@@ -133,10 +137,11 @@ body.m .wrap{width:calc(100% - 28px)}
   scrollbar-width:none;-webkit-overflow-scrolling:touch}
 .m-kw::-webkit-scrollbar{display:none}
 .m-kw .kw-chip{flex:none;white-space:nowrap;min-height:38px;
-  /* app.css 의 기본 테두리(흰색 18%)는 데스크톱 히어로의 격자무늬 배경 위에서나 겨우
-     보이는 밝기라, m.html 의 납작한 남색 배경에서는 거의 안 보인다. 값을 올린다
-     (새 색이 아니라 같은 흰색의 불투명도만 올린 것 — 다른 곳의 rgba(255,255,255,.2~.22) 와 같은 결). */
-  border-color:rgba(255,255,255,.42);background:rgba(255,255,255,.14)}
+  /* ★ app.css 의 기본값은 **어두운 히어로 위**를 전제한 반투명 흰색이다.
+     배경 사진을 없앤 뒤로는 흰 바탕에 흰 칩이 되어 아예 안 보인다 — 흰 바탕용으로 바꾼다. */
+  border-color:var(--line-2);background:var(--bg-1);color:var(--ink-2);font-weight:600}
+.m-kw .kw-chip:hover{background:var(--primary-tint);border-color:var(--primary);
+  color:var(--primary);transform:none}
 
 /* 숫자 세 칸 — 옆으로 밀어 본다 */
 /* 카드 3개를 옆으로 밀어 보는 칸.
@@ -182,8 +187,15 @@ body.m .wrap{width:calc(100% - 28px)}
 
 /* 목록 구역 */
 /* 세로 간격 전반을 좁힌다 — 한 화면에 들어오는 내용이 그만큼 늘어난다 */
-.m-sec{padding:16px 14px 6px}
-.m-sec--alt{background:var(--bg-2);border-top:1px solid var(--line);margin-top:12px}
+/* ★ 섹션을 **흰 블록**으로 만들어 연회색 바탕과 갈리게 한다 (2026-09-04, 사용자 요청).
+   예전에는 숫자 칸·내 동네 카드만 흰 카드였고 사업 목록 섹션은 바탕에 그대로 얹혀 있어
+   **어디서 한 덩이가 끝나고 다음이 시작되는지** 알 수 없었다("정리가 안 된 느낌").
+   좌우 테두리는 주지 않는다 — 좁은 화면에서는 화면 폭을 꽉 쓰는 띠가 자연스럽다. */
+.m-sec{padding:16px 14px 10px;background:var(--bg);
+  border-top:1px solid var(--line);border-bottom:1px solid var(--line);margin-top:12px}
+.m-sec--alt{background:var(--bg-2)}
+/* 검색 칸도 같은 결로 — 위는 머리말에 붙으므로 아래 테두리만 준다 */
+.m-lead{border-bottom:1px solid var(--line)}
 .m-sec-hd{margin-bottom:10px}
 .m-sec-hd h2,.m-sec-hd h3{margin-top:5px}
 .m-note{font-size:var(--fs-body-xs);color:var(--ink-3);font-weight:600;margin-top:5px}
@@ -439,13 +451,11 @@ body.m .modal-ft .btn{width:100%}
    "담기만 되고 볼 곳이 없는" 상태였기 때문이다. 이제 #scr-saved 가 생겨 감출 이유가 없다. */
 
 /* 머리말 별표 단추 — 아래 탭이 5개로 꽉 차서 입구를 여기에 둔다 */
-.m-star-btn{flex:none;position:relative;width:38px;height:38px;display:inline-flex;
-  align-items:center;justify-content:center;border-radius:var(--r-xs);
-  background:none;border:1px solid var(--line-2);color:var(--ink-2);margin-left:6px}
-.m-star-btn svg{width:19px;height:19px}
-.m-star-cnt{position:absolute;top:-5px;right:-5px;min-width:17px;height:17px;padding:0 4px;
-  border-radius:999px;background:var(--live);color:#fff;font-size:10.5px;font-weight:800;
-  line-height:17px;text-align:center}
+/* 담은 개수 배지 — 머리말 별표를 없애서(2026-09-04) 아래 탭의 '관심/알림' 아이콘 위로 옮겼다. */
+.m-tabs .ic{position:relative}
+.m-tab-cnt{position:absolute;top:-4px;right:-9px;min-width:16px;height:16px;padding:0 4px;
+  border-radius:999px;background:var(--live);color:#fff;font-size:10px;font-weight:800;
+  line-height:16px;text-align:center}
 
 .m-saved-body{padding:14px 16px calc(var(--m-tabh) + var(--m-safe) + 20px);overflow-y:auto;flex:1}
 .m-sec-t{font-size:var(--fs-h-s);margin:0 0 6px}

@@ -104,13 +104,10 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg>
       <span id="hood-pill-label">전국</span>
     </button>
-    <!-- 담은 사업으로 가는 입구. 아래 탭이 이미 5개로 꽉 차서(애플 권장도 5개) 머리말에 둔다.
-         즐겨찾기를 머리말에 두는 것은 앱들의 흔한 방식이다.
-         data-nav="saved" 는 app.js 가 두 화면 공용으로 처리한다. -->
-    <button class="m-star-btn" type="button" data-nav="saved" aria-label="관심사업 / 알림">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linejoin="round"><path d="m12 3.6 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.7l5.8-.8z"></path></svg>
-      <span class="m-star-cnt" id="savedCount" hidden>0</span>
-    </button>
+    <!-- ★ 머리말 별표를 없앴다 (2026-09-04). 아래 탭에 '관심/알림' 이 이미 있어
+         들어가는 길이 둘이었고, 셋이 나란히 있어 동네 이름이 가운데에 끼여 있었다.
+         이제 [로고] ─── [동네] 두 칸이라 동네가 오른쪽 끝에 온다.
+         담은 개수 배지는 잃지 않게 아래 탭으로 옮겼다. -->
   </header>
 
   <main id="main" class="m-main">
@@ -413,7 +410,8 @@
   <!-- '안내'를 빼고 '관심목록'을 넣었다. 안내는 자주 볼 것이 아니라 머리말·푸터로 충분하고,
        담아 둔 사업은 마감을 지켜보려고 담은 것이라 **자주 들어와야 하는 자리**다. -->
   <button type="button" data-tab="saved">
-    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linejoin="round"><path d="m12 3.6 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.7l5.8-.8z"></path></svg></span>
+    <!-- 담은 개수 — 머리말 별표를 없애서 이 자리로 옮겼다 (app.js 가 #savedCount 로 찾는다) -->
+    <span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linejoin="round"><path d="m12 3.6 2.6 5.3 5.8.8-4.2 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8L3.6 9.7l5.8-.8z"></path></svg><span class="m-tab-cnt" id="savedCount" hidden>0</span></span>
     <span>관심/알림</span>
   </button>
   <button type="button" data-tab="hood">

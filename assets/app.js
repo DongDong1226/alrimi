@@ -270,14 +270,16 @@ function renderCalSub(){
     ? dongList(r.sido, r.sgg) : [];
   const opt = (v, cur) => `<option value="${esc(v)}"${v === cur ? " selected" : ""}>${esc(v)}</option>`;
 
-  /* ★ PC 에는 '구글 캘린더로 구독' + '주소 복사' 두 개를 둔다 (2026-08-25 정정).
-       아이폰 구독(webcal:)만 PC 에서 뺀다 — PC 에는 그것을 열 앱이 없다.
+  /* ★ 단추는 **되는 길만** 둔다 (2026-09-04, 사용자 결정).
+       · PC   — `구글 캘린더로 구독` 하나
+       · 휴대폰 — `아이폰 · 캘린더 구독` + `구글 캘린더로 구독`
+     아이폰 구독(`webcal:`)은 PC 에서 뺀다 — PC 에는 그것을 열 앱이 없다.
 
-     ★ '주소 복사'를 PC 에서 뺐던 2026-08-16 결정을 되돌린 것이다. 그때는
-       "구글 단추가 하는 일을 손으로 하는 것"이라고 봤는데, 2026-08-17 에
-       **갤럭시는 폰만으로 구독 등록이 아예 안 된다**는 것을 알게 되면서 전제가 깨졌다 —
-       갤럭시 주민은 **결국 PC 에서 등록해야 하고**, 네이버·아웃룩을 쓰면 구글 단추로는 길이 없다.
-     휴대폰(m.html)은 기기마다 편한 길이 달라 셋을 그대로 둔다. */
+     ★ `주소 복사` 를 없앴다 (2026-09-04). 그래서 **구글 계정이 없거나 네이버·아웃룩·
+       삼성 캘린더를 쓰는 주민은 등록할 길이 없다.** 사용자가 화면을 간결하게 하려고
+       그렇게 정한 것이다 — 되살릴 때는 `calFeedUrl()` 의 `url` 을 클립보드에 넣으면 된다.
+     ★ 다만 **안 되는 것을 된다고 안내하지는 않는다** — 아래 문구가 갤럭시는 폰에서
+       등록이 안 된다고 그대로 밝힌다. */
   const isPhone = document.body.classList.contains("m");
 
   box.innerHTML = `
@@ -285,8 +287,7 @@ function renderCalSub(){
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 8-3 8h18s-3-1-3-8Z"></path><path d="M13.7 21a2 2 0 0 1-3.4 0" stroke-linecap="round"></path></svg>
       새 사업이 뜨면 캘린더로 자동으로 받기
     </p>
-    <p class="cal-h">한 번만 등록해 두면 <b>그 지역에 새 사업이 생길 때마다 폰 캘린더에 저절로 들어옵니다.</b>
-      알림도 폰이 줍니다. 이 화면을 다시 안 열어도 됩니다.</p>
+    <p class="cal-h">한 번 등록해 두면 <b>새 사업이 생길 때마다 폰 캘린더에 저절로 들어옵니다.</b></p>
 
     <div class="cal-pick">
       <label class="cal-pick-lb" for="calSido">알림 받을 지역</label>
@@ -301,28 +302,17 @@ function renderCalSub(){
           ${opt(ANY, r.dong)}${dongs.map(s => opt(s, r.dong)).join("")}
         </select></span>
       </div>
-      <p class="cal-h cal-h--sub">보고 있는 동네와 <b>따로 고를 수 있습니다.</b>
-        <b>고른 만큼만 옵니다</b> — 시·군·구까지만 고르면 그 시·군·구 전체가, 읍·면·동까지 고르면 그 동네 것만 옵니다.</p>
+      <p class="cal-h cal-h--sub"><b>고른 만큼만 옵니다.</b> 보고 있는 동네와 따로 고를 수 있습니다.</p>
     </div>
 
     <p class="cal-now">지금 받는 지역 <b>${esc(label)}</b></p>
     <div class="cal-btns">
-      <!-- ★ 단추 순서와 크기가 화면마다 다르다 (2026-08-25).
-           **휴대폰에서는 '구글 캘린더로 구독'이 어느 기기에서도 잘 안 된다** —
-           갤럭시는 앱에 'URL로 추가'가 없고, 아이폰은 옆의 전용 단추가 낫다.
-           그런데 그것이 가장 큰 단추라 **가장 눈에 띄는 길이 막다른 길**이었다.
-           그래서 폰에서는 아이폰 단추를 앞·크게, 갤럭시가 쓸 '주소 복사'를 그다음에 둔다.
-           PC 는 구글 단추가 실제로 되는 길이므로 그대로 앞·크게 둔다. -->
+      <!-- ★ 폰에서는 **아이폰 단추를 앞·크게** 둔다. 구글 단추는 갤럭시에서 잘 안 되므로
+           (앱에 'URL로 추가'가 없다) 그것을 가장 큰 단추로 두면 **가장 눈에 띄는 길이
+           막다른 길**이 된다. PC 는 구글이 실제로 되는 길이라 그대로 앞·크게 둔다. -->
       ${isPhone ? `
       <a class="btn btn--primary btn--sm btn--pill" href="${esc(webcal)}">아이폰 · 캘린더 구독</a>
-      <button class="btn btn--line btn--sm btn--pill" type="button" id="btnCalCopy">주소 복사</button>
-      <a class="btn btn--ghost btn--sm btn--pill" href="${esc(google)}" target="_blank" rel="noopener">구글 캘린더로 구독 ↗</a>`
-      /* ★ PC 는 단추를 **하나만** 둔다 (2026-09-04). 실제로 되는 길이 구글 하나뿐인데
-           단추가 둘이면 어느 것을 눌러야 하는지 고민하게 된다.
-         ★ 다만 '주소 복사'를 **없애지는 않는다** — 아래 설명글 속 작은 링크로 내렸다.
-           없애면 구글 계정이 없거나 네이버·아웃룩·삼성 캘린더를 쓰는 주민은
-           **PC 에서 등록할 길이 아예 사라진다.** 갤럭시 주민은 폰만으로는 등록이 안 되어
-           결국 PC 에서 해야 하므로, 이 길이 막히면 대안이 없다. */
+      <a class="btn btn--line btn--sm btn--pill" href="${esc(google)}" target="_blank" rel="noopener">구글 캘린더로 구독 ↗</a>`
       : `
       <a class="btn btn--primary btn--sm btn--pill" href="${esc(google)}" target="_blank" rel="noopener">구글 캘린더로 구독 ↗</a>`}
     </div>
@@ -331,18 +321,13 @@ function renderCalSub(){
          삼성 캘린더는 외부 ICS 주소를 아예 지원하지 않는다. 그래서 **안드로이드 폰에서는
          어떤 기본 앱으로도 등록이 안 된다.** 되는 것처럼 안내하면 주민이 눌러 보고 실패한 뒤
          '이 서비스가 고장 났다'고 여긴다. 안 되는 것은 안 된다고 밝히고, **되는 길**을 알려 준다. -->
+    <!-- ★ 짧게 쓰되 **안 되는 것은 안 된다고 밝힌다** — 갤럭시는 폰만으로 등록이 안 된다
+         (구글 캘린더 앱과 삼성 캘린더에 'URL로 추가'가 없다). 되는 것처럼 안내하면
+         주민이 눌러 보고 실패한 뒤 '이 서비스가 고장 났다'고 여긴다. -->
     <p class="cal-h cal-h--sub" id="calSubMsg">${isPhone
-      ? `<b>아이폰</b> — <b>아이폰 · 캘린더 구독</b>을 누르면 바로 등록됩니다.<br>
-         <b>갤럭시</b> — <b>폰에서는 등록이 안 됩니다.</b> 구글 캘린더 앱과 삼성 캘린더가
-         주소 구독을 지원하지 않기 때문입니다. <b>주소 복사</b>를 눌러 두었다가
-         <b>PC에서 한 번만</b> 등록하면, 그 뒤로는 폰 캘린더에 저절로 나타나고 알림도 옵니다.`
-      : `한 번 누르면 끝입니다. <b>갤럭시를 쓰셔도 여기 PC에서 등록하면</b> 폰 캘린더에 저절로 나타납니다.<br>
-         네이버·아웃룩 등 다른 캘린더를 쓰신다면
-         <button class="cal-inline" type="button" id="btnCalCopy">주소 복사</button> 후
-         그 캘린더의 <b>URL로 추가</b>에 붙여넣으세요.`}</p>
-    <!-- ★ 복사 결과는 **따로 있는 줄**에 쓴다. 위 설명글 안에 '주소 복사' 링크가 들어 있어서,
-         거기에 결과를 덮어쓰면 링크가 사라져 **다시 복사할 수 없게 된다.** -->
-    <p class="cal-h cal-h--sub" id="calCopyMsg" hidden></p>`;
+      ? `<b>갤럭시는 폰에서 등록이 안 됩니다</b>(구글·삼성 캘린더 앱이 지원하지 않습니다).
+         <b>PC에서 한 번만</b> 등록하면 그 뒤로는 폰에도 저절로 나타납니다.`
+      : `누르면 이 지역 달력이 추가됩니다. <b>갤럭시도 여기 PC에서 등록하면</b> 폰 캘린더에 나타납니다.`}</p>`;
 
   // 위 칸을 바꾸면 아래 칸은 '전체'로 되돌린다.
   // (다른 시·도의 시·군·구나, 다른 시·군·구의 읍·면·동이 남으면 없는 파일을 가리키게 된다)
@@ -354,20 +339,6 @@ function renderCalSub(){
   });
   $("#calDong").addEventListener("change", e => {
     setCalRegion({ sido:$("#calSido").value, sgg:$("#calSgg").value, dong:e.target.value });
-  });
-  $("#btnCalCopy").addEventListener("click", async () => {
-    const out = $("#calCopyMsg");
-    out.hidden = false;
-    try{
-      await navigator.clipboard.writeText(url);
-      // ★ "캘린더 앱의 'URL로 추가'" 라고만 하면 안 된다 — 구글 캘린더 앱과 삼성 캘린더에는
-      //   그 메뉴가 아예 없다(구글은 PC 웹에만 있다). 어디에 넣어야 하는지를 밝힌다.
-      out.textContent = isPhone
-        ? "주소를 복사했습니다. PC에서 구글 캘린더를 열어 '다른 캘린더 +' → 'URL로 추가'에 붙여넣으세요. 그러면 폰 캘린더에도 저절로 나타납니다."
-        : "주소를 복사했습니다. 캘린더의 'URL로 추가'에 붙여넣으세요 (구글 캘린더는 '다른 캘린더 +' → 'URL로 추가').";
-    }catch(e){
-      out.textContent = url;   // 복사가 막히면 눈으로 보고 옮길 수 있게 보여 준다
-    }
   });
 }
 
@@ -1509,6 +1480,11 @@ function show(id, push = true){
   $$(".screen").forEach(s => s.classList.remove("on"));
   $(id).classList.add("on");
   window.scrollTo(0, 0);
+  /* ★ 화면을 옮기면 펼쳐 두었던 상세는 접는다 (2026-09-04).
+     안 접으면 **앞으로가기로 되돌아왔을 때 상세가 그대로 남아** 목록이 안 보인다
+     (그 경로는 openBriefScreen()·openMapScreen() 을 지나지 않는다). */
+  if($("#briefDetail") !== NO_EL && !$("#briefDetail").hidden) showBriefPane("list");
+  if($("#gisDetail") !== NO_EL && !$("#gisDetail").hidden) showGisPane("list");
   rememberScreen(id, push);
 }
 
@@ -1543,19 +1519,57 @@ function goBackScreen(fallbackId){
   history.replaceState({ screen:fallbackId, i:0 }, "");
 }
 
-addEventListener("popstate", e => {
-  // 모달 위에서 뒤로가기를 누르면 **모달만 닫는다.** 화면까지 넘어가면 하던 것을 잃는다.
-  const open = $$(".modal:not([hidden])");
-  if(open.length){
-    open.forEach(m => closeModal(m));
-    const now = $$(".screen").find(s => s.classList.contains("on"));
-    // 물러난 기록을 도로 채운다. ★ `i` 를 빠뜨리면 깊이가 0 이 되어
-    //   그 뒤로 '돌아가기' 가 뒤로가기 대신 fallback 을 타게 된다.
-    const back = (history.state && history.state.i) || 0;
-    if(now) history.pushState({ screen:"#" + now.id, i: back + 1 }, "");
-    return;
+/* 뒤로가기로 물러난 기록을 도로 채운다 — 겹쳐 있던 것만 걷어냈으므로 화면은 그대로다.
+   ★ `i` 를 빠뜨리면 깊이가 0 이 되어 그 뒤로 '돌아가기' 가 어긋난다. */
+function repushScreen(){
+  const now = $$(".screen").find(s => s.classList.contains("on"));
+  const back = (history.state && history.state.i) || 0;
+  if(now) history.pushState({ screen:"#" + now.id, i: back + 1 }, "");
+}
+
+/* 화면 **안에서** 펼쳐 놓은 상세를 목록으로 되돌린다. 되돌렸으면 true.
+   ★ 상세는 화면 전환이 아니라 같은 화면의 칸 전환이라 기록에 안 쌓인다.
+     그대로 두면 뒤로가기가 **화면을 통째로 벗어나** 목록을 다시 찾아가야 했다. */
+function backOnePane(){
+  const brief = $("#scr-brief");
+  if(brief !== NO_EL && brief.classList.contains("on") && !$("#briefDetail").hidden){
+    showBriefPane("list");
+    return true;
   }
-  // 화면 표시가 없는 기록(#projects 같은 본문 이동)은 건드리지 않는다
+  const map = $("#scr-map");
+  if(map !== NO_EL && map.classList.contains("on")){
+    /* ★ 휴대폰 지도에는 걷어낼 것이 셋 있다 — 마커 카드 · 올라온 시트 · 펼친 상세.
+       예전에는 시트를 열어 둔 채 뒤로가기를 누르면 **지도를 통째로 벗어나 홈으로** 갔다.
+       카드는 시트가 닫혔을 때만 보이므로(CSS) 둘이 함께 열리는 일은 없다. */
+    if(document.body.classList.contains("m")){
+      const peek = $("#mPeek");
+      if(peek !== NO_EL && !peek.hidden){ hideMapPeek(); return true; }
+      // 시트를 접는 코드는 mobile.js 의 이 단추 한 곳에 있다. 상세를 보고 있었으면
+      // 목록으로 되돌리는 일까지 그 단추가 한다 — 여기에 다시 쓰면 두 벌이 된다.
+      const sheet = document.getElementById("btnSheetClose");
+      if(sheet && !map.classList.contains("sheet-closed")){ sheet.click(); return true; }
+    }
+    if(!$("#gisDetail").hidden){
+      // 되돌리는 코드는 그 단추 한 곳에 있다
+      const back = document.getElementById("btn-gis-back-list");
+      if(back){ back.click(); return true; }
+    }
+  }
+  return false;
+}
+
+addEventListener("popstate", e => {
+  /* 뒤로가기는 **한 단계씩** 되돌린다 — 겹쳐 있는 것을 먼저 걷어내고,
+     걷어낼 것이 없을 때만 화면을 옮긴다. */
+
+  // ① 모달 — **가장 나중에 열린 것만** 닫는다 (겹쳐 열리기 때문)
+  const top = modalStack[modalStack.length - 1];
+  if(top && !top.hidden){ closeModal(top); repushScreen(); return; }
+
+  // ② 화면 안에서 상세를 펼쳐 놓았으면 목록으로
+  if(backOnePane()){ repushScreen(); return; }
+
+  // ③ 화면 이동. 표시가 없는 기록(#projects 같은 본문 이동)은 건드리지 않는다
   if(e.state && e.state.screen) show(e.state.screen, false);
 });
 
@@ -1622,9 +1636,14 @@ function unlockAll(){
    한 칸만 기억하면 안쪽 모달을 열 때 그 값이 덮여, 닫을 때 초점이
    `<body>` 로 떨어진다 — 스크린리더가 **아무것도 읽지 않는 상태**가 된다. */
 let focusStack = [];
+/* ★ **열린 순서**를 기억한다. 뒤로가기는 '가장 나중에 열린 것'만 닫아야 하는데,
+   DOM 순서로는 그것을 알 수 없다 (모달이 겹쳐 열리기 때문 — 상세 안에 '의견 제출'이 있다).
+   예전에는 뒤로가기 한 번에 **열린 모달이 다 닫혔다.** */
+let modalStack = [];
 function openModal(id){
   const m = $("#" + id);
   if(m === NO_EL) return;    // 이 화면에 없는 모달 — 잠그면 화면 전체가 먹통이 된다
+  modalStack = modalStack.filter(x => x !== m).concat(m);
   focusStack.push(document.activeElement);
   m.hidden = false;
   document.body.style.overflow = "hidden";
@@ -1633,6 +1652,7 @@ function openModal(id){
   if(x) x.focus();
 }
 function closeModal(m){
+  modalStack = modalStack.filter(x => x !== m);
   m.hidden = true;
   // 아래에 겹쳐 있던 모달이 있으면 **그것을** 다시 살린다 (화면 전체를 풀어 버리면 안 된다)
   const under = $$(".modal").find(x => x !== m && !x.hidden);
