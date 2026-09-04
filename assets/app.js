@@ -1757,7 +1757,7 @@ $$("[data-scope]").forEach(b =>
 $$("[data-nav]").forEach(el => el.addEventListener("click", e => {
   const kind = el.dataset.nav;
   if(kind === "map"){ openMapScreen(); return; }
-  // '관심 사업과 알림'은 본문 이동이 아니라 **화면 전환**이다 (지도로 보기와 같은 방식).
+  // '관심사업 / 알림'은 본문 이동이 아니라 **화면 전환**이다 (지도로 보기와 같은 방식).
   if(kind === "saved"){ show("#scr-saved"); renderSaved(); return; }
   /* ★ 주민 설명회 안내도 **따로 있는 화면**이다 (2026-09-04).
      예전에는 홈 안의 한 섹션이라 메뉴를 누르면 홈 아래로 스크롤만 했다 —
@@ -2491,7 +2491,10 @@ function bindProjectActions(rootSel, opts = {}){
       return;
     }
     const d = e.target.closest("[data-detail]");
-    if(d){ openDetail(d.dataset.detail); return; }
+    /* ★ '자세히 보기'는 화면에 따라 가는 곳이 다르다 (2026-09-04).
+       설명회 화면은 모달을 띄우지 않고 **그 화면에서** 목록↔상세를 번갈아 쓴다
+       (지도 화면과 같은 방식). 옵션으로 받아 두면 판단은 여기 한 곳에 남는다. */
+    if(d){ (opts.detail || openDetail)(d.dataset.detail); return; }
     // 마감일을 캘린더 파일로 받기 (구글 캘린더는 그냥 링크라 여기서 처리할 것이 없다)
     const c = e.target.closest("[data-cal-ics]");
     if(c){
@@ -2595,7 +2598,10 @@ function briefRowsHtml(p, b){
   return `<dl class="brief">${rows.map(([k, v]) =>
     `<div><dt>${k}</dt><dd>${v}</dd></div>`).join("")}</dl>`;
 }
-bindProjectActions("#openList");
+bindProjectActions("#openList", { detail: openBriefDetail });
+/* 상세 안의 단추(의견 제출 · 담아 두기 · 지도에서 보기 · EIASS 원문 · 캘린더)도
+   다른 화면과 **같게** 동작해야 한다. 이 한 줄이 없으면 눌러도 아무 일도 안 난다. */
+bindProjectActions("#briefDetail");
 bindPager("#projPager", "#projPerPage", "proj", render, "#projects");
 /* 설명회 화면을 연다. 목록은 자료를 읽을 때 이미 그려져 있지만,
    범위를 바꾼 뒤 들어올 수 있으니 한 번 다시 그린다. */
@@ -2603,11 +2609,44 @@ function openBriefScreen(){
   show("#scr-brief");
   resetPages();          // 다른 화면에서 넘겨 둔 페이지가 남아 있으면 1쪽부터 보여준다
   renderOpenList();
+  showBriefPane("list");  // 들어올 때는 언제나 목록부터 (상세를 보다 나갔어도)
+}
+
+/* 목록과 상세가 **같은 칸을 번갈아** 쓴다 (지도 화면의 showGisPane() 과 같은 방식).
+   설명회에서 '자세히 보기'를 모달로 덮으면 목록을 잃는데, 설명회는
+   '다른 사업은 언제인가'를 견주어 보는 자리라 목록이 남아 있어야 뜻이 있다. */
+function showBriefPane(which){
+  $("#briefList").hidden = which !== "list";
+  $("#briefDetail").hidden = which !== "detail";
   // 스크롤은 화면 안쪽 칸이 한다 (데스크톱 .saved-body / 휴대폰 .m-saved-body).
   const body = document.querySelector("#scr-brief .saved-body, #scr-brief .m-saved-body");
   if(body) body.scrollTop = 0;
 }
+
+/* 설명회 화면에서 사업 하나를 펼친다. 본문은 모달과 **같은** detailBodyHtml 이다. */
+function openBriefDetail(id){
+  const p = findProject(id);
+  if(!p) return;
+  $("#briefDetail").innerHTML = `
+    <div class="gis-detail-nav">
+      <button class="gis-detail-back" type="button" id="btn-brief-to-list">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 18l-6-6 6-6"></path></svg>
+        설명회 목록으로
+      </button>
+    </div>
+    <h2 class="h-l" style="margin:2px 0 14px">${esc(p.name)}</h2>
+    ${detailBodyHtml(p)}`;
+  showBriefPane("detail");
+  const back = $("#btn-brief-to-list");
+  if(back !== NO_EL) back.focus();   // 키보드로 눌러 들어왔으면 초점도 따라간다
+}
+
 $("#btn-brief-back").addEventListener("click", () => show("#scr-home"));
+/* '설명회 목록으로' — 상세를 그릴 때마다 새로 만들어지는 단추이므로
+   그 칸에 **위임해서** 듣는다 (매번 다시 붙이면 리스너가 쌓인다). */
+$("#briefDetail").addEventListener("click", e => {
+  if(e.target.closest("#btn-brief-to-list")) showBriefPane("list");
+});
 
 /* ★ 페이지를 넘기면 **목록 맨 위**로 올린다.
    예전 앵커는 `#participate`(홈 안의 섹션)였는데 그 섹션이 화면으로 빠져나갔다.
@@ -2638,12 +2677,11 @@ function calSectionHtml(p){
     </div>`;
 }
 
-function openDetail(id){
-  // 담아 둔 사업은 기한이 지났을 수 있으므로 CLOSED_PROJECTS 까지 찾는다.
-  const p = findProject(id);
-  if(!p) return;
-  $("#m-detail-t").textContent = p.name;
-  $("#detailBody").innerHTML = `
+/* ★ 상세 본문은 **이 함수 한 곳**에서만 만든다 (2026-09-04).
+   모달(`#m-detail`)과 설명회 화면(`#briefDetail`)이 같은 것을 쓴다 —
+   복사해 두면 한쪽만 고쳐져 **같은 사업이 화면마다 다르게 보인다.** */
+function detailBodyHtml(p){
+  return `
     <div class="contact-card" style="margin-bottom:4px">
       <div class="contact-row"><span class="k">유형</span><span class="v">${esc(p.typeLabel)}</span></div>
       <div class="contact-row"><span class="k">위치</span><span class="v">${esc(p.where)}</span></div>
@@ -2661,6 +2699,14 @@ function openDetail(id){
       ${p.sourceBizCd ? `<button class="btn btn--line btn--sm" type="button" data-eiass="${esc(p.id)}">EIASS 원문 페이지 열기 ↗</button>` : ""}
     </p>
     ${calSectionHtml(p)}`;
+}
+
+function openDetail(id){
+  // 담아 둔 사업은 기한이 지났을 수 있으므로 CLOSED_PROJECTS 까지 찾는다.
+  const p = findProject(id);
+  if(!p) return;
+  $("#m-detail-t").textContent = p.name;
+  $("#detailBody").innerHTML = detailBodyHtml(p);
   openModal("m-detail");
 }
 bindProjectActions("#detailBody", { closeModal:"#m-detail" });
@@ -2711,7 +2757,7 @@ function renderSaved(){
     /* ★ 담은 것이 없을 때는 **이 화면에서 할 수 있는 두 가지**를 알려 준다.
        '별표를 어떻게 누르나'는 아래 빈 상자가 이미 말하므로 여기서 되풀이하지 않는다
        (예전에 같은 문장이 화면에 두 번 나왔다).
-       아래 구독 칸을 가리키는 것이 이 화면 이름('관심 사업과 알림')과도 맞는다. */
+       아래 구독 칸을 가리키는 것이 이 화면 이름('관심사업 / 알림')과도 맞는다. */
     : `관심 있는 사업은 <b>별표(☆)</b>로 담아 두고,
        아래에서 <b>새 사업 알림</b>을 캘린더로 받을 수 있습니다.
        담은 목록은 <b>이 기기에만</b> 저장됩니다.${gone}`;
