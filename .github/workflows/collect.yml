@@ -117,12 +117,16 @@ jobs:
           import json, os
           try:
               with open("data/projects.json", encoding="utf-8") as f:
-                  n = len(json.load(f).get("projects", []))
+                  ps = json.load(f).get("projects", [])
           except Exception:
-              n = 0
-          print(f"지금 저장된 사업 {n}건")
+              ps = []
+          n = len(ps)
+          # 노선 도형이 있는 사업 수도 적어 둔다 — 수집 뒤 줄어들면 조회가 실패한 것이다.
+          routes = sum(1 for p in ps if p.get("routeGeom"))
+          print(f"지금 저장된 사업 {n}건 (노선 {routes}건)")
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
               f.write(f"count={n}\n")
+              f.write(f"routes={routes}\n")
           PY
 
       - name: EIASS 수집
@@ -206,6 +210,89 @@ jobs:
             git commit -m "데이터 갱신 $(date -u +'%Y-%m-%d')"
             git push
           fi
+
+      # ============================================================
+      # 속 알맹이 점검 — **커밋한 뒤에** 본다
+      #
+      # ★ 왜 커밋을 막지 않고 뒤에서 보나
+      #   해석·좌표·노선이 비어도 **사업 목록 자체는 값어치가 있다.** 여기서 커밋을 막으면
+      #   새로 뜬 사업이 주민에게 아예 안 간다. 그래서 자료는 올리고, 사람에게만 알린다.
+      #
+      # ★ 왜 경고가 아니라 실패인가
+      #   GitHub 은 **실패했을 때만** 저장소 주인에게 메일을 보낸다.
+      #   ::warning:: 은 로그를 열어 봐야 보이므로 **아무도 모른다** —
+      #   2026-08-30 에 Anthropic 키가 만료됐을 때 엿새 동안 몰랐던 것이 정확히 이 까닭이다.
+      #   (건수만 보는 안전장치는 그때 내내 '성공' 으로 끝났다)
+      # ============================================================
+      - name: 속 알맹이 점검 (비었으면 알린다)
+        if: ${{ inputs.limit == '' }}
+        run: |
+          python - <<'PY'
+          import datetime, io, json, sys
+
+          # ★ 한글·특수문자가 섞인 메시지를 그냥 print 하면 **윈도우 cp949 콘솔에서 죽는다.**
+          #   그러면 종료코드는 1 이 되지만 **정작 알리려던 문구가 안 나간다** —
+          #   이 점검이 있는 까닭 자체가 사라진다 (실측으로 걸렸다).
+          #   build_data.py 의 log() 가 하는 일과 같은 취지다.
+          sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
+
+          # ★ 러너는 UTC 다. 공람 기간 판정은 반드시 한국 날짜로 해야 한다
+          #   (build_data.py 의 today_kst() 와 같은 까닭 — 하루 어긋나면 판정이 뒤집힌다)
+          KST = datetime.timezone(datetime.timedelta(hours=9))
+          today = datetime.datetime.now(KST).date()
+
+          with open("data/projects.json", encoding="utf-8") as f:
+              ps = json.load(f).get("projects", [])
+
+          def in_view(p):
+              a, b = p.get("periodStart"), p.get("periodEnd")
+              if not a or not b:
+                  return False
+              return datetime.date.fromisoformat(a) <= today <= datetime.date.fromisoformat(b)
+
+          def has_analysis(p):
+              a = p.get("analysis")
+              return bool(a) and any(v for v in a.values())
+
+          bad = []
+
+          # ① 해석 — 공람 중이고 요약문을 잘 읽었는데(ok) 해석이 통째로 빈 것.
+          #    평가서 요약문에 8개 항목이 전부 없는 문서는 현실에 없다 = 만들기 실패다.
+          #    (공람이 끝난 사업은 저장 직전에 해석을 지우므로 여기서 세면 안 된다)
+          live = [p for p in ps if in_view(p)]
+          fail = [p for p in live if p.get("summaryState") == "ok" and not has_analysis(p)]
+          print(f"[해석] 공람 중 {len(live)}건 · 요약문 읽음 "
+                f"{sum(1 for p in live if p.get('summaryState') == 'ok')}건 · "
+                f"해석 못 만든 것 {len(fail)}건")
+          if fail:
+              for p in fail[:5]:
+                  print(f"    · {p.get('name','')[:44]}")
+              bad.append(f"AI 해석을 못 만든 사업 {len(fail)}건 "
+                         f"(요약문은 읽었는데 해석이 비었습니다. 키 만료·잔액·API 오류를 확인하세요)")
+
+          # ② 좌표 — 원래 못 찾는 주소가 조금 있다. 크게 늘면 VWorld 쪽 문제다.
+          nolat = [p for p in ps if p.get("lat") is None]
+          pct = (len(nolat) * 100 / len(ps)) if ps else 0
+          print(f"[좌표] 없는 사업 {len(nolat)}/{len(ps)}건 ({pct:.1f}%)")
+          if ps and pct > 20:
+              bad.append(f"좌표 없는 사업이 {pct:.0f}% 입니다 "
+                         f"(평소 0~5%. VWorld 키·중계를 확인하세요)")
+
+          # ③ 노선 — 수집 전보다 줄었으면 하천 도형 조회가 실패한 것이다.
+          before = int("${{ steps.before.outputs.routes }}" or 0)
+          now = sum(1 for p in ps if p.get("routeGeom"))
+          print(f"[노선] 수집 전 {before}건 -> 지금 {now}건")
+          if before and now < before:
+              bad.append(f"노선 도형이 {before}건에서 {now}건으로 줄었습니다 "
+                         f"(VWorld 하천망도 조회 실패로 보입니다)")
+
+          if bad:
+              print("::error::[속이 빔] " + " || ".join(bad)
+                    + " || 자료는 커밋했습니다. 화면은 정상 동작하지만 이 값들이 비어 있습니다.")
+              sys.stdout.flush()
+              sys.exit(1)
+          print("속 알맹이도 정상입니다.")
+          PY
 
       - name: 시험 실행 안내
         if: ${{ inputs.limit != '' }}

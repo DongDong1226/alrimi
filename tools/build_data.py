@@ -391,6 +391,22 @@ def parse_list_html(html_text, category_key):
     return items
 
 
+def list_page_has_table(html_text):
+    """목록 표(tbl01)가 그 페이지에 있었나.
+
+    ★ '표는 있는데 줄이 0' 과 '표 자체가 없다' 는 전혀 다른 일이다 (2026-09-05).
+      앞은 **목록 끝**이고, 뒤는 **페이지를 못 읽은 것**이다 —
+      EIASS 가 오류·점검 페이지를 주었거나, 화면 구조가 바뀌었거나,
+      중계가 엉뚱한 것을 돌려준 때다.
+      까닭을 알려 줄 때만 쓴다. 멈출지 말지는 아래 fetch_open_items 가 정한다.
+    """
+    try:
+        tree = lhtml.fromstring(html_text)
+    except Exception:
+        return False        # HTML 로 읽히지도 않는다 = 확실히 못 읽은 것
+    return bool(tree.xpath("//table[contains(@class,'tbl01')]"))
+
+
 def fetch_open_items(category_key, today, max_pages, delay):
     """공람기간에 오늘이 포함된 사업만 모은다.
 
@@ -411,6 +427,21 @@ def fetch_open_items(category_key, today, max_pages, delay):
         html_text = fetch_list_page(category_key, page)
         items = parse_list_html(html_text, category_key)
         if not items:
+            # ★ 1페이지가 비었다면 '목록 끝' 이 아니라 **못 읽은 것**이다 (2026-09-05).
+            #   EIASS 목록에 사업이 한 건도 없는 일은 없다. 그런데 예전에는 이 둘을
+            #   구분하지 않고 그냥 break 해서, **목록을 통째로 못 읽어도
+            #   '공람 0건' 으로 조용히 끝났다** — 수집은 '성공' 으로 마무리된다.
+            #   여기서 예외를 던지면 부르는 쪽이 **아무것도 저장하지 않고 멈춘다**
+            #   (그 안전장치는 이미 있었는데 이 길로는 닿지 않았다).
+            if page == 1:
+                why = ("사업 표(tbl01)가 아예 없습니다 — 오류·점검 페이지이거나 "
+                       "화면 구조가 바뀐 것으로 보입니다"
+                       if not list_page_has_table(html_text)
+                       else "표는 있는데 사업 줄이 하나도 없습니다")
+                raise RuntimeError(
+                    f"{label} 목록 1페이지를 읽지 못했습니다 — {why} "
+                    f"(받은 글자 {len(html_text)}자)")
+            log(f"  [{label}] {page}페이지에 사업이 없어 멈춥니다.")
             break   # 더 볼 페이지가 없다
 
         found_here = 0
