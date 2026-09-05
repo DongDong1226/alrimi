@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-05",
+  "generatedAt": "2026-09-06",
   "note": "이 파일은 tools/build_data.py가 EIASS 공개 자료를 바탕으로 자동 생성합니다. 생성 시점에 초안 공람 기간 안에 있던 사업만 담겨 있습니다. 공람이 끝난 사업의 analysis(환경영향분석)는 담지 않습니다 — 평가서 초안은 법적으로 공람 기간에만 열람할 수 있기 때문입니다.",
   "source": {
     "name": "환경영향평가 정보지원시스템(EIASS)",
@@ -11434,43 +11434,6 @@
       "opinionEnd": "2026-09-07",
       "summaryState": "ok",
       "firstSeen": "2026-08-03"
-    },
-    {
-      "id": "JJ20260141-105192",
-      "category": "strat",
-      "categoryLabel": "전략환경영향평가",
-      "name": "만인공원 조성사업",
-      "org": "전북지방환경청",
-      "tel": "063-238-8874",
-      "address": "전북특별자치도 남원시 동충동 (충정로 65)",
-      "locationTypes": [
-        "면형"
-      ],
-      "segments": [],
-      "bizType": "지역개발 / 개발구역 지정",
-      "isRiver": false,
-      "lat": 35.41365386614393,
-      "lon": 127.38267453976701,
-      "periodStart": "2026-07-31",
-      "periodEnd": "2026-08-28",
-      "viewPlace": "남원시청 도시과",
-      "briefPlace": "전북특별자치도 남원시 시청로 60, 남원시청(강당)",
-      "briefWhen": "2026년 8월 7일(금) 10시 00분",
-      "opinionPeriod": "2026.07.31 ~ 2026.09.05",
-      "deptName": "도시과",
-      "deptTel": "063-620-6476",
-      "summaryFileSeq": "3262092",
-      "analysis": null,
-      "riverNames": [],
-      "routeGeom": null,
-      "routeSource": null,
-      "sourceBizCd": "JJ20260141",
-      "sourceBizSeq": "105192",
-      "sourceStepCd": "A0",
-      "sourceViewPath": "/partcptn/choan/choanSperssView.do",
-      "opinionEnd": "2026-09-05",
-      "summaryState": "ok",
-      "firstSeen": "2026-07-31"
     },
     {
       "id": "HG20260476-105198",
