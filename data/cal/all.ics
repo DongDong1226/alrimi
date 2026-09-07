@@ -8,6 +8,60 @@ X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
 BEGIN:VEVENT
+UID:ND20260216-105559@alrimi
+DTSTAMP:20260907T000000Z
+DTSTART;VALUE=DATE:20261015
+DTEND;VALUE=DATE:20261016
+SUMMARY:[의견 마감] 울산 신불산 알프스 관광단지 지정
+DESCRIPTION:사업: 울산 신불산 알프스 관광단지 지정\n유형:
+  전략환경영향평가\n위치: 울산광역시 울주군 상북면 등
+ 억알프스리 (오리밭들길 4)\n기관: 낙동강유역환경청\n공
+ 람기간: 2026-09-07 ~ 2026-10-08\n의견 제출 마감: 2026-10-15\n\n
+ 의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eias
+ s.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:울산광역시 울주군 상북면 등억알프스리 (오리밭
+ 들길 4)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:울산 신불산 알프스 관광단지 지정 의견 제출 
+ 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:울산 신불산 알프스 관광단지 지정 의견 제출 
+ 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:HG20260529-105411@alrimi
+DTSTAMP:20260907T000000Z
+DTSTART;VALUE=DATE:20260928
+DTEND;VALUE=DATE:20260929
+SUMMARY:[의견 마감] 인천대로 주변 지구단위계획구역 재정
+ 비
+DESCRIPTION:사업: 인천대로 주변 지구단위계획구역 재정비\
+ n유형: 전략환경영향평가\n위치: 인천광역시 미추홀구 
+ 용현동 (능해길 43-7)\n기관: 한강유역환경청\n공람기간: 2
+ 026-09-07 ~ 2026-09-21\n의견 제출 마감: 2026-09-28\n\n의견은 EIAS
+ S 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n
+ 우리동네 개발사업 알리미
+LOCATION:인천광역시 미추홀구 용현동 (능해길 43-7)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:인천대로 주변 지구단위계획구역 재정비 의견 
+ 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:인천대로 주변 지구단위계획구역 재정비 의견 
+ 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:YS20260251-105580@alrimi
 DTSTAMP:20260904T000000Z
 DTSTART;VALUE=DATE:20260918
@@ -520,32 +574,6 @@ DESCRIPTION:제주시 농어촌도로 기본계획 의견 제출 오늘 마
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:JJ20260157-105363@alrimi
-DTSTAMP:20260819T000000Z
-DTSTART;VALUE=DATE:20260915
-DTEND;VALUE=DATE:20260916
-SUMMARY:[의견 마감] 익산시 문화산업진흥지구 지정
-DESCRIPTION:사업: 익산시 문화산업진흥지구 지정\n유형: 전
- 략환경영향평가\n위치: 전북특별자치도 익산시 중앙동3
- 가 (중앙로3길 10)\n기관: 전북지방환경청\n공람기간: 2026-
- 08-19 ~ 2026-09-15\n의견 제출 마감: 2026-09-15\n\n의견은 EIASS 
- 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우
- 리동네 개발사업 알리미
-LOCATION:전북특별자치도 익산시 중앙동3가 (중앙로3길 10)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:익산시 문화산업진흥지구 지정 의견 제출 마감 
- 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:익산시 문화산업진흥지구 지정 의견 제출 오늘 
- 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 UID:WJ20260154-105328@alrimi
 DTSTAMP:20260819T000000Z
 DTSTART;VALUE=DATE:20260923
@@ -678,33 +706,6 @@ ACTION:DISPLAY
 TRIGGER:-PT15H
 DESCRIPTION:한강 서울권역 하천기본계획 의견 제출 오늘 마
  감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:DG20260265-105330@alrimi
-DTSTAMP:20260813T000000Z
-DTSTART;VALUE=DATE:20260909
-DTEND;VALUE=DATE:20260910
-SUMMARY:[의견 마감] 대구광역시 도시관리계획(고도지구) 
- 결정(변경)
-DESCRIPTION:사업: 대구광역시 도시관리계획(고도지구) 결정
- (변경)\n유형: 전략환경영향평가\n위치: 대구광역시 동구
-  송정동 (팔공산로23길 76)\n기관: 대구지방환경청\n공람
- 기간: 2026-08-13 ~ 2026-09-02\n의견 제출 마감: 2026-09-09\n\n의
- 견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.g
- o.kr/\n\n우리동네 개발사업 알리미
-LOCATION:대구광역시 동구 송정동 (팔공산로23길 76)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:대구광역시 도시관리계획(고도지구) 결정(변경)
-  의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:대구광역시 도시관리계획(고도지구) 결정(변경)
-  의견 제출 오늘 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
