@@ -8,6 +8,84 @@ X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
 BEGIN:VEVENT
+UID:ME20260113-105587@alrimi
+DTSTAMP:20260908T000000Z
+DTSTART;VALUE=DATE:20261019
+DTEND;VALUE=DATE:20261020
+SUMMARY:[의견 마감] 성남금토2 공공주택지구
+DESCRIPTION:사업: 성남금토2 공공주택지구\n유형: 전략환경
+ 영향평가\n위치: 경기도 성남시 수정구 금토동 (금토로 1
+ 58)\n기관: 기후에너지환경부\n공람기간: 2026-09-08 ~ 2026-10-
+ 12\n의견 제출 마감: 2026-10-19\n\n의견은 EIASS 에서 본인인
+ 증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발
+ 사업 알리미
+LOCATION:경기도 성남시 수정구 금토동 (금토로 158)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:성남금토2 공공주택지구 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:성남금토2 공공주택지구 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:ND20260216-105559@alrimi
+DTSTAMP:20260907T000000Z
+DTSTART;VALUE=DATE:20261015
+DTEND;VALUE=DATE:20261016
+SUMMARY:[의견 마감] 울산 신불산 알프스 관광단지 지정
+DESCRIPTION:사업: 울산 신불산 알프스 관광단지 지정\n유형:
+  전략환경영향평가\n위치: 울산광역시 울주군 상북면 등
+ 억알프스리 (오리밭들길 4)\n기관: 낙동강유역환경청\n공
+ 람기간: 2026-09-07 ~ 2026-10-08\n의견 제출 마감: 2026-10-15\n\n
+ 의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eias
+ s.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:울산광역시 울주군 상북면 등억알프스리 (오리밭
+ 들길 4)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:울산 신불산 알프스 관광단지 지정 의견 제출 
+ 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:울산 신불산 알프스 관광단지 지정 의견 제출 
+ 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:HG20260529-105411@alrimi
+DTSTAMP:20260907T000000Z
+DTSTART;VALUE=DATE:20260928
+DTEND;VALUE=DATE:20260929
+SUMMARY:[의견 마감] 인천대로 주변 지구단위계획구역 재정
+ 비
+DESCRIPTION:사업: 인천대로 주변 지구단위계획구역 재정비\
+ n유형: 전략환경영향평가\n위치: 인천광역시 미추홀구 
+ 용현동 (능해길 43-7)\n기관: 한강유역환경청\n공람기간: 2
+ 026-09-07 ~ 2026-09-21\n의견 제출 마감: 2026-09-28\n\n의견은 EIAS
+ S 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n
+ 우리동네 개발사업 알리미
+LOCATION:인천광역시 미추홀구 용현동 (능해길 43-7)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:인천대로 주변 지구단위계획구역 재정비 의견 
+ 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:인천대로 주변 지구단위계획구역 재정비 의견 
+ 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:YS20260251-105580@alrimi
 DTSTAMP:20260904T000000Z
 DTSTART;VALUE=DATE:20260918
@@ -520,32 +598,6 @@ DESCRIPTION:제주시 농어촌도로 기본계획 의견 제출 오늘 마
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:JJ20260157-105363@alrimi
-DTSTAMP:20260819T000000Z
-DTSTART;VALUE=DATE:20260915
-DTEND;VALUE=DATE:20260916
-SUMMARY:[의견 마감] 익산시 문화산업진흥지구 지정
-DESCRIPTION:사업: 익산시 문화산업진흥지구 지정\n유형: 전
- 략환경영향평가\n위치: 전북특별자치도 익산시 중앙동3
- 가 (중앙로3길 10)\n기관: 전북지방환경청\n공람기간: 2026-
- 08-19 ~ 2026-09-15\n의견 제출 마감: 2026-09-15\n\n의견은 EIASS 
- 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우
- 리동네 개발사업 알리미
-LOCATION:전북특별자치도 익산시 중앙동3가 (중앙로3길 10)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:익산시 문화산업진흥지구 지정 의견 제출 마감 
- 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:익산시 문화산업진흥지구 지정 의견 제출 오늘 
- 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 UID:WJ20260154-105328@alrimi
 DTSTAMP:20260819T000000Z
 DTSTART;VALUE=DATE:20260923
@@ -678,33 +730,6 @@ ACTION:DISPLAY
 TRIGGER:-PT15H
 DESCRIPTION:한강 서울권역 하천기본계획 의견 제출 오늘 마
  감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:DG20260265-105330@alrimi
-DTSTAMP:20260813T000000Z
-DTSTART;VALUE=DATE:20260909
-DTEND;VALUE=DATE:20260910
-SUMMARY:[의견 마감] 대구광역시 도시관리계획(고도지구) 
- 결정(변경)
-DESCRIPTION:사업: 대구광역시 도시관리계획(고도지구) 결정
- (변경)\n유형: 전략환경영향평가\n위치: 대구광역시 동구
-  송정동 (팔공산로23길 76)\n기관: 대구지방환경청\n공람
- 기간: 2026-08-13 ~ 2026-09-02\n의견 제출 마감: 2026-09-09\n\n의
- 견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.g
- o.kr/\n\n우리동네 개발사업 알리미
-LOCATION:대구광역시 동구 송정동 (팔공산로23길 76)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:대구광역시 도시관리계획(고도지구) 결정(변경)
-  의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:대구광역시 도시관리계획(고도지구) 결정(변경)
-  의견 제출 오늘 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
@@ -871,84 +896,6 @@ TRIGGER:-PT15H
 DESCRIPTION:영동 군관리계획(용도지역·지구\, 농어촌관광·
  휴양형 지구단위계획) 결정(변경)(안) 의견 제출 오늘 마
  감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:YS20260235-105248@alrimi
-DTSTAMP:20260803T000000Z
-DTSTART;VALUE=DATE:20260907
-DTEND;VALUE=DATE:20260908
-SUMMARY:[의견 마감] 현경 수양저수지 수질개선사업
-DESCRIPTION:사업: 현경 수양저수지 수질개선사업\n유형: 전
- 략환경영향평가\n위치: 전남광주통합특별시 무안군 현
- 경면 수양리 (석북길 167-62)\n기관: 영산강유역환경청\n공
- 람기간: 2026-08-03 ~ 2026-08-31\n의견 제출 마감: 2026-09-07\n\n
- 의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eias
- s.go.kr/\n\n우리동네 개발사업 알리미
-LOCATION:전남광주통합특별시 무안군 현경면 수양리 (석북
- 길 167-62)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:현경 수양저수지 수질개선사업 의견 제출 마감 
- 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:현경 수양저수지 수질개선사업 의견 제출 오늘 
- 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:DG20260245-105162@alrimi
-DTSTAMP:20260803T000000Z
-DTSTART;VALUE=DATE:20260907
-DTEND;VALUE=DATE:20260908
-SUMMARY:[의견 마감] 밀양강권역(동창천 단장천) 국가 하천
- 기본계획
-DESCRIPTION:사업: 밀양강권역(동창천 단장천) 국가 하천기
- 본계획\n유형: 전략환경영향평가\n위치: 경상북도 청도
- 군 운문면 방지리 (방지강변길 5)\n기관: 대구지방환경청
- \n공람기간: 2026-08-03 ~ 2026-08-31\n의견 제출 마감: 2026-09-07\
- n\n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.e
- iass.go.kr/\n\n우리동네 개발사업 알리미
-LOCATION:경상북도 청도군 운문면 방지리 (방지강변길 5)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:밀양강권역(동창천 단장천) 국가 하천기본계획 
- 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:밀양강권역(동창천 단장천) 국가 하천기본계획 
- 의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:JJ20260141-105192@alrimi
-DTSTAMP:20260731T000000Z
-DTSTART;VALUE=DATE:20260905
-DTEND;VALUE=DATE:20260906
-SUMMARY:[의견 마감] 만인공원 조성사업
-DESCRIPTION:사업: 만인공원 조성사업\n유형: 전략환경영향
- 평가\n위치: 전북특별자치도 남원시 동충동 (충정로 65)\n
- 기관: 전북지방환경청\n공람기간: 2026-07-31 ~ 2026-08-28\n의
- 견 제출 마감: 2026-09-05\n\n의견은 EIASS 에서 본인인증 후 
- 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 
- 알리미
-LOCATION:전북특별자치도 남원시 동충동 (충정로 65)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:만인공원 조성사업 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:만인공원 조성사업 의견 제출 오늘 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
@@ -1210,33 +1157,6 @@ ACTION:DISPLAY
 TRIGGER:-PT15H
 DESCRIPTION:345kV 신해남~신장성 송전선로 건설사업 의견 제
  출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:ME2026C014-45765@alrimi
-DTSTAMP:20260731T000000Z
-DTSTART;VALUE=DATE:20260907
-DTEND;VALUE=DATE:20260908
-SUMMARY:[의견 마감] 영광칠해 해상풍력 발전사업(발전단지
- ~육상변전소 구간)
-DESCRIPTION:사업: 영광칠해 해상풍력 발전사업(발전단지~육
- 상변전소 구간)\n유형: 환경영향평가\n위치: 전남광주통
- 합특별시 영광군 낙월면 (안마길 97-6)\n기관: 기후에너지
- 환경부\n공람기간: 2026-07-31 ~ 2026-08-31\n의견 제출 마감: 20
- 26-09-07\n\n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttp
- s://www.eiass.go.kr/\n\n우리동네 개발사업 알리미
-LOCATION:전남광주통합특별시 영광군 낙월면 (안마길 97-6)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:영광칠해 해상풍력 발전사업(발전단지~육상변
- 전소 구간) 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:영광칠해 해상풍력 발전사업(발전단지~육상변
- 전소 구간) 의견 제출 오늘 마감
 END:VALARM
 END:VEVENT
 END:VCALENDAR

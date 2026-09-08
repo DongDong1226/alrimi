@@ -7,4 +7,31 @@ X-WR-CALNAME:인천광역시 미추홀구 개발사업 의견 마감
 X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:HG20260529-105411@alrimi
+DTSTAMP:20260907T000000Z
+DTSTART;VALUE=DATE:20260928
+DTEND;VALUE=DATE:20260929
+SUMMARY:[의견 마감] 인천대로 주변 지구단위계획구역 재정
+ 비
+DESCRIPTION:사업: 인천대로 주변 지구단위계획구역 재정비\
+ n유형: 전략환경영향평가\n위치: 인천광역시 미추홀구 
+ 용현동 (능해길 43-7)\n기관: 한강유역환경청\n공람기간: 2
+ 026-09-07 ~ 2026-09-21\n의견 제출 마감: 2026-09-28\n\n의견은 EIAS
+ S 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n
+ 우리동네 개발사업 알리미
+LOCATION:인천광역시 미추홀구 용현동 (능해길 43-7)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:인천대로 주변 지구단위계획구역 재정비 의견 
+ 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:인천대로 주변 지구단위계획구역 재정비 의견 
+ 제출 오늘 마감
+END:VALARM
+END:VEVENT
 END:VCALENDAR
