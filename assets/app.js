@@ -2780,19 +2780,43 @@ function savedBuckets(){
   return { open, closed, missing };
 }
 
+/* ★ 머리쪽 숫자는 '담은 번호 개수'가 아니라 **화면에 실제로 보여줄 수 있는 개수**다.
+   담은 사업은 공람·의견 기간이 지나면 EIASS 목록에서 내려가고, 우리 자료에도 남지 않는다.
+   그때 번호 개수를 그대로 띄우면 **배지는 5 인데 들어가 보면 0건**이 되어
+   담은 사람은 "사라졌다 / 고장났다"고 여긴다 (2026-09-08 에 실제로 그렇게 보였다).
+   ★ 자료를 아직 못 읽었을 때는 빼지 않는다 — 그러면 전부 '없는 것'으로 세어져
+   담아 둔 것이 없는 것처럼 보인다. 읽기가 끝나면 refreshAll() 이 다시 맞춰 준다. */
+function savedShowCount(){
+  if(!PROJECTS.length && !CLOSED_PROJECTS.length) return SAVED_IDS.length;
+  return SAVED_IDS.filter(id => findProject(id)).length;
+}
+
 function renderSaved(){
   const { open, closed, missing } = savedBuckets();
   const grid = $("#savedGrid");
 
-  $("#savedHead").textContent = SAVED_IDS.length
-    ? `담아 둔 사업 ${open.length + closed.length}건`
-    : "아직 담아 둔 사업이 없습니다";
+  const shown = open.length + closed.length;
+  /* ★ 담은 것은 있는데 자료에 하나도 안 남은 경우가 실제로 있다.
+     그때 제목이 "담아 둔 사업 0건"이면 별표를 누른 기억과 어긋나 고장으로 보인다.
+     무슨 일이 있었는지 제목에서 바로 밝힌다. */
+  const allGone = missing > 0 && shown === 0;
+  $("#savedHead").textContent = allGone
+    ? `담아 둔 사업 ${missing}건이 목록에서 내려갔습니다`
+    : SAVED_IDS.length
+      ? `담아 둔 사업 ${shown}건`
+      : "아직 담아 둔 사업이 없습니다";
 
   /* 문구는 짧게, 그러나 **기기에 묶여 있다는 사실은 반드시** 남긴다.
      모르면 폰에서 담고 PC 에서 열었을 때 "사라졌다"고 여긴다 — 고칠 수 있는 문제가 아니라
      계정이 없어서 생기는 구조적 한계이므로, 화면이 밝히는 것 말고는 방법이 없다. */
   const gone = missing ? ` EIASS 목록에서 내려간 사업 ${missing}건은 빼고 보여드립니다.` : "";
-  $("#savedNote").innerHTML = SAVED_IDS.length
+  $("#savedNote").innerHTML = allGone
+    /* 담은 것이 전부 자료에서 빠진 경우 — '마감이 가까운 순서입니다'로 시작하면
+       0건인 화면과 어긋난다. 왜 안 보이는지부터 말한다. */
+    ? `담아 두셨던 ${missing}건은 <b>공람과 의견 제출 기간이 모두 끝나</b> EIASS 목록에서 내려갔습니다.
+       자료가 남지 않아 내용을 보여드릴 수 없습니다.
+       담은 목록은 <b>이 기기에만 저장</b>되어 다른 기기에서는 보이지 않습니다.`
+    : SAVED_IDS.length
     ? `마감이 가까운 순서입니다.
        <b>이 기기에만 저장</b>되어 다른 기기에서는 보이지 않고, 브라우저 기록을 지우면 사라집니다.${gone}`
     /* ★ 담은 것이 없을 때는 **이 화면에서 할 수 있는 두 가지**를 알려 준다.
@@ -2844,12 +2868,26 @@ function renderSaved(){
            마감일을 놓치지 않고 지켜보고 싶은 사업을 담아 두세요.</p>
          <div class="proj-empty-btns">
            <button class="btn btn--primary btn--sm btn--pill" type="button" id="btnSavedGoHome">사업 목록 보러 가기</button>
+           ${allGone ? `<button class="btn btn--line btn--sm btn--pill" type="button" id="btnSavedClearGone">담은 목록 비우기 (${missing}건)</button>` : ""}
          </div>
        </div>`;
   const go = $("#btnSavedGoHome");
   if(go) go.addEventListener("click", () => {
     show("#scr-home");
     $("#projects").scrollIntoView({ behavior:"smooth", block:"start" });
+  });
+
+  /* ★ 비우는 단추가 여기에도 있어야 한다. 원래 있던 '기한이 지난 사업 비우기'는
+     #savedClosedWrap 안에 있는데, 담은 것이 전부 자료에서 빠지면 그 칸이 숨어서
+     **비울 길이 아예 없어진다** — 배지 숫자가 영영 그대로 남는다.
+     스스로 지우지는 않는다. 일부러 담아 둔 것이 말없이 사라지면 그것도 고장으로 보인다. */
+  const cg = $("#btnSavedClearGone");
+  if(cg) cg.addEventListener("click", () => {
+    if(!confirm(`목록에서 내려간 ${missing}건을 담은 목록에서 비울까요?`)) return;
+    SAVED_IDS = SAVED_IDS.filter(id => findProject(id));
+    lsSet(LSSAVED, SAVED_IDS);
+    syncSavedUi();
+    renderSaved();
   });
 
   $("#savedClosedWrap").hidden = !closed.length;
@@ -2873,10 +2911,11 @@ function syncSavedUi(){
   });
 
   // 담은 개수는 헤더 메뉴와 목록 줄 두 곳에 같이 나온다 (헤더는 좁은 창에서 숨기 때문)
+  const n = savedShowCount();
   const cnt = $("#savedCount");
-  cnt.textContent = SAVED_IDS.length;
-  cnt.hidden = !SAVED_IDS.length;
-  $("#savedCount2").textContent = SAVED_IDS.length;
+  cnt.textContent = n;
+  cnt.hidden = !n;
+  $("#savedCount2").textContent = n;
 
   // 담은 사업 화면을 보고 있는 중이면 목록도 다시 그린다 (별표를 빼면 그 자리에서 빠져야 한다)
   if($("#scr-saved").classList.contains("on")) renderSaved();
