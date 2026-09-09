@@ -10,10 +10,10 @@
   },
   "stats": {
     "underReview": {
-      "strat": 135,
-      "main": 106,
-      "small": 363,
-      "total": 604
+      "strat": 137,
+      "main": 105,
+      "small": 382,
+      "total": 624
     }
   },
   "projects": [
@@ -3489,6 +3489,52 @@
       "sourceViewPath": "/partcptn/choan/choanSperssView.do",
       "opinionEnd": "2026-09-26",
       "firstSeen": "2026-08-26"
+    },
+    {
+      "id": "JJ20260157-105363",
+      "category": "strat",
+      "categoryLabel": "전략환경영향평가",
+      "name": "익산시 문화산업진흥지구 지정",
+      "org": "전북지방환경청",
+      "tel": "063-238-8873",
+      "address": "전북특별자치도 익산시 중앙동3가 (중앙로3길 10)",
+      "locationTypes": [
+        "면형"
+      ],
+      "segments": [],
+      "bizType": "산업입지 / 문화산업진흥기구의 지정",
+      "isRiver": false,
+      "lat": 35.940031164625736,
+      "lon": 126.94983270952969,
+      "periodStart": "2026-08-19",
+      "periodEnd": "2026-09-15",
+      "viewPlace": "1. 익산시 문화관광산업과 2. 익산시 홈페이지(www.iksan.go.kr) 3. 환경영향평가정보지원시스템(www.eiass.go.kr)",
+      "briefPlace": "중앙동 행정복지센터(3층)",
+      "briefWhen": "20260828(금), 11:00",
+      "opinionPeriod": "2026.08.19 ~ 2026.09.15",
+      "deptName": "익산시 문화관광산업과",
+      "deptTel": "063-859-7389",
+      "summaryFileSeq": "3269198",
+      "summaryState": "ok",
+      "analysis": {
+        "overview": "익산시에서 문화산업진흥지구를 지정하는 사업입니다. 익산역과 구도심 상권 지역인 중앙동과 마동 일원에 약 416,000제곱미터 규모의 지구를 2025년부터 2030년까지 약 1,364억 원을 들여 조성할 계획입니다. 가상융합산업, 홀로테크, 창작주거, 체험, 실증 등 5개 구역으로 나누어 문화산업 관련 시설을 만들 예정입니다.",
+        "air": null,
+        "noise": "공사 기간 중 소음과 진동이 일시적으로 발생할 것으로 예상되며, 적절한 저감 대책을 통해 영향을 최소화하기로 되어 있습니다.",
+        "water": "금강 수계의 만경 C 유역에 포함되어 있으며, 상수원보호구역은 약 2.4km 떨어져 있습니다.",
+        "nature": "공사 시 생태계 훼손 등 자연환경에 영향이 예상됩니다. 야생생물보호구역은 약 1.7km, 겨울철새 도래지는 약 2.5km 떨어져 있습니다. 천연기념물인 익산 천호동굴은 동측 약 18.7m 떨어져 있습니다.",
+        "land": "공사 시 지형의 변화가 발생할 것으로 예상되며, 지형에 순응하는 개발계획 수립과 지형변화 최소화 대책을 마련하기로 되어 있습니다. 계획지구는 3등급 생태·경관 지역에 위치합니다.",
+        "waste": null,
+        "etc": "저유황유 사용지역으로 지정되어 경유는 황함유량 0.1% 이하, 중유는 0.3% 이하를 사용해야 합니다. 공사는 우기와 야생생물 산란시기를 고려하여 연차별·구역별로 단계적으로 진행할 계획입니다."
+      },
+      "riverNames": [],
+      "routeGeom": null,
+      "routeSource": null,
+      "sourceBizCd": "JJ20260157",
+      "sourceBizSeq": "105363",
+      "sourceStepCd": "A0",
+      "sourceViewPath": "/partcptn/choan/choanSperssView.do",
+      "opinionEnd": "2026-09-15",
+      "firstSeen": "2026-09-09"
     },
     {
       "id": "WJ20260154-105328",

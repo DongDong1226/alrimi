@@ -8,6 +8,32 @@ X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
 BEGIN:VEVENT
+UID:JJ20260157-105363@alrimi
+DTSTAMP:20260819T000000Z
+DTSTART;VALUE=DATE:20260915
+DTEND;VALUE=DATE:20260916
+SUMMARY:[의견 마감] 익산시 문화산업진흥지구 지정
+DESCRIPTION:사업: 익산시 문화산업진흥지구 지정\n유형: 전
+ 략환경영향평가\n위치: 전북특별자치도 익산시 중앙동3
+ 가 (중앙로3길 10)\n기관: 전북지방환경청\n공람기간: 2026-
+ 08-19 ~ 2026-09-15\n의견 제출 마감: 2026-09-15\n\n의견은 EIASS 
+ 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우
+ 리동네 개발사업 알리미
+LOCATION:전북특별자치도 익산시 중앙동3가 (중앙로3길 10)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:익산시 문화산업진흥지구 지정 의견 제출 마감 
+ 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:익산시 문화산업진흥지구 지정 의견 제출 오늘 
+ 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:JJ20260145-105276@alrimi
 DTSTAMP:20260813T000000Z
 DTSTART;VALUE=DATE:20260918
