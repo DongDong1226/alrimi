@@ -7,4 +7,32 @@ X-WR-CALNAME:서울특별시 중랑구 개발사업 의견 마감
 X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:HG20260585-105620@alrimi
+DTSTAMP:20260910T000000Z
+DTSTART;VALUE=DATE:20260928
+DTEND;VALUE=DATE:20260929
+SUMMARY:[의견 마감] 도시관리계획(중화생활권중심 지구단
+ 위계획구역 및 계획) 결정(변경)(안)
+DESCRIPTION:사업: 도시관리계획(중화생활권중심 지구단위
+ 계획구역 및 계획) 결정(변경)(안)\n유형: 전략환경영향
+ 평가\n위치: 서울특별시 중랑구 중화동 (동일로136길 10)\n
+ 기관: 한강유역환경청\n공람기간: 2026-09-10 ~ 2026-09-28\n의
+ 견 제출 마감: 2026-09-28\n\n의견은 EIASS 에서 본인인증 후 
+ 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 
+ 알리미
+LOCATION:서울특별시 중랑구 중화동 (동일로136길 10)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:도시관리계획(중화생활권중심 지구단위계획구
+ 역 및 계획) 결정(변경)(안) 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:도시관리계획(중화생활권중심 지구단위계획구
+ 역 및 계획) 결정(변경)(안) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
 END:VCALENDAR
