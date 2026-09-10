@@ -10,10 +10,10 @@
   },
   "stats": {
     "underReview": {
-      "strat": 138,
-      "main": 105,
-      "small": 382,
-      "total": 625
+      "strat": 136,
+      "main": 104,
+      "small": 388,
+      "total": 628
     }
   },
   "projects": [
@@ -493,6 +493,52 @@
       "sourceViewPath": "/partcptn/choan/choanSperssView.do",
       "opinionEnd": "2026-10-19",
       "firstSeen": "2026-09-04"
+    },
+    {
+      "id": "YS20260246-105555",
+      "category": "strat",
+      "categoryLabel": "전략환경영향평가",
+      "name": "제주시 고도지구 결정(정비) 전략환경영향평가",
+      "org": "영산강유역환경청",
+      "tel": "02--",
+      "address": "제주특별자치도 제주시 노형동 (원노형로 46)",
+      "locationTypes": [
+        "면형"
+      ],
+      "segments": [],
+      "bizType": "도시개발 / 도시관리계획 / 용도지역/용도지구의 지정 또는 변경 / 용도지구",
+      "isRiver": false,
+      "lat": 33.48476247024243,
+      "lon": 126.48453703237018,
+      "periodStart": "2026-09-04",
+      "periodEnd": "2026-09-18",
+      "viewPlace": "제주시 도시계획과, 읍,면사무소, 동주민센터",
+      "briefPlace": "다른법령에 따른 주민의견 수렴절차에서 의견수렴 진행",
+      "briefWhen": "다른법령에 따른 주민의견 수렴절차에서 의견수렴 진행",
+      "opinionPeriod": "2026.09.04 ~ 2026.09.18",
+      "deptName": "제주시 도시계획과",
+      "deptTel": "064-728-3512",
+      "summaryFileSeq": "3278479",
+      "summaryState": "ok",
+      "analysis": {
+        "overview": "제주시의 건물 높이를 규제하는 고도지구를 정리하는 사업입니다. 지난 오랜 시간 동안 일정하게 제한해온 높이규제를 현재의 도시 상황에 맞게 조정하려는 것입니다. 전체 29.564㎢ 구역 중 2.504㎢(8.5%)만 높이규제를 유지하고 나머지는 새로운 기준으로 관리하기로 했습니다.",
+        "air": null,
+        "noise": null,
+        "water": null,
+        "nature": null,
+        "land": null,
+        "waste": null,
+        "etc": null
+      },
+      "riverNames": [],
+      "routeGeom": null,
+      "routeSource": null,
+      "sourceBizCd": "YS20260246",
+      "sourceBizSeq": "105555",
+      "sourceStepCd": "A0",
+      "sourceViewPath": "/partcptn/choan/choanSperssView.do",
+      "opinionEnd": "2026-09-18",
+      "firstSeen": "2026-09-10"
     },
     {
       "id": "HG20260561-105537",
