@@ -7,4 +7,29 @@ X-WR-CALNAME:경상남도 통영시 개발사업 의견 마감
 X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:ND2026K004-45810@alrimi
+DTSTAMP:20260914T000000Z
+DTSTART;VALUE=DATE:20261023
+DTEND;VALUE=DATE:20261024
+SUMMARY:[의견 마감] 통영 도산관광단지 조성사업
+DESCRIPTION:사업: 통영 도산관광단지 조성사업\n유형: 환경
+ 영향평가\n위치: 경상남도 통영시 도산면 (구촌길 17)\n기
+ 관: 경상남도\n공람기간: 2026-09-14 ~ 2026-10-16\n의견 제출 
+ 마감: 2026-10-23\n\n의견은 EIASS 에서 본인인증 후 제출합니
+ 다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:경상남도 통영시 도산면 (구촌길 17)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:통영 도산관광단지 조성사업 의견 제출 마감 3
+ 일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:통영 도산관광단지 조성사업 의견 제출 오늘 마
+ 감
+END:VALARM
+END:VEVENT
 END:VCALENDAR
