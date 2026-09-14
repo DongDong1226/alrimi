@@ -552,59 +552,6 @@ DESCRIPTION:성환수향지구 산업유통형 지구단위계획변경(안
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:HG20260560-105535@alrimi
-DTSTAMP:20260831T000000Z
-DTSTART;VALUE=DATE:20260914
-DTEND;VALUE=DATE:20260915
-SUMMARY:[의견 마감] 2030년 수원 도시관리계획(재정비)
-DESCRIPTION:사업: 2030년 수원 도시관리계획(재정비)\n유형: 
- 전략환경영향평가\n위치: 경기도 수원시 팔달구 인계동 
- (효원로 241)\n기관: 한강유역환경청\n공람기간: 2026-08-31 ~
-  2026-09-14\n의견 제출 마감: 2026-09-14\n\n의견은 EIASS 에서 
- 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동
- 네 개발사업 알리미
-LOCATION:경기도 수원시 팔달구 인계동 (효원로 241)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:2030년 수원 도시관리계획(재정비) 의견 제출 마
- 감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:2030년 수원 도시관리계획(재정비) 의견 제출 오
- 늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:GG20260349-105442@alrimi
-DTSTAMP:20260828T000000Z
-DTSTART;VALUE=DATE:20260914
-DTEND;VALUE=DATE:20260915
-SUMMARY:[의견 마감] 증평군 화물자동차 공영차고지 조성 
- 군관리계획 결정(변경)
-DESCRIPTION:사업: 증평군 화물자동차 공영차고지 조성 군관
- 리계획 결정(변경)\n유형: 전략환경영향평가\n위치: 충청
- 북도 증평군 증평읍 미암리 (하평로 3)\n기관: 금강유역
- 환경청\n공람기간: 2026-08-28 ~ 2026-09-14\n의견 제출 마감: 20
- 26-09-14\n\n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttp
- s://www.eiass.go.kr/\n\n우리동네 개발사업 알리미
-LOCATION:충청북도 증평군 증평읍 미암리 (하평로 3)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:증평군 화물자동차 공영차고지 조성 군관리계
- 획 결정(변경) 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:증평군 화물자동차 공영차고지 조성 군관리계
- 획 결정(변경) 의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 UID:ND20260201-105339@alrimi
 DTSTAMP:20260828T000000Z
 DTSTART;VALUE=DATE:20260917
