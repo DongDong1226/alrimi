@@ -7,4 +7,31 @@ X-WR-CALNAME:충청북도 충주시 개발사업 의견 마감
 X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:WJ2026Q002-45815@alrimi
+DTSTAMP:20260915T000000Z
+DTSTART;VALUE=DATE:20261030
+DTEND;VALUE=DATE:20261031
+SUMMARY:[의견 마감] (주)삼일씨엔에스 채석단지 지정 환경
+ 영향평가(재협의)
+DESCRIPTION:사업: (주)삼일씨엔에스 채석단지 지정 환경영
+ 향평가(재협의)\n유형: 환경영향평가\n위치: 충청북도 충
+ 주시 대소원면 (쇠실로 595-46)\n기관: 충청북도\n공람기간
+ : 2026-09-15 ~ 2026-10-23\n의견 제출 마감: 2026-10-30\n\n의견은 E
+ IASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\
+ n우리동네 개발사업 알리미
+LOCATION:충청북도 충주시 대소원면 (쇠실로 595-46)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:(주)삼일씨엔에스 채석단지 지정 환경영향평가(
+ 재협의) 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:(주)삼일씨엔에스 채석단지 지정 환경영향평가(
+ 재협의) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
 END:VCALENDAR
