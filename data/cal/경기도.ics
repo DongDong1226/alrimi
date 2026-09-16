@@ -91,30 +91,6 @@ DESCRIPTION:일산 노후계획도시 아파트16구역(강촌1\,2백마1\,
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ME20260112-105509@alrimi
-DTSTAMP:20260902T000000Z
-DTSTART;VALUE=DATE:20260916
-DTEND;VALUE=DATE:20260917
-SUMMARY:[의견 마감] 포천 평화경제특구
-DESCRIPTION:사업: 포천 평화경제특구\n유형: 전략환경영향
- 평가\n위치: 경기도 포천시 관인면 냉정리 (찬우물길 93-2
- 1)\n기관: 기후에너지환경부\n공람기간: 2026-09-02 ~ 2026-09-1
- 6\n의견 제출 마감: 2026-09-16\n\n의견은 EIASS 에서 본인인증
-  후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사
- 업 알리미
-LOCATION:경기도 포천시 관인면 냉정리 (찬우물길 93-21)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:포천 평화경제특구 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:포천 평화경제특구 의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 UID:HG20260508-105322@alrimi
 DTSTAMP:20260824T000000Z
 DTSTART;VALUE=DATE:20261007
