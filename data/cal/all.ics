@@ -8,6 +8,66 @@ X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
 BEGIN:VEVENT
+UID:YS20260260-105680@alrimi
+DTSTAMP:20260917T000000Z
+DTSTART;VALUE=DATE:20261009
+DTEND;VALUE=DATE:20261010
+SUMMARY:[의견 마감] 핵융합 핵심기술 개발 및 첨단 인프라 
+ 구축사업을 위한 나주 도시관리계획(용도지역\, 시설:연
+ 구시설) 결정(변경)(안)
+DESCRIPTION:사업: 핵융합 핵심기술 개발 및 첨단 인프라 구
+ 축사업을 위한 나주 도시관리계획(용도지역\, 시설:연구
+ 시설) 결정(변경)(안)\n유형: 전략환경영향평가\n위치: 전
+ 남광주통합특별시 나주시 왕곡면 양산리 (고분로 1464-1)\
+ n기관: 영산강유역환경청\n공람기간: 2026-09-17 ~ 2026-10-02\n
+ 의견 제출 마감: 2026-10-09\n\n의견은 EIASS 에서 본인인증 
+ 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사
+ 업 알리미
+LOCATION:전남광주통합특별시 나주시 왕곡면 양산리 (고분
+ 로 1464-1)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:핵융합 핵심기술 개발 및 첨단 인프라 구축사업
+ 을 위한 나주 도시관리계획(용도지역\, 시설:연구시설) 
+ 결정(변경)(안) 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:핵융합 핵심기술 개발 및 첨단 인프라 구축사업
+ 을 위한 나주 도시관리계획(용도지역\, 시설:연구시설) 
+ 결정(변경)(안) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:YS20260259-105671@alrimi
+DTSTAMP:20260917T000000Z
+DTSTART;VALUE=DATE:20261028
+DTEND;VALUE=DATE:20261029
+SUMMARY:[의견 마감] 목포 삽진일반산업단지 확장부지조성
+DESCRIPTION:사업: 목포 삽진일반산업단지 확장부지조성\n유
+ 형: 전략환경영향평가\n위치: 전남광주통합특별시 목포
+ 시 연산동 (삽진산단로 37)\n기관: 영산강유역환경청\n공
+ 람기간: 2026-09-17 ~ 2026-10-21\n의견 제출 마감: 2026-10-28\n\n
+ 의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eias
+ s.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:전남광주통합특별시 목포시 연산동 (삽진산단로 3
+ 7)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:목포 삽진일반산업단지 확장부지조성 의견 제
+ 출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:목포 삽진일반산업단지 확장부지조성 의견 제
+ 출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:WJ20260173-105590@alrimi
 DTSTAMP:20260917T000000Z
 DTSTART;VALUE=DATE:20261029
@@ -33,6 +93,35 @@ ACTION:DISPLAY
 TRIGGER:-PT15H
 DESCRIPTION:화천군(간동) 소하천정비종합계획(변경) 의견 
  제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:YS20260249-105578@alrimi
+DTSTAMP:20260917T000000Z
+DTSTART;VALUE=DATE:20261014
+DTEND;VALUE=DATE:20261015
+SUMMARY:[의견 마감] 강진 군관리계획(용도지역\, 지구단위
+ 계획) 결정(변경) (안)
+DESCRIPTION:사업: 강진 군관리계획(용도지역\, 지구단위계
+ 획) 결정(변경) (안)\n유형: 전략환경영향평가\n위치: 전
+ 남광주통합특별시 강진군 성전면 월평리 (송계로 897-10)\
+ n기관: 영산강유역환경청\n공람기간: 2026-09-17 ~ 2026-10-07\n
+ 의견 제출 마감: 2026-10-14\n\n의견은 EIASS 에서 본인인증 
+ 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사
+ 업 알리미
+LOCATION:전남광주통합특별시 강진군 성전면 월평리 (송계
+ 로 897-10)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:강진 군관리계획(용도지역\, 지구단위계획) 결
+ 정(변경) (안) 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:강진 군관리계획(용도지역\, 지구단위계획) 결
+ 정(변경) (안) 의견 제출 오늘 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
