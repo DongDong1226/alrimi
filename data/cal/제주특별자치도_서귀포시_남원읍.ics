@@ -8,4 +8,33 @@ X-WR-CALNAME:제주특별자치도 서귀포시 남원읍 개발사업 의
 X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:YS20260266-105747@alrimi
+DTSTAMP:20260922T000000Z
+DTSTART;VALUE=DATE:20261102
+DTEND;VALUE=DATE:20261103
+SUMMARY:[의견 마감] 서귀포시 소하천(남원\,성산\,표선) 정
+ 비종합계획
+DESCRIPTION:사업: 서귀포시 소하천(남원\,성산\,표선) 정비
+ 종합계획\n유형: 전략환경영향평가\n위치: 제주특별자치
+ 도 서귀포시 남원읍 하례리 (하례학림로 96-2)\n기관: 영
+ 산강유역환경청\n공람기간: 2026-09-22 ~ 2026-10-26\n의견 제
+ 출 마감: 2026-11-02\n\n의견은 EIASS 에서 본인인증 후 제출
+ 합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알리
+ 미
+LOCATION:제주특별자치도 서귀포시 남원읍 하례리 (하례학
+ 림로 96-2)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:서귀포시 소하천(남원\,성산\,표선) 정비종합계
+ 획 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:서귀포시 소하천(남원\,성산\,표선) 정비종합계
+ 획 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
 END:VCALENDAR
