@@ -894,33 +894,6 @@ DESCRIPTION:제주시 농어촌도로 기본계획 의견 제출 오늘 마
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:WJ20260154-105328@alrimi
-DTSTAMP:20260819T000000Z
-DTSTART;VALUE=DATE:20260923
-DTEND;VALUE=DATE:20260924
-SUMMARY:[의견 마감] 양구 지석농공단지 조성사업
-DESCRIPTION:사업: 양구 지석농공단지 조성사업\n유형: 전략
- 환경영향평가\n위치: 강원특별자치도 양구군 동면 지석
- 리 (금강산로956번길 206)\n기관: 원주지방환경청\n공람기
- 간: 2026-08-19 ~ 2026-09-16\n의견 제출 마감: 2026-09-23\n\n의견
- 은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.k
- r/\n\n우리동네 개발사업 알리미
-LOCATION:강원특별자치도 양구군 동면 지석리 (금강산로956
- 번길 206)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:양구 지석농공단지 조성사업 의견 제출 마감 3
- 일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:양구 지석농공단지 조성사업 의견 제출 오늘 마
- 감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 UID:ND20260192-105281@alrimi
 DTSTAMP:20260819T000000Z
 DTSTART;VALUE=DATE:20261007
@@ -944,58 +917,6 @@ ACTION:DISPLAY
 TRIGGER:-PT15H
 DESCRIPTION:서낙동강수계 하천기본계획 의견 제출 오늘 마
  감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:HG20260513-105343@alrimi
-DTSTAMP:20260814T000000Z
-DTSTART;VALUE=DATE:20260923
-DTEND;VALUE=DATE:20260924
-SUMMARY:[의견 마감] 한강 서울권역 하천기본계획
-DESCRIPTION:사업: 한강 서울권역 하천기본계획\n유형: 전략
- 환경영향평가\n위치: 경기도 의왕시 왕곡동 (경수대로 10
- 6)\n기관: 한강유역환경청\n공람기간: 2026-08-14 ~ 2026-09-16\n
- 의견 제출 마감: 2026-09-23\n\n의견은 EIASS 에서 본인인증 
- 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사
- 업 알리미
-LOCATION:경기도 의왕시 왕곡동 (경수대로 106)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:한강 서울권역 하천기본계획 의견 제출 마감 3
- 일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:한강 서울권역 하천기본계획 의견 제출 오늘 마
- 감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:HG20260476-105198@alrimi
-DTSTAMP:20260730T000000Z
-DTSTART;VALUE=DATE:20260923
-DTEND;VALUE=DATE:20260924
-SUMMARY:[의견 마감] 한강 고양권역 하천기본계획(변경)
-DESCRIPTION:사업: 한강 고양권역 하천기본계획(변경)\n유형:
-  전략환경영향평가\n위치: 경기도 파주시 조리읍 장곡리
-  (통일로 1317-24)\n기관: 한강유역환경청\n공람기간: 2026-07
- -30 ~ 2026-09-14\n의견 제출 마감: 2026-09-23\n\n의견은 EIASS 에
- 서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리
- 동네 개발사업 알리미
-LOCATION:경기도 파주시 조리읍 장곡리 (통일로 1317-24)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:한강 고양권역 하천기본계획(변경) 의견 제출 
- 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:한강 고양권역 하천기본계획(변경) 의견 제출 
- 오늘 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
