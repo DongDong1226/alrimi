@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-26",
+  "generatedAt": "2026-09-27",
   "note": "이 파일은 tools/build_data.py가 EIASS 공개 자료를 바탕으로 자동 생성합니다. 생성 시점에 초안 공람 기간 안에 있던 사업만 담겨 있습니다. 공람이 끝난 사업의 analysis(환경영향분석)는 담지 않습니다 — 평가서 초안은 법적으로 공람 기간에만 열람할 수 있기 때문입니다.",
   "source": {
     "name": "환경영향평가 정보지원시스템(EIASS)",
@@ -7390,49 +7390,6 @@
       "sourceViewPath": "/partcptn/choan/choanSperssView.do",
       "opinionEnd": "2026-10-07",
       "firstSeen": "2026-08-24"
-    },
-    {
-      "id": "YS20260239-105431",
-      "category": "strat",
-      "categoryLabel": "전략환경영향평가",
-      "name": "제주시 농어촌도로 기본계획",
-      "org": "영산강유역환경청",
-      "tel": "062-410-5254",
-      "address": "제주특별자치도 제주시 애월읍 애월리 (애월원당길 101-10)",
-      "locationTypes": [
-        "선형"
-      ],
-      "segments": [
-        {
-          "from": "제주특별자치도 제주시 애월읍 애월리 (애월원당길 101-10) 제주시 관내 농어촌도로",
-          "to": "제주특별자치도 제주시 애월읍 애월리 (일주서로 6335-9)",
-          "length": "411.74km"
-        }
-      ],
-      "bizType": "도로건설 / 도로기본계획",
-      "isRiver": false,
-      "lat": 33.45361777965854,
-      "lon": 126.3234148821314,
-      "periodStart": "2026-08-19",
-      "periodEnd": "2026-09-18",
-      "viewPlace": "제주시청 건설과, 한림읍사무소, 애월읍사무소, 구좌읍사무소, 조천읍사무소, 한경면사무소, 우도면사무소, 추자면사무소",
-      "briefPlace": "제주테크노파크 제주벤처마루 10층 대강당",
-      "briefWhen": "20260826 15시",
-      "opinionPeriod": "2026.08.19 ~ 2026.09.26",
-      "deptName": "제주시청 건설과",
-      "deptTel": "064-728-3735",
-      "summaryFileSeq": "3273210",
-      "summaryState": "ok",
-      "analysis": null,
-      "riverNames": [],
-      "routeGeom": null,
-      "routeSource": null,
-      "sourceBizCd": "YS20260239",
-      "sourceBizSeq": "105431",
-      "sourceStepCd": "A0",
-      "sourceViewPath": "/partcptn/choan/choanSperssView.do",
-      "opinionEnd": "2026-09-26",
-      "firstSeen": "2026-08-26"
     },
     {
       "id": "ND20260192-105281",
