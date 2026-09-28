@@ -401,34 +401,6 @@ DESCRIPTION:워커힐아파트 일대 도시관리계획 수립 전략환
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:HG20260585-105620@alrimi
-DTSTAMP:20260910T000000Z
-DTSTART;VALUE=DATE:20260928
-DTEND;VALUE=DATE:20260929
-SUMMARY:[의견 마감] 도시관리계획(중화생활권중심 지구단
- 위계획구역 및 계획) 결정(변경)(안)
-DESCRIPTION:사업: 도시관리계획(중화생활권중심 지구단위
- 계획구역 및 계획) 결정(변경)(안)\n유형: 전략환경영향
- 평가\n위치: 서울특별시 중랑구 중화동 (동일로136길 10)\n
- 기관: 한강유역환경청\n공람기간: 2026-09-10 ~ 2026-09-28\n의
- 견 제출 마감: 2026-09-28\n\n의견은 EIASS 에서 본인인증 후 
- 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 
- 알리미
-LOCATION:서울특별시 중랑구 중화동 (동일로136길 10)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:도시관리계획(중화생활권중심 지구단위계획구
- 역 및 계획) 결정(변경)(안) 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:도시관리계획(중화생활권중심 지구단위계획구
- 역 및 계획) 결정(변경)(안) 의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 UID:HG20260584-105618@alrimi
 DTSTAMP:20260910T000000Z
 DTSTART;VALUE=DATE:20261023
@@ -531,63 +503,6 @@ ACTION:DISPLAY
 TRIGGER:-PT15H
 DESCRIPTION:울산 신불산 알프스 관광단지 지정 의견 제출 
  오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:HG20260529-105411@alrimi
-DTSTAMP:20260907T000000Z
-DTSTART;VALUE=DATE:20260928
-DTEND;VALUE=DATE:20260929
-SUMMARY:[의견 마감] 인천대로 주변 지구단위계획구역 재정
- 비
-DESCRIPTION:사업: 인천대로 주변 지구단위계획구역 재정비\
- n유형: 전략환경영향평가\n위치: 인천광역시 미추홀구 
- 용현동 (능해길 43-7)\n기관: 한강유역환경청\n공람기간: 2
- 026-09-07 ~ 2026-09-21\n의견 제출 마감: 2026-09-28\n\n의견은 EIAS
- S 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n
- 우리동네 개발사업 알리미
-LOCATION:인천광역시 미추홀구 용현동 (능해길 43-7)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:인천대로 주변 지구단위계획구역 재정비 의견 
- 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:인천대로 주변 지구단위계획구역 재정비 의견 
- 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:GG20260365-105582@alrimi
-DTSTAMP:20260904T000000Z
-DTSTART;VALUE=DATE:20260928
-DTEND;VALUE=DATE:20260929
-SUMMARY:[의견 마감] 영운근린공원 민간공원조성사업 비공
- 원시설부지에 대한 도시관리계획 결정(변경)(안)
-DESCRIPTION:사업: 영운근린공원 민간공원조성사업 비공원
- 시설부지에 대한 도시관리계획 결정(변경)(안)\n유형: 전
- 략환경영향평가\n위치: 충청북도 청주시 상당구 영운동 
- (수영로181번길 12)\n기관: 금강유역환경청\n공람기간: 2026
- -09-04 ~ 2026-09-28\n의견 제출 마감: 2026-09-28\n\n의견은 EIASS 
- 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우
- 리동네 개발사업 알리미
-LOCATION:충청북도 청주시 상당구 영운동 (수영로181번길 12)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:영운근린공원 민간공원조성사업 비공원시설부
- 지에 대한 도시관리계획 결정(변경)(안) 의견 제출 마감 
- 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:영운근린공원 민간공원조성사업 비공원시설부
- 지에 대한 도시관리계획 결정(변경)(안) 의견 제출 오늘 
- 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
@@ -1048,32 +963,6 @@ DESCRIPTION:과천자원정화센터 현대화사업 의견 제출 오늘
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:GW2026B003-45803@alrimi
-DTSTAMP:20260828T000000Z
-DTSTART;VALUE=DATE:20260928
-DTEND;VALUE=DATE:20260929
-SUMMARY:[의견 마감] 원주태봉일반산업단지 조성사업
-DESCRIPTION:사업: 원주태봉일반산업단지 조성사업\n유형: 
- 환경영향평가\n위치: 강원특별자치도 원주시 태장동 (치
- 악로 2156)\n기관: 강원특별자치도\n공람기간: 2026-08-28 ~ 20
- 26-09-28\n의견 제출 마감: 2026-09-28\n\n의견은 EIASS 에서 본
- 인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 
- 개발사업 알리미
-LOCATION:강원특별자치도 원주시 태장동 (치악로 2156)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:원주태봉일반산업단지 조성사업 의견 제출 마
- 감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:원주태봉일반산업단지 조성사업 의견 제출 오
- 늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 UID:HG2026A005-45801@alrimi
 DTSTAMP:20260904T000000Z
 DTSTART;VALUE=DATE:20261014
@@ -1122,32 +1011,6 @@ BEGIN:VALARM
 ACTION:DISPLAY
 TRIGGER:-PT15H
 DESCRIPTION:서울서리풀1 공공주택지구 조성사업 의견 제출 
- 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:DG2026A005-45797@alrimi
-DTSTAMP:20260824T000000Z
-DTSTART;VALUE=DATE:20260928
-DTEND;VALUE=DATE:20260929
-SUMMARY:[의견 마감] 구미 봉곡신도시지구 도시개발사업
-DESCRIPTION:사업: 구미 봉곡신도시지구 도시개발사업\n유형
- : 환경영향평가\n위치: 경상북도 구미시 봉곡동 (봉곡서
- 로7길 52-9)\n기관: 구미시\n공람기간: 2026-08-24 ~ 2026-09-21\n
- 의견 제출 마감: 2026-09-28\n\n의견은 EIASS 에서 본인인증 
- 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사
- 업 알리미
-LOCATION:경상북도 구미시 봉곡동 (봉곡서로7길 52-9)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:구미 봉곡신도시지구 도시개발사업 의견 제출 
- 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:구미 봉곡신도시지구 도시개발사업 의견 제출 
  오늘 마감
 END:VALARM
 END:VEVENT
