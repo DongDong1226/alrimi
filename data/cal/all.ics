@@ -8,6 +8,34 @@ X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
 BEGIN:VEVENT
+UID:YS20260274-105801@alrimi
+DTSTAMP:20260929T000000Z
+DTSTART;VALUE=DATE:20261013
+DTEND;VALUE=DATE:20261014
+SUMMARY:[의견 마감] 여수시 본청사 별관 증축 건립사업을 
+ 위한 도시관리계획 결정(변경)(안)
+DESCRIPTION:사업: 여수시 본청사 별관 증축 건립사업을 위
+ 한 도시관리계획 결정(변경)(안)\n유형: 전략환경영향평
+ 가\n위치: 전남광주통합특별시 여수시 학동 (시청로 1)\n
+ 기관: 영산강유역환경청\n공람기간: 2026-09-29 ~ 2026-10-13\n
+ 의견 제출 마감: 2026-10-13\n\n의견은 EIASS 에서 본인인증 
+ 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사
+ 업 알리미
+LOCATION:전남광주통합특별시 여수시 학동 (시청로 1)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:여수시 본청사 별관 증축 건립사업을 위한 도시
+ 관리계획 결정(변경)(안) 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:여수시 본청사 별관 증축 건립사업을 위한 도시
+ 관리계획 결정(변경)(안) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:YS20260266-105747@alrimi
 DTSTAMP:20260922T000000Z
 DTSTART;VALUE=DATE:20261102
