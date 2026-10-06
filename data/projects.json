@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-06",
+  "generatedAt": "2026-10-07",
   "note": "이 파일은 tools/build_data.py가 EIASS 공개 자료를 바탕으로 자동 생성합니다. 생성 시점에 초안 공람 기간 안에 있던 사업만 담겨 있습니다. 공람이 끝난 사업의 analysis(환경영향분석)는 담지 않습니다 — 평가서 초안은 법적으로 공람 기간에만 열람할 수 있기 때문입니다.",
   "source": {
     "name": "환경영향평가 정보지원시스템(EIASS)",
@@ -6110,16 +6110,7 @@
       "deptTel": "055-392-3104",
       "summaryFileSeq": "3273344",
       "summaryState": "ok",
-      "analysis": {
-        "overview": "양산시의 2024년부터 2035년까지 주거환경을 개선하고 체계적으로 관리하기 위한 기본계획입니다. 양산시 전체 주거·상업지역을 대상으로 노후주택 정비, 기반시설 확충, 주거지 관리 등을 추진합니다.",
-        "air": null,
-        "noise": null,
-        "water": null,
-        "nature": null,
-        "land": null,
-        "waste": null,
-        "etc": null
-      },
+      "analysis": null,
       "riverNames": [],
       "routeGeom": null,
       "routeSource": null,
