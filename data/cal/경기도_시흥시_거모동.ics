@@ -7,4 +7,29 @@ X-WR-CALNAME:경기도 시흥시 거모동 개발사업 의견 마감
 X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:HG2026L002-45823@alrimi
+DTSTAMP:20261012T000000Z
+DTSTART;VALUE=DATE:20261116
+DTEND;VALUE=DATE:20261117
+SUMMARY:[의견 마감] 죽율~장현~목감간 도로개설사업
+DESCRIPTION:사업: 죽율~장현~목감간 도로개설사업\n유형: 환
+ 경영향평가\n위치: 경기도 시흥시 거모동 (군자로 354)\n
+ 기관: 시흥시\n공람기간: 2026-10-12 ~ 2026-11-09\n의견 제출 
+ 마감: 2026-11-16\n\n의견은 EIASS 에서 본인인증 후 제출합니
+ 다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:경기도 시흥시 거모동 (군자로 354)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:죽율~장현~목감간 도로개설사업 의견 제출 마감
+  3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:죽율~장현~목감간 도로개설사업 의견 제출 오늘
+  마감
+END:VALARM
+END:VEVENT
 END:VCALENDAR
