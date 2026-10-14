@@ -36,6 +36,34 @@ DESCRIPTION:청주시 농어촌도로 기본 및 정비계획(변경) 의
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
+UID:GG2026B008-45831@alrimi
+DTSTAMP:20261002T000000Z
+DTSTART;VALUE=DATE:20261102
+DTEND;VALUE=DATE:20261103
+SUMMARY:[의견 마감] 청주 오창 제4일반산업단지 조성사업 
+ 환경영향평가
+DESCRIPTION:사업: 청주 오창 제4일반산업단지 조성사업 환
+ 경영향평가\n유형: 환경영향평가\n위치: 충청북도 청주
+ 시 청원구 오창읍 (신평중신1길 82-31)\n기관: 청주시\n공
+ 람기간: 2026-10-02 ~ 2026-11-02\n의견 제출 마감: 2026-11-02\n\n
+ 의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eias
+ s.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:충청북도 청주시 청원구 오창읍 (신평중신1길 82-31
+ )
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:청주 오창 제4일반산업단지 조성사업 환경영향
+ 평가 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:청주 오창 제4일반산업단지 조성사업 환경영향
+ 평가 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:WJ2026Q002-45815@alrimi
 DTSTAMP:20260917T000000Z
 DTSTART;VALUE=DATE:20261030
