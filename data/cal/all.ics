@@ -57,30 +57,30 @@ DESCRIPTION:동해권역 하천기본계획 의견 제출 오늘 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:ME20260095-105338@alrimi
-DTSTAMP:20261015T000000Z
-DTSTART;VALUE=DATE:20261208
-DTEND;VALUE=DATE:20261209
-SUMMARY:[의견 마감] 용인~충주 고속도로 민간투자사업
-DESCRIPTION:사업: 용인~충주 고속도로 민간투자사업\n유형: 
- 전략환경영향평가\n위치: 경기도 용인시 처인구 포곡읍 
- 신원리 (곡현로330번길 68-1)\n기관: 기후에너지환경부\n공
- 람기간: 2026-10-15 ~ 2026-12-01\n의견 제출 마감: 2026-12-08\n\n
- 의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eias
- s.go.kr/\n\n우리동네 개발사업 알리미
-LOCATION:경기도 용인시 처인구 포곡읍 신원리 (곡현로330번
- 길 68-1)
+UID:WJ20260196-105916@alrimi
+DTSTAMP:20261014T000000Z
+DTSTART;VALUE=DATE:20261028
+DTEND;VALUE=DATE:20261029
+SUMMARY:[의견 마감] 속초 도시관리계획(용도지역) 결정(변
+ 경)(안)
+DESCRIPTION:사업: 속초 도시관리계획(용도지역) 결정(변경)(
+ 안)\n유형: 전략환경영향평가\n위치: 강원특별자치도 속
+ 초시 노학동 (이목로 21-88)\n기관: 원주지방환경청\n공람
+ 기간: 2026-10-14 ~ 2026-10-28\n의견 제출 마감: 2026-10-28\n\n의
+ 견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.g
+ o.kr/\n\n우리동네 개발사업 알리미
+LOCATION:강원특별자치도 속초시 노학동 (이목로 21-88)
 BEGIN:VALARM
 ACTION:DISPLAY
 TRIGGER:-P3DT15H
-DESCRIPTION:용인~충주 고속도로 민간투자사업 의견 제출 마
- 감 3일 전
+DESCRIPTION:속초 도시관리계획(용도지역) 결정(변경)(안) 의
+ 견 제출 마감 3일 전
 END:VALARM
 BEGIN:VALARM
 ACTION:DISPLAY
 TRIGGER:-PT15H
-DESCRIPTION:용인~충주 고속도로 민간투자사업 의견 제출 오
- 늘 마감
+DESCRIPTION:속초 도시관리계획(용도지역) 결정(변경)(안) 의
+ 견 제출 오늘 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
