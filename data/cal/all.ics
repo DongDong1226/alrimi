@@ -8,6 +8,35 @@ X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
 BEGIN:VEVENT
+UID:JJ20260193-105924@alrimi
+DTSTAMP:20261020T000000Z
+DTSTART;VALUE=DATE:20261201
+DTEND;VALUE=DATE:20261202
+SUMMARY:[의견 마감] 구이 체육공원 조성을 위한 도시관리
+ 계획(용도지역\, 도시계획시설) 결정(변경)
+DESCRIPTION:사업: 구이 체육공원 조성을 위한 도시관리계획
+ (용도지역\, 도시계획시설) 결정(변경)\n유형: 전략환경
+ 영향평가\n위치: 전북특별자치도 완주군 구이면 덕천리 
+ (덕천구암2길 104-4)\n기관: 전북지방환경청\n공람기간: 202
+ 6-10-20 ~ 2026-11-20\n의견 제출 마감: 2026-12-01\n\n의견은 EIASS 
+ 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우
+ 리동네 개발사업 알리미
+LOCATION:전북특별자치도 완주군 구이면 덕천리 (덕천구암2
+ 길 104-4)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:구이 체육공원 조성을 위한 도시관리계획(용도
+ 지역\, 도시계획시설) 결정(변경) 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:구이 체육공원 조성을 위한 도시관리계획(용도
+ 지역\, 도시계획시설) 결정(변경) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:DG20260344-105912@alrimi
 DTSTAMP:20261020T000000Z
 DTSTART;VALUE=DATE:20261125
@@ -31,6 +60,34 @@ BEGIN:VALARM
 ACTION:DISPLAY
 TRIGGER:-PT15H
 DESCRIPTION:포항시 폐기물처리시설(포항에코빌리지) 조성 
+ 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:JJ20260198-105969@alrimi
+DTSTAMP:20261019T000000Z
+DTSTART;VALUE=DATE:20261127
+DTEND;VALUE=DATE:20261128
+SUMMARY:[의견 마감] 고창군 통합 바이오가스화시설 민간투
+ 자사업
+DESCRIPTION:사업: 고창군 통합 바이오가스화시설 민간투자
+ 사업\n유형: 전략환경영향평가\n위치: 전북특별자치도 
+ 고창군 공음면 덕암리 (덕암로 77-8)\n기관: 전북지방환경
+ 청\n공람기간: 2026-10-19 ~ 2026-11-18\n의견 제출 마감: 2026-11-
+ 27\n\n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://ww
+ w.eiass.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:전북특별자치도 고창군 공음면 덕암리 (덕암로 77-
+ 8)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:고창군 통합 바이오가스화시설 민간투자사업 
+ 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:고창군 통합 바이오가스화시설 민간투자사업 
  의견 제출 오늘 마감
 END:VALARM
 END:VEVENT
