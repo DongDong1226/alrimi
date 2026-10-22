@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-22",
+  "generatedAt": "2026-10-23",
   "note": "이 파일은 tools/build_data.py가 EIASS 공개 자료를 바탕으로 자동 생성합니다. 생성 시점에 초안 공람 기간 안에 있던 사업만 담겨 있습니다. 공람이 끝난 사업의 analysis(환경영향분석)는 담지 않습니다 — 평가서 초안은 법적으로 공람 기간에만 열람할 수 있기 때문입니다.",
   "source": {
     "name": "환경영향평가 정보지원시스템(EIASS)",
@@ -10,10 +10,10 @@
   },
   "stats": {
     "underReview": {
-      "strat": 144,
-      "main": 99,
-      "small": 397,
-      "total": 640
+      "strat": 143,
+      "main": 98,
+      "small": 396,
+      "total": 637
     }
   },
   "projects": [
@@ -11680,16 +11680,7 @@
       "deptTel": "033-440-2492",
       "summaryFileSeq": "3280019",
       "summaryState": "ok",
-      "analysis": {
-        "overview": "강원특별자치도 화천군 간동면의 소하천 45개소, 총 길이 66.76km를 정비하는 계획입니다. 제방, 호안, 배수시설, 교량, 보 등 다양한 시설물을 새로 설치하거나 개선하기로 되어 있습니다.",
-        "air": null,
-        "noise": null,
-        "water": "공사 중에 강우시 흙탕물이 하천으로 흘러들어갈 수 있습니다. 도송천, 냉장터골천, 깊은개천, 칼라장골천의 하류에는 물고기 보호 구역이 있어서, 흙탕물 유출 등으로 간접적인 영향이 예상되고 있습니다.",
-        "nature": "유촌천, 지당골천, 뛰개천, 운수골천, 갓골천은 생태·자연도 1등급 권역을 일부 통과합니다. 이 중 유촌천은 소나무-굴참나무 숲이 있고, 지당골천과 갓골천은 멸종 위기 양서류·파충류와 포유류가 있는 지역입니다. 등뒷골천, 운수골천, 운수현천, 갓골천, 김부터천은 산림 보호 구역을 통과합니다. 계획에서 기존 시설물을 개선하는 공사가 주이므로 숲 훼손 영향은 작을 것으로 예상되고 있습니다.",
-        "land": null,
-        "waste": null,
-        "etc": "공사 중에 비산먼지와 공사 장비로 인한 소음·진동이 발생할 수 있습니다. 춘천~속초 철도 건설, 접경지역 마을 조성 사업, 세대공존 주거단지 조성 사업 등 주변 사업들과 함께 시행될 예정입니다."
-      },
+      "analysis": null,
       "riverNames": [
         "가래골천",
         "간을천",
@@ -13596,41 +13587,6 @@
       "sourceViewPath": "/partcptn/choan/choanEiassView.do",
       "opinionEnd": "2026-11-02",
       "firstSeen": "2026-09-22"
-    },
-    {
-      "id": "GG2026B006-45816",
-      "category": "main",
-      "categoryLabel": "환경영향평가",
-      "name": "아산 영인일반산업단지 조성사업",
-      "org": "충청남도",
-      "tel": "041-530-6153",
-      "address": "충청남도 아산시 영인면 (역리길 105)",
-      "locationTypes": [],
-      "segments": [],
-      "bizType": "산업입지및산업단지의 조성",
-      "isRiver": false,
-      "lat": 36.869918950638635,
-      "lon": 126.96846261873412,
-      "periodStart": "2026-09-10",
-      "periodEnd": "2026-10-15",
-      "viewPlace": "충청남도(산업입지과), 아산시(투자유치과), 아산시 영인면 행정복지센터, 아산시 염치읍 행정복지센터, 아산시 음봉면 행정복지센터, 아산시 인주면 행정복지센터",
-      "briefPlace": "아산시 영인면 행정복지센터 2층",
-      "briefWhen": "2026년 09월 17일(목요일) 14:00",
-      "opinionPeriod": "2026.10.22 ~ 2026.10.22",
-      "deptName": "아산시(투자유치과)",
-      "deptTel": "041-530-6153",
-      "summaryFileSeq": "3282575",
-      "summaryState": "ok",
-      "analysis": null,
-      "riverNames": [],
-      "routeGeom": null,
-      "routeSource": null,
-      "sourceBizCd": "GG2026B006",
-      "sourceBizSeq": "45816",
-      "sourceStepCd": null,
-      "sourceViewPath": "/partcptn/choan/choanEiassView.do",
-      "opinionEnd": "2026-10-22",
-      "firstSeen": "2026-09-21"
     },
     {
       "id": "WJ2026Q002-45815",
