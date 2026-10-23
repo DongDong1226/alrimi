@@ -7,4 +7,30 @@ X-WR-CALNAME:경상남도 하동군 개발사업 의견 마감
 X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:YS20260280-105998@alrimi
+DTSTAMP:20261023T000000Z
+DTSTART;VALUE=DATE:20261106
+DTEND;VALUE=DATE:20261107
+SUMMARY:[의견 마감] 2030년 하동군관리계획(재정비)
+DESCRIPTION:사업: 2030년 하동군관리계획(재정비)\n유형: 전
+ 략환경영향평가\n위치: 경상남도 하동군 하동읍 읍내리 
+ (군청로 23)\n기관: 영산강유역환경청\n공람기간: 2026-10-23
+  ~ 2026-11-06\n의견 제출 마감: 2026-11-06\n\n의견은 EIASS 에서 
+ 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동
+ 네 개발사업 알리미
+LOCATION:경상남도 하동군 하동읍 읍내리 (군청로 23)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:2030년 하동군관리계획(재정비) 의견 제출 마감 3
+ 일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:2030년 하동군관리계획(재정비) 의견 제출 오늘 
+ 마감
+END:VALARM
+END:VEVENT
 END:VCALENDAR
