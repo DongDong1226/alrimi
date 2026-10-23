@@ -300,60 +300,6 @@ DESCRIPTION:부산~양산~울산 광역철도 건설사업 의견 제출
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:JJ20260192-105910@alrimi
-DTSTAMP:20261001T000000Z
-DTSTART;VALUE=DATE:20261023
-DTEND;VALUE=DATE:20261024
-SUMMARY:[의견 마감] 2030년 장수군관리계획(재정비)수립
-DESCRIPTION:사업: 2030년 장수군관리계획(재정비)수립\n유형:
-  전략환경영향평가\n위치: 전북특별자치도 장수군 장계
- 면 금곡리 (진장로 1817-4)\n기관: 전북지방환경청\n공람기
- 간: 2026-10-01 ~ 2026-10-23\n의견 제출 마감: 2026-10-23\n\n의견
- 은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.k
- r/\n\n우리동네 개발사업 알리미
-LOCATION:전북특별자치도 장수군 장계면 금곡리 (진장로 181
- 7-4)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:2030년 장수군관리계획(재정비)수립 의견 제출 
- 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:2030년 장수군관리계획(재정비)수립 의견 제출 
- 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:JJ20260190-105902@alrimi
-DTSTAMP:20261001T000000Z
-DTSTART;VALUE=DATE:20261023
-DTEND;VALUE=DATE:20261024
-SUMMARY:[의견 마감] 장수 군관릭계획(용도지역) 결정(변경)
-DESCRIPTION:사업: 장수 군관릭계획(용도지역) 결정(변경)\n
- 유형: 전략환경영향평가\n위치: 전북특별자치도 장수군 
- 계남면 가곡리 (가곡길 14-15)\n기관: 전북지방환경청\n공
- 람기간: 2026-10-01 ~ 2026-10-23\n의견 제출 마감: 2026-10-23\n\n
- 의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eias
- s.go.kr/\n\n우리동네 개발사업 알리미
-LOCATION:전북특별자치도 장수군 계남면 가곡리 (가곡길 14-
- 15)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:장수 군관릭계획(용도지역) 결정(변경) 의견 제
- 출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:장수 군관릭계획(용도지역) 결정(변경) 의견 제
- 출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 UID:YS20260266-105747@alrimi
 DTSTAMP:20260922T000000Z
 DTSTART;VALUE=DATE:20261102
@@ -573,87 +519,6 @@ ACTION:DISPLAY
 TRIGGER:-PT15H
 DESCRIPTION:수원 오목천지구 도시개발사업 의견 제출 오늘 
  마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:YS20260247-105562@alrimi
-DTSTAMP:20260911T000000Z
-DTSTART;VALUE=DATE:20261023
-DTEND;VALUE=DATE:20261024
-SUMMARY:[의견 마감] 고막원천권역 하천기본계획
-DESCRIPTION:사업: 고막원천권역 하천기본계획\n유형: 전략
- 환경영향평가\n위치: 전남광주통합특별시 함평군 해보
- 면 대창리 (창서길 68-121)\n기관: 영산강유역환경청\n공람
- 기간: 2026-09-11 ~ 2026-10-16\n의견 제출 마감: 2026-10-23\n\n의
- 견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.g
- o.kr/\n\n우리동네 개발사업 알리미
-LOCATION:전남광주통합특별시 함평군 해보면 대창리 (창서
- 길 68-121)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:고막원천권역 하천기본계획 의견 제출 마감 3일
-  전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:고막원천권역 하천기본계획 의견 제출 오늘 마
- 감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:HG20260586-105625@alrimi
-DTSTAMP:20260910T000000Z
-DTSTART;VALUE=DATE:20261021
-DTEND;VALUE=DATE:20261022
-SUMMARY:[의견 마감] 워커힐아파트 일대 도시관리계획 수립
-  전략환경영향평가
-DESCRIPTION:사업: 워커힐아파트 일대 도시관리계획 수립 전
- 략환경영향평가\n유형: 전략환경영향평가\n위치: 서울특
- 별시 광진구 광장동 (아차산로 635)\n기관: 한강유역환경
- 청\n공람기간: 2026-09-10 ~ 2026-10-23\n의견 제출 마감: 2026-10-
- 21\n\n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://ww
- w.eiass.go.kr/\n\n우리동네 개발사업 알리미
-LOCATION:서울특별시 광진구 광장동 (아차산로 635)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:워커힐아파트 일대 도시관리계획 수립 전략환
- 경영향평가 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:워커힐아파트 일대 도시관리계획 수립 전략환
- 경영향평가 의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:HG20260584-105618@alrimi
-DTSTAMP:20260910T000000Z
-DTSTART;VALUE=DATE:20261023
-DTEND;VALUE=DATE:20261024
-SUMMARY:[의견 마감] 양재~올림픽대로간 지하도로 민간투자
- 사업
-DESCRIPTION:사업: 양재~올림픽대로간 지하도로 민간투자사
- 업\n유형: 전략환경영향평가\n위치: 서울특별시 서초구 
- 양재동 (매헌로6길 58)\n기관: 한강유역환경청\n공람기간:
-  2026-09-10 ~ 2026-10-16\n의견 제출 마감: 2026-10-23\n\n의견은 EI
- ASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n
- 우리동네 개발사업 알리미
-LOCATION:서울특별시 서초구 양재동 (매헌로6길 58)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:양재~올림픽대로간 지하도로 민간투자사업 의
- 견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:양재~올림픽대로간 지하도로 민간투자사업 의
- 견 제출 오늘 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
@@ -888,57 +753,6 @@ ACTION:DISPLAY
 TRIGGER:-PT15H
 DESCRIPTION:(주)삼일씨엔에스 채석단지 지정 환경영향평가(
  재협의) 의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:ND2026K004-45810@alrimi
-DTSTAMP:20260914T000000Z
-DTSTART;VALUE=DATE:20261023
-DTEND;VALUE=DATE:20261024
-SUMMARY:[의견 마감] 통영 도산관광단지 조성사업
-DESCRIPTION:사업: 통영 도산관광단지 조성사업\n유형: 환경
- 영향평가\n위치: 경상남도 통영시 도산면 (구촌길 17)\n기
- 관: 경상남도\n공람기간: 2026-09-14 ~ 2026-10-16\n의견 제출 
- 마감: 2026-10-23\n\n의견은 EIASS 에서 본인인증 후 제출합니
- 다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알리미
-LOCATION:경상남도 통영시 도산면 (구촌길 17)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:통영 도산관광단지 조성사업 의견 제출 마감 3
- 일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:통영 도산관광단지 조성사업 의견 제출 오늘 마
- 감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:ME2026C016-45807@alrimi
-DTSTAMP:20260909T000000Z
-DTSTART;VALUE=DATE:20261023
-DTEND;VALUE=DATE:20261024
-SUMMARY:[의견 마감] 여수 문도 해상풍력 발전사업
-DESCRIPTION:사업: 여수 문도 해상풍력 발전사업\n유형: 환경
- 영향평가\n위치: 전남광주통합특별시 여수시 삼산면 (동
- 도로 123)\n기관: 기후에너지환경부\n공람기간: 2026-09-09 ~ 
- 2026-10-16\n의견 제출 마감: 2026-10-23\n\n의견은 EIASS 에서 본
- 인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 
- 개발사업 알리미
-LOCATION:전남광주통합특별시 여수시 삼산면 (동도로 123)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:여수 문도 해상풍력 발전사업 의견 제출 마감 3
- 일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:여수 문도 해상풍력 발전사업 의견 제출 오늘 
- 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT

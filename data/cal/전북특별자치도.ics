@@ -65,60 +65,6 @@ DESCRIPTION:고창군 통합 바이오가스화시설 민간투자사업
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:JJ20260192-105910@alrimi
-DTSTAMP:20261001T000000Z
-DTSTART;VALUE=DATE:20261023
-DTEND;VALUE=DATE:20261024
-SUMMARY:[의견 마감] 2030년 장수군관리계획(재정비)수립
-DESCRIPTION:사업: 2030년 장수군관리계획(재정비)수립\n유형:
-  전략환경영향평가\n위치: 전북특별자치도 장수군 장계
- 면 금곡리 (진장로 1817-4)\n기관: 전북지방환경청\n공람기
- 간: 2026-10-01 ~ 2026-10-23\n의견 제출 마감: 2026-10-23\n\n의견
- 은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.k
- r/\n\n우리동네 개발사업 알리미
-LOCATION:전북특별자치도 장수군 장계면 금곡리 (진장로 181
- 7-4)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:2030년 장수군관리계획(재정비)수립 의견 제출 
- 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:2030년 장수군관리계획(재정비)수립 의견 제출 
- 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:JJ20260190-105902@alrimi
-DTSTAMP:20261001T000000Z
-DTSTART;VALUE=DATE:20261023
-DTEND;VALUE=DATE:20261024
-SUMMARY:[의견 마감] 장수 군관릭계획(용도지역) 결정(변경)
-DESCRIPTION:사업: 장수 군관릭계획(용도지역) 결정(변경)\n
- 유형: 전략환경영향평가\n위치: 전북특별자치도 장수군 
- 계남면 가곡리 (가곡길 14-15)\n기관: 전북지방환경청\n공
- 람기간: 2026-10-01 ~ 2026-10-23\n의견 제출 마감: 2026-10-23\n\n
- 의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eias
- s.go.kr/\n\n우리동네 개발사업 알리미
-LOCATION:전북특별자치도 장수군 계남면 가곡리 (가곡길 14-
- 15)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:장수 군관릭계획(용도지역) 결정(변경) 의견 제
- 출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:장수 군관릭계획(용도지역) 결정(변경) 의견 제
- 출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 UID:JJ2026Q002-45822@alrimi
 DTSTAMP:20260910T000000Z
 DTSTART;VALUE=DATE:20261106
