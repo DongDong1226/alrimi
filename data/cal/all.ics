@@ -8,6 +8,61 @@ X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
 BEGIN:VEVENT
+UID:ME20260132-106042@alrimi
+DTSTAMP:20261028T000000Z
+DTSTART;VALUE=DATE:20261202
+DTEND;VALUE=DATE:20261203
+SUMMARY:[의견 마감] 신규원전(대형) 전원개발사업 예정구
+ 역 지정
+DESCRIPTION:사업: 신규원전(대형) 전원개발사업 예정구역 
+ 지정\n유형: 전략환경영향평가\n위치: 경상북도 영덕군 
+ 영덕읍 노물리 (영덕대게로 1391-3)\n기관: 기후에너지환
+ 경부\n공람기간: 2026-10-28 ~ 2026-11-25\n의견 제출 마감: 2026-
+ 12-02\n\n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps:/
+ /www.eiass.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:경상북도 영덕군 영덕읍 노물리 (영덕대게로 1391-3
+ )
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:신규원전(대형) 전원개발사업 예정구역 지정 의
+ 견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:신규원전(대형) 전원개발사업 예정구역 지정 의
+ 견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:HG20260672-105985@alrimi
+DTSTAMP:20261028T000000Z
+DTSTART;VALUE=DATE:20261111
+DTEND;VALUE=DATE:20261112
+SUMMARY:[의견 마감] 청안지구 도시관리계획(산업유통형 지
+ 구단위계획)결정(변경)
+DESCRIPTION:사업: 청안지구 도시관리계획(산업유통형 지구
+ 단위계획)결정(변경)\n유형: 전략환경영향평가\n위치: 경
+ 기도 여주시 점동면 청안리 (청안로 63-30)\n기관: 한강유
+ 역환경청\n공람기간: 2026-10-28 ~ 2026-11-11\n의견 제출 마감:
+  2026-11-11\n\n의견은 EIASS 에서 본인인증 후 제출합니다.\nh
+ ttps://www.eiass.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:경기도 여주시 점동면 청안리 (청안로 63-30)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:청안지구 도시관리계획(산업유통형 지구단위계
+ 획)결정(변경) 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:청안지구 도시관리계획(산업유통형 지구단위계
+ 획)결정(변경) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:ME20260095-105338@alrimi
 DTSTAMP:20261027T000000Z
 DTSTART;VALUE=DATE:20261218
@@ -834,6 +889,32 @@ ACTION:DISPLAY
 TRIGGER:-PT15H
 DESCRIPTION:(주)삼일씨엔에스 채석단지 지정 환경영향평가(
  재협의) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:ND2026B002-45782@alrimi
+DTSTAMP:20261028T000000Z
+DTSTART;VALUE=DATE:20261125
+DTEND;VALUE=DATE:20261126
+SUMMARY:[의견 마감] 서부산스마트밸리 재생사업지구계획
+DESCRIPTION:사업: 서부산스마트밸리 재생사업지구계획\n유
+ 형: 환경영향평가\n위치: 부산광역시 사하구 신평동 (을
+ 숙도대로 675)\n기관: 부산광역시\n공람기간: 2026-10-28 ~ 202
+ 6-11-25\n의견 제출 마감: 2026-11-25\n\n의견은 EIASS 에서 본인
+ 인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개
+ 발사업 알리미
+LOCATION:부산광역시 사하구 신평동 (을숙도대로 675)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P3DT15H
+DESCRIPTION:서부산스마트밸리 재생사업지구계획 의견 제출
+  마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-PT15H
+DESCRIPTION:서부산스마트밸리 재생사업지구계획 의견 제출
+  오늘 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
