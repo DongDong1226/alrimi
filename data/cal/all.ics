@@ -487,64 +487,6 @@ DESCRIPTION:부산~양산~울산 광역철도 건설사업 의견 제출
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:YS20260266-105747@alrimi
-DTSTAMP:20260922T000000Z
-DTSTART;VALUE=DATE:20261102
-DTEND;VALUE=DATE:20261103
-SUMMARY:[의견 마감] 서귀포시 소하천(남원\,성산\,표선) 정
- 비종합계획
-DESCRIPTION:사업: 서귀포시 소하천(남원\,성산\,표선) 정비
- 종합계획\n유형: 전략환경영향평가\n위치: 제주특별자치
- 도 서귀포시 남원읍 하례리 (하례학림로 96-2)\n기관: 영
- 산강유역환경청\n공람기간: 2026-09-22 ~ 2026-10-26\n의견 제
- 출 마감: 2026-11-02\n\n의견은 EIASS 에서 본인인증 후 제출
- 합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알리
- 미
-LOCATION:제주특별자치도 서귀포시 남원읍 하례리 (하례학
- 림로 96-2)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:서귀포시 소하천(남원\,성산\,표선) 정비종합계
- 획 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:서귀포시 소하천(남원\,성산\,표선) 정비종합계
- 획 의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:YS20260265-105746@alrimi
-DTSTAMP:20260922T000000Z
-DTSTART;VALUE=DATE:20261102
-DTEND;VALUE=DATE:20261103
-SUMMARY:[의견 마감] 서귀포시 소하천(대정\,안덕\,동지역) 
- 정비종합계획
-DESCRIPTION:사업: 서귀포시 소하천(대정\,안덕\,동지역) 정
- 비종합계획\n유형: 전략환경영향평가\n위치: 제주특별자
- 치도 서귀포시 대정읍 신도리 (노을해안로 574-41)\n기관: 
- 영산강유역환경청\n공람기간: 2026-09-22 ~ 2026-10-26\n의견 
- 제출 마감: 2026-11-02\n\n의견은 EIASS 에서 본인인증 후 제
- 출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알
- 리미
-LOCATION:제주특별자치도 서귀포시 대정읍 신도리 (노을해
- 안로 574-41)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:서귀포시 소하천(대정\,안덕\,동지역) 정비종합
- 계획 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:서귀포시 소하천(대정\,안덕\,동지역) 정비종합
- 계획 의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 UID:GG20260384-105721@alrimi
 DTSTAMP:20260922T000000Z
 DTSTART;VALUE=DATE:20261104
@@ -784,34 +726,6 @@ DESCRIPTION:담양 음식특화농공단지조성사업 의견 제출 오
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
-UID:GG2026B008-45831@alrimi
-DTSTAMP:20261002T000000Z
-DTSTART;VALUE=DATE:20261102
-DTEND;VALUE=DATE:20261103
-SUMMARY:[의견 마감] 청주 오창 제4일반산업단지 조성사업 
- 환경영향평가
-DESCRIPTION:사업: 청주 오창 제4일반산업단지 조성사업 환
- 경영향평가\n유형: 환경영향평가\n위치: 충청북도 청주
- 시 청원구 오창읍 (신평중신1길 82-31)\n기관: 청주시\n공
- 람기간: 2026-10-02 ~ 2026-11-02\n의견 제출 마감: 2026-11-02\n\n
- 의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eias
- s.go.kr/\n\n우리동네 개발사업 알리미
-LOCATION:충청북도 청주시 청원구 오창읍 (신평중신1길 82-31
- )
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:청주 오창 제4일반산업단지 조성사업 환경영향
- 평가 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:청주 오창 제4일반산업단지 조성사업 환경영향
- 평가 의견 제출 오늘 마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
 UID:GW2026B004-45830@alrimi
 DTSTAMP:20261007T000000Z
 DTSTART;VALUE=DATE:20261118
@@ -910,33 +824,6 @@ ACTION:DISPLAY
 TRIGGER:-PT15H
 DESCRIPTION:(유)우진산업사 채석단지 지정 의견 제출 오늘 
  마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:ND2026D005-45820@alrimi
-DTSTAMP:20260922T000000Z
-DTSTART;VALUE=DATE:20261102
-DTEND;VALUE=DATE:20261103
-SUMMARY:[의견 마감] 부산항 진해신항 항만시설용부지 조성
- 사업
-DESCRIPTION:사업: 부산항 진해신항 항만시설용부지 조성사
- 업\n유형: 환경영향평가\n위치: 경상남도 창원시 진해구 
- 연도동 (신항로 633)\n기관: 부산지방해양수산청 부산항
- 건설사무소\n공람기간: 2026-09-22 ~ 2026-10-26\n의견 제출 마
- 감: 2026-11-02\n\n의견은 EIASS 에서 본인인증 후 제출합니다
- .\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알리미
-LOCATION:경상남도 창원시 진해구 연도동 (신항로 633)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P3DT15H
-DESCRIPTION:부산항 진해신항 항만시설용부지 조성사업 의
- 견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-PT15H
-DESCRIPTION:부산항 진해신항 항만시설용부지 조성사업 의
- 견 제출 오늘 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
