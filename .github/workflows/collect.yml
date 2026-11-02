@@ -39,6 +39,10 @@ on:
         description: "이미 받아 둔 것을 무시하고 전부 다시 받기 (비용이 많이 든다)"
         type: boolean
         default: false
+      retry_analysis:
+        description: "AI 해석이 비어 있는 공람 중 사업만 다시 받기"
+        type: boolean
+        default: false
       limit:
         description: "유형별 최대 건수 (시험용). 넣으면 커밋하지 않는다."
         type: string
@@ -60,6 +64,8 @@ jobs:
   collect:
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    outputs:
+      saved: ${{ steps.saved.outputs.done }}
 
     steps:
       # 액션 판 번호는 2026-08-16 에 최신으로 올렸다 (Node 20 지원 종료 경고 때문).
@@ -143,6 +149,7 @@ jobs:
           set -o pipefail
           ARGS=""
           if [ "${{ inputs.full }}" = "true" ]; then ARGS="$ARGS --full"; fi
+          if [ "${{ inputs.retry_analysis }}" = "true" ]; then ARGS="$ARGS --retry-analysis"; fi
           if [ -n "${{ inputs.limit }}" ]; then ARGS="$ARGS --limit ${{ inputs.limit }}"; fi
           echo "실행: python tools/build_data.py $ARGS"
 
@@ -193,6 +200,7 @@ jobs:
           PY
 
       - name: 바뀐 게 있으면 커밋
+        id: saved
         # --limit 를 준 시험 실행은 일부만 수집하므로 절대 커밋하지 않는다.
         # (예전에는 이 장치가 없어서, 시험 삼아 --limit 3 으로 돌리면
         #  48건이던 자료가 6건으로 덮어써진 채 그대로 올라갈 수 있었다)
@@ -210,6 +218,7 @@ jobs:
             git commit -m "데이터 갱신 $(date -u +'%Y-%m-%d')"
             git push
           fi
+          echo "done=true" >> "$GITHUB_OUTPUT"
 
       # ============================================================
       # 속 알맹이 점검 — **커밋한 뒤에** 본다
@@ -300,9 +309,13 @@ jobs:
 
   # 수집이 끝나면 바로 사이트를 다시 올린다.
   # (Actions 가 만든 커밋은 다른 워크플로를 자동으로 깨우지 않기 때문에 여기서 직접 부른다)
+  #
+  # ★ 자료를 저장했으면 뒤의 속 알맹이 점검이 실패해도 배포한다.
+  #   점검 실패는 사람에게 메일로 알리는 장치인데, 배포까지 막으면 새 사업이 주민에게 안 간다.
+  #   2026-10-28 에 PDF 하나를 못 받은 사업 1건 때문에 엿새 동안 배포가 멈췄다.
   deploy:
     needs: collect
-    if: ${{ inputs.limit == '' }}
+    if: ${{ !cancelled() && inputs.limit == '' && needs.collect.outputs.saved == 'true' }}
     uses: ./.github/workflows/deploy.yml
     secrets: inherit
     permissions:
