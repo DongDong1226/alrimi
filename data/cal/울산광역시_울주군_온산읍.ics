@@ -23,13 +23,13 @@ DESCRIPTION:사업: 울산 남신항 2단계 기타광석부두 축조공
 LOCATION:울산광역시 울주군 온산읍 (당월로 72-51)
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-P3DT15H
+TRIGGER:-P2DT15H
 DESCRIPTION:울산 남신항 2단계 기타광석부두 축조공사 의견
   제출 마감 3일 전
 END:VALARM
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-PT15H
+TRIGGER:PT9H
 DESCRIPTION:울산 남신항 2단계 기타광석부두 축조공사 의견
   제출 오늘 마감
 END:VALARM

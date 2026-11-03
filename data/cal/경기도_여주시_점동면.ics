@@ -23,13 +23,13 @@ DESCRIPTION:사업: 청안지구 도시관리계획(산업유통형 지구
 LOCATION:경기도 여주시 점동면 청안리 (청안로 63-30)
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-P3DT15H
+TRIGGER:-P2DT15H
 DESCRIPTION:청안지구 도시관리계획(산업유통형 지구단위계
  획)결정(변경) 의견 제출 마감 3일 전
 END:VALARM
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-PT15H
+TRIGGER:PT9H
 DESCRIPTION:청안지구 도시관리계획(산업유통형 지구단위계
  획)결정(변경) 의견 제출 오늘 마감
 END:VALARM

@@ -24,13 +24,13 @@ LOCATION:충청북도 청주시 청원구 내수읍 마산리 (마산3길 4
  9)
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-P3DT15H
+TRIGGER:-P2DT15H
 DESCRIPTION:청주시 농어촌도로 기본 및 정비계획(변경) 의
  견 제출 마감 3일 전
 END:VALARM
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-PT15H
+TRIGGER:PT9H
 DESCRIPTION:청주시 농어촌도로 기본 및 정비계획(변경) 의
  견 제출 오늘 마감
 END:VALARM

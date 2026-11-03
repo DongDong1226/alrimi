@@ -26,13 +26,13 @@ LOCATION:전북특별자치도 완주군 구이면 덕천리 (덕천구암2
  길 104-4)
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-P3DT15H
+TRIGGER:-P2DT15H
 DESCRIPTION:구이 체육공원 조성을 위한 도시관리계획(용도
  지역\, 도시계획시설) 결정(변경) 의견 제출 마감 3일 전
 END:VALARM
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-PT15H
+TRIGGER:PT9H
 DESCRIPTION:구이 체육공원 조성을 위한 도시관리계획(용도
  지역\, 도시계획시설) 결정(변경) 의견 제출 오늘 마감
 END:VALARM

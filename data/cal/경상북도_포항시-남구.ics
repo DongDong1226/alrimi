@@ -23,13 +23,13 @@ DESCRIPTION:사업: 포항시 폐기물처리시설(포항에코빌리지)
 LOCATION:경상북도 포항시 남구 대송면 대각리 (운제로 301)
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-P3DT15H
+TRIGGER:-P2DT15H
 DESCRIPTION:포항시 폐기물처리시설(포항에코빌리지) 조성 
  의견 제출 마감 3일 전
 END:VALARM
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-PT15H
+TRIGGER:PT9H
 DESCRIPTION:포항시 폐기물처리시설(포항에코빌리지) 조성 
  의견 제출 오늘 마감
 END:VALARM

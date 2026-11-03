@@ -23,13 +23,13 @@ DESCRIPTION:사업: (주)하룡 석산개발사업 환경영향평가(재
 LOCATION:충청남도 당진시 구룡동 (큰골길 179)
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-P3DT15H
+TRIGGER:-P2DT15H
 DESCRIPTION:(주)하룡 석산개발사업 환경영향평가(재협의) 
  용역 의견 제출 마감 3일 전
 END:VALARM
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-PT15H
+TRIGGER:PT9H
 DESCRIPTION:(주)하룡 석산개발사업 환경영향평가(재협의) 
  용역 의견 제출 오늘 마감
 END:VALARM

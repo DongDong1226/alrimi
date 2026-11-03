@@ -24,13 +24,13 @@ DESCRIPTION:사업: 도시계획시설(공간시설 : 미디어파크 유
 LOCATION:강원특별자치도 속초시 장사동 (미시령로 3151)
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-P3DT15H
+TRIGGER:-P2DT15H
 DESCRIPTION:도시계획시설(공간시설 : 미디어파크 유원지) 
  조성사업 의견 제출 마감 3일 전
 END:VALARM
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-PT15H
+TRIGGER:PT9H
 DESCRIPTION:도시계획시설(공간시설 : 미디어파크 유원지) 
  조성사업 의견 제출 오늘 마감
 END:VALARM

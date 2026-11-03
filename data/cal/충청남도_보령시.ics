@@ -23,13 +23,13 @@ DESCRIPTION:사업: 보령 웅천도시지역 및 비도시지역 도시관
 LOCATION:충청남도 보령시 명천동 (성주산로 77)
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-P3DT15H
+TRIGGER:-P2DT15H
 DESCRIPTION:보령 웅천도시지역 및 비도시지역 도시관리계
  획(재정비) 의견 제출 마감 3일 전
 END:VALARM
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-PT15H
+TRIGGER:PT9H
 DESCRIPTION:보령 웅천도시지역 및 비도시지역 도시관리계
  획(재정비) 의견 제출 오늘 마감
 END:VALARM

@@ -23,13 +23,13 @@ DESCRIPTION:사업: 울주군 농어촌도로 기본 및 정비계획 수
 LOCATION:울산광역시 울주군 두동면 봉계리 (남명리1길 38)
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-P3DT15H
+TRIGGER:-P2DT15H
 DESCRIPTION:울주군 농어촌도로 기본 및 정비계획 수립 의견
   제출 마감 3일 전
 END:VALARM
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-PT15H
+TRIGGER:PT9H
 DESCRIPTION:울주군 농어촌도로 기본 및 정비계획 수립 의견
   제출 오늘 마감
 END:VALARM

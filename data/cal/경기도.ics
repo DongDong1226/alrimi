@@ -23,13 +23,13 @@ DESCRIPTION:사업: 청안지구 도시관리계획(산업유통형 지구
 LOCATION:경기도 여주시 점동면 청안리 (청안로 63-30)
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-P3DT15H
+TRIGGER:-P2DT15H
 DESCRIPTION:청안지구 도시관리계획(산업유통형 지구단위계
  획)결정(변경) 의견 제출 마감 3일 전
 END:VALARM
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-PT15H
+TRIGGER:PT9H
 DESCRIPTION:청안지구 도시관리계획(산업유통형 지구단위계
  획)결정(변경) 의견 제출 오늘 마감
 END:VALARM
@@ -50,13 +50,13 @@ LOCATION:경기도 용인시 처인구 포곡읍 신원리 (곡현로330번
  길 68-1)
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-P3DT15H
+TRIGGER:-P2DT15H
 DESCRIPTION:용인~충주 고속도로 민간투자사업 의견 제출 마
  감 3일 전
 END:VALARM
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-PT15H
+TRIGGER:PT9H
 DESCRIPTION:용인~충주 고속도로 민간투자사업 의견 제출 오
  늘 마감
 END:VALARM
@@ -77,13 +77,13 @@ DESCRIPTION:사업: 양주 회정동 도시관리계획(용도지역\, 지
 LOCATION:경기도 양주시 회정동 (화합로 1221)
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-P3DT15H
+TRIGGER:-P2DT15H
 DESCRIPTION:양주 회정동 도시관리계획(용도지역\, 지구단위
  계획) 결정(변경)(안) 의견 제출 마감 3일 전
 END:VALARM
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-PT15H
+TRIGGER:PT9H
 DESCRIPTION:양주 회정동 도시관리계획(용도지역\, 지구단위
  계획) 결정(변경)(안) 의견 제출 오늘 마감
 END:VALARM
@@ -104,13 +104,13 @@ LOCATION:경기도 수원시 권선구 오목천동 (서수원로63번길 1
  27)
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-P3DT15H
+TRIGGER:-P2DT15H
 DESCRIPTION:수원 오목천지구 도시개발사업 의견 제출 마감 
  3일 전
 END:VALARM
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-PT15H
+TRIGGER:PT9H
 DESCRIPTION:수원 오목천지구 도시개발사업 의견 제출 오늘 
  마감
 END:VALARM
@@ -131,13 +131,13 @@ DESCRIPTION:사업: 이천 부발역세권 북단지구 도시개발사업\
 LOCATION:경기도 이천시 부발읍 (신아로 101-92)
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-P3DT15H
+TRIGGER:-P2DT15H
 DESCRIPTION:이천 부발역세권 북단지구 도시개발사업 의견 
  제출 마감 3일 전
 END:VALARM
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-PT15H
+TRIGGER:PT9H
 DESCRIPTION:이천 부발역세권 북단지구 도시개발사업 의견 
  제출 오늘 마감
 END:VALARM
@@ -156,13 +156,13 @@ DESCRIPTION:사업: 죽율~장현~목감간 도로개설사업\n유형: 환
 LOCATION:경기도 시흥시 거모동 (군자로 354)
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-P3DT15H
+TRIGGER:-P2DT15H
 DESCRIPTION:죽율~장현~목감간 도로개설사업 의견 제출 마감
   3일 전
 END:VALARM
 BEGIN:VALARM
 ACTION:DISPLAY
-TRIGGER:-PT15H
+TRIGGER:PT9H
 DESCRIPTION:죽율~장현~목감간 도로개설사업 의견 제출 오늘
   마감
 END:VALARM
