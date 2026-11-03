@@ -149,13 +149,16 @@ body.m .wrap{width:calc(100% - 28px)}
    스크롤 스냅으로 카드 사이에서 어중간하게 멈추지 않게 한다. 몇 번째인지는 아래 점으로 안다. */
 /* 두 칸이 한 화면에 딱 들어간다. **옆으로 밀지 않는다** —
    밀 수 있다는 걸 모르면 안 보이는 칸이 생기고, 첫 칸도 잘려 보인다. */
-.m-stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 14px 6px}
+/* ★ 조금 작게 (2026-11-03, 사용자 요청) — 숫자 32→20px · 여백을 줄였다. 설명 줄은 **자르지 않는다**
+   (일시 미정 n건 같은 정보가 들어 있다). 실측 390px: 사업 없을 때 163→132px · 있을 때 229→192px.
+   이름표·숫자를 한 줄에 놓는 안도 재 봤는데 이름표가 잘려 뜻이 사라져서 뺐다. */
+.m-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 14px 4px}
 .m-stat{min-width:0;background:#fff;border:1px solid var(--line);border-radius:var(--r-md);
-  padding:13px 14px;display:flex;flex-direction:column;gap:3px;box-shadow:var(--sh-sm)}
+  padding:10px 12px;display:flex;flex-direction:column;gap:2px;box-shadow:var(--sh-sm)}
 .m-stat.feat{border-color:var(--primary);background:var(--primary-tint)}
 .m-stat .lab{font-size:var(--fs-body-xs);font-weight:700;color:var(--ink-3)}
-.m-stat .num{font-size:var(--fs-h-l);font-weight:800;color:var(--navy);letter-spacing:-.03em}
-.m-stat .num small{font-size:14px;font-weight:700;color:var(--ink-3);margin-left:2px}
+.m-stat .num{font-size:var(--fs-h-s);font-weight:800;color:var(--navy);letter-spacing:-.03em;line-height:1.25}
+.m-stat .num small{font-size:var(--fs-body-xs);font-weight:700;color:var(--ink-3);margin-left:2px}
 /* display:block — 문장처럼 이어 흐르게 (app.css 의 .stat .delta 와 같은 까닭. 안 그러면 D-n 이 따로 칸이 된다) */
 .m-stat .delta{display:block;font-size:11.5px;font-weight:600;color:var(--ink-3);line-height:1.5}
 .m-stat .delta.hot{color:var(--danger)}
@@ -166,7 +169,7 @@ body.m .wrap{width:calc(100% - 28px)}
 
 .m-tick{padding:0 14px}
 .m-tick .tick{border:0;border-left:3px solid var(--danger);background:#fff;border-radius:var(--r-sm);
-  padding:11px 13px;margin-bottom:8px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+  padding:8px 12px;margin-bottom:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 
 /* 내 동네 카드 */
 .m-hoodcard{margin:4px 14px 0;background:#fff;border:1px solid var(--line);

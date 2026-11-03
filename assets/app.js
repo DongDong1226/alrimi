@@ -1825,8 +1825,10 @@ function renderScope(){
     : homeScope === "near" ? `우리 집 반경 ${esc(S.radiusKm)}km 안, <span class="em">계획 중인 사업</span>입니다.`
     : `<span class="em">전국</span>에서 계획 중인 사업입니다.`;
   $("#h-hood").textContent = homeScope === "all" ? "전국" : (hoodShortName || "우리 동네");
-  $("#stat-open-lab").textContent = homeScope === "all"
-    ? "전국에서 의견 낼 수 있는 사업" : "우리 동네에서 의견 낼 수 있는 사업";
+  // ★ 휴대폰은 짧게 (2026-11-03) — m.html 에는 원래 짧은 이름표가 적혀 있었는데 여기서 긴 것으로
+  //   덮어써서, 좁은 폰에서 두 줄로 접혀 칸이 커졌다. 어디를 보는지는 위 머리말·범위 단추가 이미 말한다.
+  $("#stat-open-lab").textContent = document.body.classList.contains("m") ? "의견 낼 수 있는 사업"
+    : homeScope === "all" ? "전국에서 의견 낼 수 있는 사업" : "우리 동네에서 의견 낼 수 있는 사업";
 }
 
 function setScope(scope){
@@ -2375,7 +2377,9 @@ function renderDashTick(){
     <div class="tick">
       <span class="tag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v5" stroke-linecap="round"></path><circle cx="12" cy="16.5" r="1" fill="currentColor"></circle></svg>D-${p.dday}</span>
       <span class="msg">${esc(p.name)} — 의견 제출 마감까지 ${p.dday}일</span>
-      <span class="date">~${esc(p.period.split("~")[1] || "")}</span>
+      ${/* ★ 날짜는 의견 제출 마감일(opinionEnd) — 바로 옆 'D-n · 마감까지 n일' 과 같은 날이어야 한다 (2026-11-03).
+           예전에는 공람 종료일을 적어서 'D-1 … ~ 2026-10-26'(이미 지난 날)처럼 서로 다른 날을 가리켰다 */""}
+      <span class="date">~${esc(p.opinionEnd || p.period.split("~")[1] || "")}</span>
     </div>`).join("");
 }
 
