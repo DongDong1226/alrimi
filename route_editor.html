@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="light">
+<meta name="color-scheme" content="only light">
 <title>노선 그리기 도구 — 우리동네 개발사업 알리미</title>
 
 <!--
@@ -62,7 +62,7 @@
 <link rel="stylesheet" href="assets/tokens.css">
 <style>
   /* 담당자용 도구라 꾸미지 않는다. 색·글꼴은 tokens.css 의 변수만 쓴다. */
-  :root{ color-scheme:light }
+  :root{ color-scheme:only light }   /* only — 크롬 계열 강제 다크를 막는다 (app.css 맨 위 설명) */
   *{ box-sizing:border-box }
   /* ★ hidden 이 안 먹는 것을 막는다.
      클래스로 준 display(예: #imgPane 의 flex)가 hidden 속성의 기본값을 이겨서,
