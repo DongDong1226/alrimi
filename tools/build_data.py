@@ -797,12 +797,28 @@ def _rough_km(lat1, lon1, lat2, lon2):
     return (((lat1 - lat2) * 111) ** 2 + ((lon1 - lon2) * 88) ** 2) ** 0.5
 
 
-def fetch_river_routes(names, lat, lon, key, domain, max_names=8):
-    """하천 이름들로 실제 도형을 받아 [{name, type, coordinates}] 로 돌려준다."""
+# 하천 이름을 몇 개까지 VWorld 에 물을지 — 사실상 **전부**다 (2026-11-03).
+# ★ 예전에는 8개였다. 이름이 가나다순이라 '앞 8개'만 물어서, 이름이 24~27개인 권역 사업은
+#   **본류까지 빠졌다** — 내성천권역은 `내성천` 이 9번째라 아예 묻지 않았다.
+#   실측(같은 요청): 전부 물으면 내성천권역 3→11 · 동해권역 3→9 · 형산강권역 2→9.
+#   60 은 '끝없이 묻지 않게' 막아 두는 울타리일 뿐이다. 넘으면 로그에 밝힌다.
+RIVER_MAX_NAMES = 60
+
+
+def fetch_river_routes(names, lat, lon, key, domain, stats=None):
+    """하천 이름들로 실제 도형을 받아 [{name, type, coordinates}] 로 돌려준다.
+
+    stats 에 dict 를 넘기면 {"asked": 답을 받은 이름 수, "failed": 실패한 조회 수} 를 채운다.
+    ★ '못 찾음'(NOT_FOUND)은 실패가 아니다 — 소하천은 원래 하천망도에 없다.
+      거부·오류만 센다. 둘을 섞으면 VWorld 가 죽은 날의 반쪽 결과를 '다 물어봤다'로 굳힌다."""
+    if stats is not None:
+        stats.update(asked=0, failed=0)
     if not key or not names:
         return []
+    if len(names) > RIVER_MAX_NAMES:
+        log(f"    [하천 이름이 {len(names)}개라 앞 {RIVER_MAX_NAMES}개만 묻습니다]")
     routes = []
-    for name in names[:max_names]:
+    for name in names[:RIVER_MAX_NAMES]:
         try:
             r = SESSION.get(VWORLD_DATA_URL, params={
                 "service": "data", "request": "GetFeature", "data": RIVER_LAYER,
@@ -810,8 +826,21 @@ def fetch_river_routes(names, lat, lon, key, domain, max_names=8):
                 "size": 20, "geometry": "true", "attrFilter": f"riv_nm:like:{name}",
             }, verify=VERIFY_SSL, timeout=60)
             res = r.json().get("response", {})
-            if res.get("status") != "OK":
+            status = res.get("status")
+            if status != "OK":
+                if status == "NOT_FOUND":
+                    if stats is not None:
+                        stats["asked"] += 1
+                else:
+                    # 거부·오류 — '못 찾음'과 갈라서 남긴다
+                    log(f"    [하천 도형 조회 거부] {name}: {status} "
+                        f"{(res.get('error') or {}).get('text', '')}")
+                    if stats is not None:
+                        stats["failed"] += 1
+                time.sleep(0.15)
                 continue
+            if stats is not None:
+                stats["asked"] += 1
             for f in res.get("result", {}).get("featureCollection", {}).get("features", []):
                 geom = f.get("geometry") or {}
                 coords = geom.get("coordinates")
@@ -829,6 +858,8 @@ def fetch_river_routes(names, lat, lon, key, domain, max_names=8):
                 })
         except Exception as e:
             log(f"    [하천 도형 조회 오류] {name}: {e}")
+            if stats is not None:
+                stats["failed"] += 1
         time.sleep(0.15)
     return routes
 
@@ -1316,15 +1347,21 @@ def needs_detail_refresh(cached):
 
 def refresh_cached(cached, item, vworld_key, skip_geocode, category_key, delay,
                    vworld_domain=None, skip_route=False, skip_summary=False,
-                   today=None):
+                   today=None, *, anthropic_key):
     """재사용하는 사업에서 '싸게 고칠 수 있는 것'만 손본다.
 
     · 공람 기간: 목록에 나온 최신 값으로 갱신한다 (기간이 연장되는 경우가 있다).
     · 설명회·공람 장소·의견 받는 곳: 아직 안 정해진 값이 있으면 상세를 다시 받는다.
     · 좌표: 지난번에 못 찾았으면 다시 시도한다 (지오코딩은 돈이 들지 않는다).
-    · **노선 도형: 하천 이름은 찾았는데 도형이 비어 있으면 다시 받는다.** 좌표와 같은 이유다.
+    · **노선 도형: 하천 이름은 찾았는데 도형이 비었거나, 물어본 이름이 모자라면 다시 받는다.**
+      좌표와 같은 이유다 (routeNamesAsked — 아래 '노선 도형 되받기' 참고).
     · AI 해석: 다시 하지 않는다. 한 번 실패한 요약문은 내일도 실패할 가능성이 크고,
       매일 다시 부르면 그만큼 비용이 계속 나간다. 전부 다시 받으려면 --full 을 쓴다.
+      **단 요약문을 이번에 처음 읽은 사업은 한 번 만든다** — 처음 수집 때 PDF 를 못 받아
+      해석을 시도조차 못 한 사업이다. 새 사업이 받는 것과 같은 한 번이라 되풀이되지 않는다.
+
+    ★ anthropic_key 는 이름을 붙여 **반드시** 넘긴다(빠뜨리면 바로 오류가 난다).
+      기본값을 두면 빠뜨려도 아무 말 없이 해석만 안 만들어진다.
     """
     today = today or today_kst()   # 안 넘겨주면 오늘로 (날짜 비교에서 터지지 않게)
 
@@ -1362,14 +1399,36 @@ def refresh_cached(cached, item, vworld_key, skip_geocode, category_key, delay,
     #   두 건 다 VWorld 가 죽어 있던 8/13~8/15 에 처음 수집된 사업이다.
     #
     # 지오코딩과 같이 **VWorld 만 부르므로 돈이 들지 않는다** (PDF·AI 는 건드리지 않는다).
-    if (not skip_route and cached.get("isRiver") and cached.get("riverNames")
-            and not cached.get("routeGeom")):
-        routes = fetch_river_routes(cached["riverNames"], cached.get("lat"), cached.get("lon"),
-                                    vworld_key, vworld_domain)
+    #
+    # ★ '비었을 때'만 되받으면 안 된다 (2026-11-03). 예전에 이름을 **앞 8개만** 물었던 사업은
+    #   도형이 **조금은 있어서** 여기 걸리지 않았고, 그래서 묻는 이름 수를 늘려도 **영영 안 고쳐졌다**
+    #   (내성천권역: 이름 27개 중 8개만 물어 도형 3개 — 본류 `내성천` 이 빠졌다).
+    #   그래서 '몇 개를 물어봤는지'(routeNamesAsked)를 적어 두고 모자라면 다시 묻는다.
+    #   값이 없는 옛 사업은 **한 번** 다시 묻고, 그 뒤로는 안 묻는다.
+    #   · 조회가 하나라도 실패했으면 '다 물어봤다'고 적지 않는다 → 다음 수집에서 또 묻는다
+    #   · 그때는 받은 것과 **있던 것을 합친다** (이름별). 반쪽 결과로 있던 노선을 지우면 안 된다
+    #   · 실패 없이 다 물었는데 하나도 없으면 있던 것을 그대로 둔다 (빈손으로 덮지 않는다)
+    names = cached.get("riverNames") or []
+    asked = cached.get("routeNamesAsked")
+    want = min(len(names), RIVER_MAX_NAMES)
+    if (not skip_route and cached.get("isRiver") and names
+            and (not cached.get("routeGeom") or asked is None or asked < want)):
+        old = cached.get("routeGeom") or []
+        stats = {}
+        routes = fetch_river_routes(names, cached.get("lat"), cached.get("lon"),
+                                    vworld_key, vworld_domain, stats=stats)
+        if stats["failed"]:
+            got = {r.get("name") for r in routes}
+            routes = routes + [r for r in old if r.get("name") not in got]
+            log(f"    [노선 도형 조회 {stats['failed']}건 실패 — 있던 것과 합치고 다음 수집에서 다시 묻습니다]")
+        else:
+            cached["routeNamesAsked"] = stats["asked"]
         if routes:
             cached["routeGeom"] = routes
             cached["routeSource"] = "vworld-river"
-            log(f"    (재사용) 비어 있던 노선 도형 {len(routes)}개를 채웠습니다")
+            if len(routes) != len(old):
+                log(f"    (재사용) 노선 도형을 다시 받았습니다 — 이름 {stats['asked']}/{len(names)}개를 물어"
+                    f" 도형 {len(old)} → {len(routes)}개")
 
     # ★ 하천 사업 판정(isRiver) 되받기 — 판정 **규칙이 바뀌면** 이미 받아 둔 사업은
     #   증분 수집이 통째로 건너뛰므로 **옛 판정이 영영 굳는다.**
@@ -1398,11 +1457,14 @@ def refresh_cached(cached, item, vworld_key, skip_geocode, category_key, delay,
                     names = extract_river_names(text)
                     if names:
                         cached["riverNames"] = names
+                        stats = {}
                         routes = fetch_river_routes(names, cached.get("lat"), cached.get("lon"),
-                                                    vworld_key, vworld_domain)
+                                                    vworld_key, vworld_domain, stats=stats)
                         if routes:
                             cached["routeGeom"] = routes
                             cached["routeSource"] = "vworld-river"
+                        if not stats["failed"]:
+                            cached["routeNamesAsked"] = stats["asked"]   # 위 '노선 도형 되받기' 참고
                         log(f"    (재사용) 하천 이름 {len(names)}개를 채웠습니다"
                             f" → 노선 도형 {len(routes)}개")
                     else:
@@ -1417,7 +1479,8 @@ def refresh_cached(cached, item, vworld_key, skip_geocode, category_key, delay,
     # **되받는 코드가 없으면 영영 비어 있고**, 화면은 계속 "요약문에 내용이 없습니다"라고
     # 잘못 말하게 된다 (실제로는 못 읽은 것이다).
     #
-    # 돈은 들지 않는다 — AI 는 부르지 않고, 대부분은 내려받지도 않는다.
+    # 돈은 거의 들지 않는다 — 대부분은 내려받지도 않는다.
+    # AI 는 **요약문을 이번에 처음 읽은 사업에만** 한 번 부른다 (아래 참고).
     if not skip_summary and cached.get("summaryState") is None:
         if cached.get("analysis"):
             # 해석이 있다는 것은 그때 요약문을 잘 읽었다는 뜻이다. 받아 볼 필요가 없다.
@@ -1436,6 +1499,29 @@ def refresh_cached(cached, item, vworld_key, skip_geocode, category_key, delay,
                 cached["summaryState"] = "ok" if per_page >= MIN_CHARS_PER_PAGE else "scanned"
                 log(f"    (재사용) 요약문을 다시 읽어 봤습니다 — {pages}쪽 {len(text)}자"
                     f"(쪽당 {per_page:.0f}자) → {cached['summaryState']}")
+
+                # ★ 요약문을 이번에 처음 읽었으면 해석도 지금 한 번 만든다 (2026-11-03).
+                #   처음 수집 때 PDF 를 못 받은 사업은 해석 없이 저장된다. 여기서 summaryState 만
+                #   'ok' 로 채우고 끝내면 **해석은 영영 빈다** — 해석은 되받지 않기 때문이다.
+                #   실제로 '청안지구' 가 10/28~11/2 내내 그 상태로 collect.yml 의 속 알맹이 점검 ① 에
+                #   걸렸고, 그 때문에 배포까지 멈췄다.
+                #   · 새 사업이 받는 것과 **같은 한 번**이다. summaryState 가 비었다가 채워지는 일은
+                #     사업마다 한 번뿐이라 비용이 되풀이되지 않는다 (한 건 약 $0.02)
+                #   · 이 한 번이 실패하면 새 사업과 똑같이 '만들지 못함' 으로 남고 점검 ① 이 알린다
+                #   · 공람이 끝난 사업은 위 elif 에서 걸러져 여기 오지 않는다 (해석을 되살리면 안 된다)
+                #   · 스캔본(scanned)은 AI 에 넘기지 않는다 — 새 사업과 같은 규칙
+                #   · 키가 없으면 부르지 않는다 (시작할 때 [안내] 로 이미 알렸다)
+                if cached["summaryState"] == "ok" and anthropic_key:
+                    analysis = analyze_environment(cached.get("name"), cached.get("address"),
+                                                   text, anthropic_key)
+                    if analysis:
+                        cached["analysis"] = analysis
+                        filled = sum(1 for v in analysis.values() if v)
+                        log(f"    (재사용) 요약문을 처음 읽어 환경영향분석도 만들었습니다"
+                            f" — {filled}/{len(EIA_FIELDS)}개 항목 채움")
+                    else:
+                        log("    [환경영향분석을 만들지 못했습니다 — '만들지 못함' 으로 남습니다."
+                            " Actions 에서 retry_analysis 를 켜고 돌리면 다시 받습니다]")
             except Exception as e:
                 # 못 받았으면 '모름'으로 둔다. 다음 수집에서 다시 시도한다.
                 log(f"    [요약문 재확인 실패 — 다음에 다시 해 봅니다] {e}")
@@ -1515,7 +1601,8 @@ def build(args):
                     refresh_cached(cached, it, vworld_key, args.skip_geocode,
                                    category_key, args.delay,
                                    vworld_domain, args.skip_route,
-                                   args.skip_summary, today))
+                                   args.skip_summary, today,
+                                   anthropic_key=anthropic_key))
                 reused_count += 1
                 continue
 
@@ -1577,11 +1664,16 @@ def build(args):
             location_types = detail.get("locationTypes") or []
             is_linear = "선형" in location_types
             is_river = is_river_project(it["name"], detail.get("bizType"), detail.get("lawBasis"))
-            river_names, routes = [], []
+            river_names, routes, route_asked = [], [], None
             if is_linear and is_river and raw_text and not args.skip_route:
                 river_names = extract_river_names(raw_text)
                 if river_names:
-                    routes = fetch_river_routes(river_names, lat, lon, vworld_key, vworld_domain)
+                    stats = {}
+                    routes = fetch_river_routes(river_names, lat, lon, vworld_key, vworld_domain,
+                                                stats=stats)
+                    # 실패 없이 다 물었을 때만 적는다 — 아니면 다음 수집의 되받기가 다시 묻는다
+                    if not stats["failed"]:
+                        route_asked = stats["asked"]
                 log(f"    선형/하천 사업: 하천 이름 {len(river_names)}개, 노선 도형 {len(routes)}개")
             elif is_linear:
                 log("    선형이지만 하천 사업이 아니어서 자동 노선을 찾지 않음 (관리자가 직접 그리기)")
@@ -1618,6 +1710,8 @@ def build(args):
                 "riverNames": river_names,
                 "routeGeom": routes or None,
                 "routeSource": "vworld-river" if routes else None,
+                # 하천 이름을 몇 개 물어봤나 — 모자라면 되받기가 다시 묻는다 (refresh_cached 참고)
+                "routeNamesAsked": route_asked,
                 # 화면에서 "EIASS 원문 보기" 링크를 만들 때 그대로 쓴다.
                 # (EIASS 상세페이지는 GET 링크가 아니라 이 값들을 넣어 POST로 열어야 한다.)
                 "sourceBizCd": it["biz_cd"],

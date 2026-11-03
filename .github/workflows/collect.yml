@@ -127,12 +127,16 @@ jobs:
           except Exception:
               ps = []
           n = len(ps)
-          # 노선 도형이 있는 사업 수도 적어 둔다 — 수집 뒤 줄어들면 조회가 실패한 것이다.
-          routes = sum(1 for p in ps if p.get("routeGeom"))
-          print(f"지금 저장된 사업 {n}건 (노선 {routes}건)")
+          # 노선 도형이 있는 사업도 **번호째로** 적어 둔다 — 수집 뒤 같은 사업이 노선을 잃었으면 조회가 실패한 것이다.
+          # ★ 건수만 적으면 안 된다. 노선 있는 사업이 의견 마감으로 정상적으로 빠져도
+          #   '줄었다' 로 잡혀 헛경보가 난다 (2026-11-03, 서귀포 소하천 2건이 빠지며 8 -> 6 으로 실패 처리됐다).
+          #   번호는 출력값으로 넘기지 않고 파일로 둔다 — 자료에서 온 글자를 스크립트에 끼워 넣지 않기 위해서다.
+          route_ids = sorted(p["id"] for p in ps if p.get("routeGeom") and p.get("id"))
+          with open(os.path.join(os.environ["RUNNER_TEMP"], "routes_before.json"), "w", encoding="utf-8") as f:
+              json.dump(route_ids, f)
+          print(f"지금 저장된 사업 {n}건 (노선 {len(route_ids)}건)")
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
               f.write(f"count={n}\n")
-              f.write(f"routes={routes}\n")
           PY
 
       - name: EIASS 수집
@@ -237,7 +241,7 @@ jobs:
         if: ${{ inputs.limit == '' }}
         run: |
           python - <<'PY'
-          import datetime, io, json, sys
+          import datetime, io, json, os, sys
 
           # ★ 한글·특수문자가 섞인 메시지를 그냥 print 하면 **윈도우 cp949 콘솔에서 죽는다.**
           #   그러면 종료코드는 1 이 되지만 **정작 알리려던 문구가 안 나간다** —
@@ -287,12 +291,26 @@ jobs:
               bad.append(f"좌표 없는 사업이 {pct:.0f}% 입니다 "
                          f"(평소 0~5%. VWorld 키·중계를 확인하세요)")
 
-          # ③ 노선 — 수집 전보다 줄었으면 하천 도형 조회가 실패한 것이다.
-          before = int("${{ steps.before.outputs.routes }}" or 0)
+          # ③ 노선 — 수집 전에 노선이 있던 사업이 **아직 목록에 있는데** 노선을 잃었으면
+          #    하천 도형 조회가 실패한 것이다.
+          #    ★ 목록에서 아예 빠진 사업은 세지 않는다 — 의견 마감이 지나 정상적으로 내려간 것이다.
+          #      건수만 견주던 때는 그것까지 '줄었다' 로 잡혀 헛경보가 났다.
+          #      헛경보가 쌓이면 진짜 실패 메일도 그냥 넘기게 된다.
+          try:
+              with open(os.path.join(os.environ["RUNNER_TEMP"], "routes_before.json"), encoding="utf-8") as f:
+                  before_ids = set(json.load(f))
+          except Exception:
+              before_ids = set()
+          by_id = {p.get("id"): p for p in ps}
+          lost = [by_id[i] for i in sorted(before_ids) if i in by_id and not by_id[i].get("routeGeom")]
+          gone = sum(1 for i in before_ids if i not in by_id)
           now = sum(1 for p in ps if p.get("routeGeom"))
-          print(f"[노선] 수집 전 {before}건 -> 지금 {now}건")
-          if before and now < before:
-              bad.append(f"노선 도형이 {before}건에서 {now}건으로 줄었습니다 "
+          print(f"[노선] 수집 전 {len(before_ids)}건 -> 지금 {now}건 "
+                f"(마감돼 빠진 사업 {gone}건 · 남아 있는데 노선을 잃은 사업 {len(lost)}건)")
+          if lost:
+              for p in lost[:5]:
+                  print(f"    · {p.get('name','')[:44]}")
+              bad.append(f"노선이 있던 사업 {len(lost)}건이 노선을 잃었습니다 "
                          f"(VWorld 하천망도 조회 실패로 보입니다)")
 
           if bad:
