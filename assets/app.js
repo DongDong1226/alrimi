@@ -261,7 +261,7 @@ function renderCalSub(){
   const box = $("#calSub");
   if(!box || !box.classList) return;
   const r = calRegion();
-  const { url, label } = calFeedUrl();
+  const { url } = calFeedUrl();
   // 아이폰은 webcal:// 을 누르면 구독 창이 바로 뜬다. 구글 캘린더는 cid= 로 받는다.
   const webcal = url.replace(/^https?:/, "webcal:");
   const google = `https://calendar.google.com/calendar/render?cid=${encodeURIComponent(webcal)}`;
@@ -305,10 +305,9 @@ function renderCalSub(){
           ${opt(ANY, r.dong)}${dongs.map(s => opt(s, r.dong)).join("")}
         </select></span>
       </div>
-      <p class="cal-h cal-h--sub"><b>고른 만큼만 옵니다.</b> 보고 있는 동네와 따로 고를 수 있습니다.</p>
     </div>
-
-    <p class="cal-now">지금 받는 지역 <b>${esc(label)}</b></p>
+    ${/* '고른 만큼만 옵니다…' 와 '지금 받는 지역 ○○' 줄은 뺐다 (2026-11-03) —
+         둘 다 바로 위 세 칸이 보여 주는 것을 글로 한 번 더 말하고 있었다 */""}
     <div class="cal-btns">
       <!-- ★ 폰에서는 **아이폰 단추를 앞·크게** 둔다. 구글 단추는 갤럭시에서 잘 안 되므로
            (앱에 'URL로 추가'가 없다) 그것을 가장 큰 단추로 두면 **가장 눈에 띄는 길이
@@ -1850,7 +1849,7 @@ $$("[data-nav]").forEach(el => el.addEventListener("click", e => {
   const kind = el.dataset.nav;
   if(kind === "map"){ openMapScreen(); return; }
   // '관심사업 / 알림'은 본문 이동이 아니라 **화면 전환**이다 (지도로 보기와 같은 방식).
-  if(kind === "saved"){ show("#scr-saved"); renderSaved(); return; }
+  if(kind === "saved"){ openSavedScreen(); return; }
   /* ★ 주민 설명회 안내도 **따로 있는 화면**이다 (2026-09-04).
      예전에는 홈 안의 한 섹션이라 메뉴를 누르면 홈 아래로 스크롤만 했다 —
      설명회는 '언제 어디로 가면 되나'를 보러 오는 자리라 화면을 따로 두는 것이 맞다. */
@@ -2574,7 +2573,9 @@ function projCardHtml(p, opts = {}){
       <p class="desc">공람기간 ${esc(p.period)}${p.opinionEnd ? `<br><b class="op-end">의견 마감 ${esc(p.opinionEnd)}</b>` : ""}</p>
       <div class="rows">
         <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 21s7-6.3 7-11a7 7 0 1 0-14 0c0 4.7 7 11 7 11Z"></path><circle cx="12" cy="10" r="2.4"></circle></svg><span>${esc(p.where)}${dist ? `<br><span class="dist">우리 집에서 ${esc(dist)}</span>` : ""}</span></div>
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"></path><path d="M15 3v4h4"></path></svg><span>${esc(p.org)} · ${esc(p.stage)}</span></div>
+        ${/* 예전에는 기관 뒤에 '· 초안 공람 중'(p.stage)을 붙였다. 목록에 나오는 사업은 전부 그 상태이고,
+             공람이 끝난 사업·기한이 지난 사업은 위 배지가 이미 말하므로 뺐다 (2026-11-03) */""}
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M6 3h9l4 4v14H6z"></path><path d="M15 3v4h4"></path></svg><span>${esc(p.org)}</span></div>
       </div>
       <div class="foot">
         ${p.dday !== null ? `<button class="btn btn--primary btn--sm btn--pill" type="button" data-opinion="${esc(p.id)}">의견 제출</button>` : ``}
@@ -2792,7 +2793,8 @@ function detailBodyHtml(p){
       <div class="contact-row"><span class="k">유형</span><span class="v">${esc(p.typeLabel)}</span></div>
       <div class="contact-row"><span class="k">위치</span><span class="v">${esc(p.where)}</span></div>
       <div class="contact-row"><span class="k">기관</span><span class="v">${esc(p.org)}</span></div>
-      <div class="contact-row"><span class="k">공람기간</span><span class="v">${esc(p.period)}</span></div>
+      ${/* '공람기간' 줄은 뺐다 — 바로 아래 첫 칸(participationSection)에 같은 날짜가 또 나온다 (2026-11-03).
+           행동해야 하는 날인 '의견 마감'만 위에 남긴다 */""}
       ${p.opinionEnd ? `<div class="contact-row"><span class="k">의견 마감</span><span class="v">${esc(p.opinionEnd)}${p.dday !== null ? ` (D-${p.dday})` : ""}</span></div>` : ""}
     </div>
     ${tabsHtml([participationSection(p), segmentsSection(p), eiaSection(p)])}
@@ -2856,6 +2858,15 @@ function savedShowCount(){
   return SAVED_IDS.filter(id => findProject(id)).length;
 }
 
+/* 관심사업 / 알림 화면 열기 — 위 메뉴(데스크톱)와 아래 탭(휴대폰, mobile.js)이 함께 부른다.
+   ★ 휴대폰 탭은 예전에 화면 안의 [data-nav="saved"] 단추를 대신 눌러 열었다. 그런데 m.html 에는
+     그런 단추가 홈 목록 아래 초록 줄 하나뿐이어서, 그 줄을 빼자(2026-11-03) **탭이 아무 일도 안 했다.**
+     남의 단추에 기대지 않도록 이 함수를 바로 부르게 했다 (openBriefScreen 과 같은 방식). */
+function openSavedScreen(){
+  show("#scr-saved");
+  renderSaved();
+}
+
 function renderSaved(){
   const { open, closed, missing } = savedBuckets();
   const grid = $("#savedGrid");
@@ -2882,8 +2893,7 @@ function renderSaved(){
        자료가 남지 않아 내용을 보여드릴 수 없습니다.
        담은 목록은 <b>이 기기에만 저장</b>되어 다른 기기에서는 보이지 않습니다.`
     : SAVED_IDS.length
-    ? `마감이 가까운 순서입니다.
-       <b>이 기기에만 저장</b>되어 다른 기기에서는 보이지 않고, 브라우저 기록을 지우면 사라집니다.${gone}`
+    ? `마감이 가까운 순서입니다. 담은 목록은 <b>이 기기에만</b> 저장됩니다.${gone}`
     /* ★ 담은 것이 없을 때는 **이 화면에서 할 수 있는 두 가지**를 알려 준다.
        '별표를 어떻게 누르나'는 아래 빈 상자가 이미 말하므로 여기서 되풀이하지 않는다
        (예전에 같은 문장이 화면에 두 번 나왔다).
@@ -2907,13 +2917,11 @@ function renderSaved(){
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><rect x="4" y="5" width="16" height="16" rx="2"></rect><path d="M8 3v4M16 3v4M4 11h16"></path></svg>
           담은 사업 ${withDay.length}건의 마감일을 캘린더에 넣기
         </p>
-        <p class="cal-h">사흘 전과 당일 아침에 폰이 알려 줍니다. 서비스가 알림을 보내는 것이 아니라
-          <b>폰 캘린더가 알려 주는 것</b>이라, 이 화면을 안 열어도 됩니다.</p>
+        <p class="cal-h">마감 사흘 전과 당일 아침에 <b>폰 캘린더가</b> 알려 줍니다.</p>
         <div class="cal-btns">
           <button class="btn btn--primary btn--sm btn--pill" type="button" id="btnSavedIcs">캘린더 파일 받기 (${withDay.length}건)</button>
         </div>
-        <p class="cal-h cal-h--sub">아이폰은 받은 파일을 열면 바로 들어갑니다.
-          갤럭시는 사업을 하나씩 열어 <b>구글 캘린더에 넣기</b>를 쓰는 편이 빠릅니다.</p>`;
+        <p class="cal-h cal-h--sub">갤럭시는 사업 상세의 <b>구글 캘린더에 넣기</b>가 더 빠릅니다.</p>`;
       $("#btnSavedIcs").addEventListener("click", () => {
         downloadIcs("알리미-담은사업-마감일.ics", withDay);
       });

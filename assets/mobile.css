@@ -71,15 +71,19 @@ body.m .wrap{width:calc(100% - 28px)}
    시·도와 시·군·구를 **나란히** 두고 높이도 줄여, 210px 짜리를 100px 안쪽으로 줄인다.
    읍·면·동은 이름이 길어(예: 오창읍 장대리) 한 줄을 다 준다. */
 .m-setbar{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+/* ★ 칸 전체를 누르면 열리게 한다 (2026-11-03).
+   예전에는 이름표 아래 글자 줄(28px)만 select 라서, 이름표 쪽을 누르면 아무 일도 없었다.
+   이제 select 가 칸을 꽉 채우고(52px) 이름표는 그 위에 얹어 둔다(누르면 아래 select 로 간다). */
 .m-field{display:block;position:relative;background:#fff;border-radius:var(--r-md);
-  padding:6px 12px 7px;min-width:0}
+  padding:0;min-width:0}
 .m-field--wide{grid-column:1 / -1}
-.m-field-lb{display:block;font-size:11px;font-weight:700;color:var(--ink-3);margin-bottom:0}
+.m-field-lb{display:block;position:absolute;top:6px;left:12px;right:28px;pointer-events:none;
+  font-size:11px;font-weight:700;color:var(--ink-3);margin-bottom:0}
 .m-field select:focus-visible{outline:2px solid var(--primary);outline-offset:-1px;border-radius:4px}
-.m-field select{width:100%;height:28px;border:0;background:transparent;outline:0;
+.m-field select{width:100%;height:52px;border:0;background:transparent;outline:0;
   /* 16px 미만이면 아이폰이 입력할 때 화면을 확대해 버린다 */
   font-size:16px;font-weight:700;color:var(--ink);appearance:none;-webkit-appearance:none;
-  padding-right:18px;text-overflow:ellipsis}
+  padding:17px 18px 0 12px;text-overflow:ellipsis}
 .m-field::after{content:"";position:absolute;right:14px;bottom:18px;width:7px;height:7px;
   border-right:2px solid var(--ink-3);border-bottom:2px solid var(--ink-3);
   transform:rotate(45deg);pointer-events:none}
@@ -101,7 +105,7 @@ body.m .wrap{width:calc(100% - 28px)}
   justify-content:space-between;gap:10px;padding:9px 14px;background:#fff;
   border-bottom:1px solid var(--line)}
 .m-top .brand-logo{font-size:15px;min-width:0}
-.m-hood-pill{display:inline-flex;align-items:center;gap:5px;flex:0 1 auto;min-width:0;
+.m-hood-pill{display:inline-flex;align-items:center;gap:5px;flex:0 1 auto;min-width:0;min-height:36px;
   border:1px solid var(--line-2);border-radius:var(--r-pill);padding:7px 12px;background:var(--bg-1);
   font-size:var(--fs-body-xs);font-weight:700;color:var(--navy)}
 .m-hood-pill svg{width:14px;height:14px;flex:none;color:var(--primary)}
@@ -188,6 +192,9 @@ body.m .wrap{width:calc(100% - 28px)}
 .m-hoodfoot{margin-top:11px}
 .m-hoodfoot div{padding:11px 10px;text-align:center}
 .m-hoodfoot .v{font-size:15px}
+/* 반경 고르기 — 누르는 자리만 28 → 36px. 위아래 음수 여백으로 칸 높이는 그대로 둔다
+   (높이가 늘면 옆 두 칸과 줄이 어긋난다) */
+.m-hoodfoot .radius-pick select{min-height:36px;margin:-4px 0}
 
 /* 목록 구역 */
 /* 세로 간격 전반을 좁힌다 — 한 화면에 들어오는 내용이 그만큼 늘어난다 */
@@ -217,18 +224,24 @@ body.m .wrap{width:calc(100% - 28px)}
 /* 사업 카드 — 한 줄에 하나 */
 .m-grid{display:flex;flex-direction:column;gap:12px}
 body.m .proj{min-width:0}
+/* 제목 '두 줄 자리'(app.css min-height:2.9em)는 여러 칸이 나란한 데스크톱에서 줄을 맞추려는 것이다.
+   한 줄에 하나씩인 휴대폰에서는 한 줄 제목 아래에 21px 빈칸만 남긴다 */
+body.m .proj .ttl{min-height:0}
 body.m .proj .foot{flex-wrap:wrap;gap:7px}
-body.m .proj .foot .btn{flex:1 1 auto;min-height:42px}
+body.m .proj .foot .btn{flex:1 1 0;min-height:42px}
+/* '지도에서 보기'는 상세 안에도 있다. 휴대폰 카드에서는 빼고 남는 두 단추를 넓게 쓴다 */
+body.m .proj .foot [data-onmap]{display:none}
 body.m .proj-empty{padding:28px 18px}
 
 /* 주민 설명회 카드 — 항목마다 dt/dd 를 줄바꿈해서 세로로 너무 길었다.
    한 줄로 되돌리고(원래 app.css 는 가로였다), 여백·글자를 줄여 카드를 압축한다. */
 body.m .row-item{flex-wrap:wrap;padding:13px 4px;gap:10px}
-body.m .row-body .t{font-size:14.5px;line-height:1.4}
+/* 글자 크기는 토큰으로 (예전 14.5·11.5·12px 은 토큰 14.4·11.7 과 눈으로 못 가르는 값이었다) */
+body.m .row-body .t{font-size:var(--fs-body-m);line-height:1.4}
 body.m .brief{gap:4px;margin-top:5px}
 body.m .brief>div{flex-direction:row;gap:6px}
-body.m .brief dt{width:62px;font-size:11.5px}
-body.m .brief dd{font-size:12px;line-height:1.45}
+body.m .brief dt{width:62px;font-size:var(--fs-body-xs)}
+body.m .brief dd{font-size:var(--fs-body-xs);line-height:1.45}
 body.m .row-btns{flex:1 1 100%;width:auto;min-width:0;margin-left:0;margin-top:8px;display:flex;gap:6px}
 /* min-height 는 건드리지 않는다 — app.css 의 @media(max-width:560px) 가 이미
    .btn--sm 을 40px 로 고정해 둔다(손가락으로 누르는 최소 크기 규칙). 그 아래로 내리지 않는다. */
@@ -246,11 +259,12 @@ body.m .pg{min-width:40px;min-height:40px}
 .m-foot strong{color:#fff;margin-right:6px}
 .m-foot-links{display:flex;gap:14px;margin:0 0 8px;flex-wrap:wrap}
 .m-foot-links button,.m-foot-links a{color:#fff;font-weight:700;background:none;border:0;
-  padding:6px 0;text-decoration:underline;font-size:var(--fs-body-xs)}
+  padding:10px 0;text-decoration:underline;font-size:var(--fs-body-xs)}
 .m-copy{color:#8fa6d4;line-height:1.7}
 /* 자료 출처 표기 — 공공누리 제4유형은 '출처표시'가 이용 조건이라 항상 보여야 한다 */
-.m-src{margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,.12)}
-.m-src a{color:#fff;text-decoration:underline}
+.m-src{margin-top:10px;padding-top:4px;border-top:1px solid rgba(255,255,255,.12)}
+/* 글자 높이(14px)만큼만 눌리던 링크 — 위아래로 넓혀 손가락으로 누를 수 있게 */
+.m-src a{color:#fff;text-decoration:underline;display:inline-block;padding:8px 0}
 .m-totop{bottom:calc(var(--m-tabh) + var(--m-safe) + 14px)}
 
 /* ============================================================
@@ -328,6 +342,11 @@ body.m .pg{min-width:40px;min-height:40px}
 .m-legend-btn.on{background:var(--primary);color:#fff;border-color:var(--primary);
   top:auto;bottom:10px;left:10px}
 body.m .leaflet-control-zoom{margin-top:52px!important}
+/* 확대·축소 단추 30px → 40px (손가락 기준) */
+body.m .leaflet-touch .leaflet-bar a{width:40px;height:40px;line-height:40px}
+/* 지도 상세의 '지도로 돌아가기'·'EIASS 원문 페이지 열기' — 글자 높이(15px)만 눌렸다 */
+body.m #gisDetail .gis-detail-back,
+body.m #gisDetail .eiass-link{min-height:40px}
 
 /* 목록 보기 배지 — 시트가 닫혀 있을 때(지도만 보일 때)만 뜬다.
    가운데 아래에 떠 있는 알약 모양. 누르면 시트가 열린다. */
@@ -411,10 +430,11 @@ body.m .modal-ft .btn{width:100%}
    세 칸을 세로로 쌓으면(첫 화면 방식) 그만큼 모달이 길어지므로 한 줄로 눕히고 줄인다. */
 /* 첫 화면은 2칸 격자인데, 이 모달은 세 칸을 **한 줄**로 눕힌다 (모달을 짧게 유지) */
 #m-hood .m-setbar--row{grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:2px}
-#m-hood .m-setbar--row .m-field{min-width:0;padding:6px 8px 7px}
-#m-hood .m-setbar--row .m-field-lb{font-size:10px;margin-bottom:1px;
+/* 칸 전체(50px)를 누르면 열린다 — 위 .m-field 와 같은 방식. 이름표는 10 → 11px (사이트에서 가장 작던 글자) */
+#m-hood .m-setbar--row .m-field{min-width:0;padding:0}
+#m-hood .m-setbar--row .m-field-lb{font-size:11px;top:6px;left:8px;right:16px;margin-bottom:0;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#m-hood .m-setbar--row .m-field select{height:30px;font-size:12.5px;padding-right:16px}
+#m-hood .m-setbar--row .m-field select{height:50px;font-size:12.5px;padding:16px 16px 0 8px}
 #m-hood .m-setbar--row .m-field::after{right:9px;bottom:14px;width:6px;height:6px}
 
 /* PC 에서 휴대폰 화면을 열었을 때의 안내 띠 */
@@ -442,28 +462,19 @@ body.m .modal-ft .btn{width:100%}
 }
 
 /* ============================================================
-   ★ '내가 담은 사업'은 아직 데스크톱(index.html)에만 있다.
-
-   사업 카드는 app.js 의 projCardHtml() 한 곳에서 만들기 때문에
-   휴대폰 화면에도 별표가 함께 따라온다. 그런데 m.html 에는 담은 사업을
-   볼 화면(#scr-saved)이 없다 — 아래 탭 막대가 이미 5개로 꽉 차 있어
-   자리를 어디에 둘지 아직 정하지 않았다.
-
-   담기만 되고 볼 곳이 없으면 담은 사람은 잃어버린 것으로 여긴다.
-   그래서 휴대폰에서는 담기 단추를 아예 감춘다.
-   **휴대폰용 담은 사업 화면을 만들 때 이 규칙을 지운다.**
+   관심·알림(담은 사업) · 설명회 화면
    ============================================================ */
-/* ── 담은 사업 (2026-08-16 추가) ──
-   예전에는 여기서 별표를 통째로 감췄다. 휴대폰에 담은 사업을 볼 화면이 없어서
-   "담기만 되고 볼 곳이 없는" 상태였기 때문이다. 이제 #scr-saved 가 생겨 감출 이유가 없다. */
-
-/* 머리말 별표 단추 — 아래 탭이 5개로 꽉 차서 입구를 여기에 둔다 */
 /* 담은 개수 배지 — 머리말 별표를 없애서(2026-09-04) 아래 탭의 '관심/알림' 아이콘 위로 옮겼다. */
 .m-tabs .ic{position:relative}
 .m-tab-cnt{position:absolute;top:-4px;right:-9px;min-width:16px;height:16px;padding:0 4px;
   border-radius:999px;background:var(--live);color:#fff;font-size:10px;font-weight:800;
   line-height:16px;text-align:center}
 
+/* 위 남색 띠에 화면 이름을 보인다 (2026-11-03). app.css 는 좁은 화면에서 .gis-ttl 을 숨기는데,
+   그건 지도 화면 띠를 한 줄로 지키려는 것이다 — 이 두 화면 띠에는 돌아가기 단추뿐이라
+   제목이 없으면 빈 띠가 되고, 같은 제목이 본문에 한 번 더 나왔다 */
+#scr-brief .gis-ttl,#scr-saved .gis-ttl{display:block;min-width:0;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
 .m-saved-body{padding:14px 16px calc(var(--m-tabh) + var(--m-safe) + 20px);overflow-y:auto;flex:1}
 .m-sec-t{font-size:var(--fs-h-s);margin:0 0 6px}
 .m-saved-body .saved-note{font-size:var(--fs-body-xs);color:var(--ink-3);line-height:1.7;margin:0 0 14px}
@@ -476,4 +487,5 @@ body.m .modal-ft .btn{width:100%}
   gap:10px;margin:22px 0 6px;flex-wrap:wrap}
 .m-saved-body .saved-div-t{font-size:var(--fs-body-m);margin:0}
 .m-saved-body .saved-div-h{font-size:var(--fs-body-xs);color:var(--ink-3);margin:0 0 12px;line-height:1.6}
-.proj .badges{padding-right:0}   /* 별표가 없으니 그 자리를 비워 둘 필요도 없다 */
+/* (예전 `.proj .badges{padding-right:0}` 은 휴대폰에 별표가 없던 때 것이다. 별표가 생긴 뒤로는
+   배지가 길면 별표 밑으로 들어갔다 — 지워서 app.css 의 자리 비움(36px)을 그대로 쓴다) */

@@ -46,10 +46,12 @@
     if(kind === "map"){ openMapScreen(); syncTabs(); return; }
     if(kind === "hood"){ openModal("m-hood"); return; }
     if(kind === "guide"){ openModal("m-guide"); return; }
-    // 관심·알림 — app.js 가 두 화면 공용으로 처리한다 (머리말 별표와 같은 길)
+    /* 관심·알림 — 여는 일은 app.js 의 openSavedScreen() 이 한다 (두 화면 공용).
+       ★ 예전에는 화면 안의 [data-nav="saved"] 단추를 대신 눌렀는데, m.html 에서 그 단추가
+         홈 목록 아래 초록 줄 하나뿐이라 그 줄을 빼자(2026-11-03) 탭이 먹통이 됐다.
+         없을 수도 있는 남의 단추에 기대지 않는다. */
     if(kind === "saved"){
-      const star = q('[data-nav="saved"]');
-      if(star) star.click();
+      if(typeof openSavedScreen === "function") openSavedScreen();
       syncTabs();
       return;
     }

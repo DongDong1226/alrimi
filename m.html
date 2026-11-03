@@ -219,7 +219,8 @@
         <button type="button" data-modal="m-contact">문의</button>
         <a href="index.html?pc=1">넓은 화면(PC)</a>
       </p>
-      <p class="m-copy">© 2026 기후에너지환경부. EIASS에 공개된 자료를 정리해 보여드립니다. 원문과 다르면 원문이 우선합니다.</p>
+      <!-- 'EIASS 자료를 정리해 보여드립니다'는 바로 아래 출처 줄이 말하므로 뺐다 (2026-11-03) -->
+      <p class="m-copy">© 2026 기후에너지환경부 · 원문과 다르면 원문이 우선합니다.</p>
       <p class="m-copy m-src">자료 출처
         <a href="https://www.eiass.go.kr/" target="_blank" rel="noopener">EIASS</a> ·
         <a href="https://www.kogl.or.kr/info/license.do" target="_blank" rel="noopener">공공누리 제4유형</a>
@@ -342,10 +343,10 @@
   <div class="m-saved-body">
     <!-- 목록과 상세가 같은 칸을 번갈아 쓴다 (index.html 과 같은 칸 이름 — app.js 공용) -->
     <div id="briefList">
-      <h2 class="m-sec-t">주민 설명회 안내</h2>
+      <!-- 화면 이름은 위 남색 띠(.gis-ttl)에 있다. 본문에 같은 제목을 또 두지 않는다 (2026-11-03) -->
       <p class="saved-note" id="openListNote"></p>
-      <p class="brief-guide">설명회 일시·장소는 사업자가 낸 <b>원문 그대로</b>입니다.
-        날짜를 분명히 알 수 있는 것만 지난 일정에 <b>지남</b>을 붙였습니다.</p>
+      <!-- '지남' 딱지는 보면 알아서 설명을 뺐다. 원문 그대로라는 사실만 남긴다 -->
+      <p class="brief-guide">일시·장소는 사업자가 낸 <b>원문 그대로</b>입니다.</p>
       <!-- 사업 목록과 같은 이유로 3개 고정, 고르는 UI는 없앤다. -->
       <select id="openPerPage" hidden><option value="3" selected>3개</option></select>
       <div id="openList"></div>
@@ -373,10 +374,9 @@
     <h2 class="m-sec-t" id="savedHead">담아 둔 사업</h2>
     <p class="saved-note" id="savedNote"></p>
 
-    <!-- 구독을 먼저, 파일 받기를 나중에. index.html 과 같은 칸 이름 (app.js 공용) -->
-    <div class="cal-box cal-box--sub" id="calSub"></div>
-    <div class="cal-box cal-box--minor" id="savedCal" hidden></div>
-
+    <!-- ★ 담은 사업을 맨 위에 둔다 (2026-11-03). 예전에는 캘린더 칸 두 개가 위에 있어
+         담아 둔 사업이 817px 아래(한 화면 넘게 내려야)에야 보였다. 이 화면에 오는 까닭은 대개
+         '담아 둔 것의 마감 확인'이고, 알림 설정은 한 번 해 두면 다시 볼 일이 드물다. -->
     <div class="m-cards" id="savedGrid"></div>
 
     <!-- 기한이 지난 사업은 따로 모은다. 일부러 담아 둔 것이 말없이 사라지면 고장으로 여긴다. -->
@@ -388,6 +388,10 @@
       <p class="saved-div-h">의견 제출 기한이 끝났습니다. 기록으로 남겨 둔 것이며, 평가서 초안 해석은 표시되지 않습니다.</p>
       <div class="m-cards" id="savedClosedGrid"></div>
     </div>
+
+    <!-- 그 아래 알림 — 구독을 먼저, 파일 받기를 나중에. index.html 과 같은 칸 이름 (app.js 공용) -->
+    <div class="cal-box cal-box--sub" id="calSub"></div>
+    <div class="cal-box cal-box--minor" id="savedCal" hidden></div>
   </div>
 </div>
 

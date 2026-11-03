@@ -669,8 +669,7 @@ select:disabled{opacity:.5;cursor:not-allowed}
 .cal-pick-row{display:flex;gap:8px;flex-wrap:wrap}
 .cal-pick-row .msel{flex:1 1 150px;min-width:0}
 .cal-pick-row select{width:100%}
-.cal-now{margin:12px 0 0;font-size:var(--fs-body-s);color:var(--ink-2)}
-.cal-now b{color:var(--eco)}
+/* ('지금 받는 지역 ○○' 줄 .cal-now 는 2026-11-03 에 뺐다 — 바로 위 세 칸과 같은 말이었다) */
 
 /* ── 새로 올라온 사업 알림 줄 ──────────────────────────────────────
    지난번 본 뒤로 공람이 시작된 사업이 있을 때만 나온다.
