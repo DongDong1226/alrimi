@@ -350,6 +350,9 @@ button{cursor:pointer}
 .sort-btn{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:var(--fs-body-s);
   font-weight:600;color:var(--ink-3);background:none;border:0;padding:8px 2px}
 .sort-btn:hover{color:var(--primary)}
+/* 우리 집이 없으면(전국·시·도만) 거리를 몰라 '마감 임박 순'으로 고정한다 — 눌러도 바꿀 것이 없다 */
+.sort-btn:disabled{cursor:default}
+.sort-btn:disabled:hover{color:var(--ink-3)}
 .sort-btn svg{width:15px;height:15px}
 
 .proj-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:20px}

@@ -1183,8 +1183,17 @@ def ics_esc(s):
 
 
 def cal_deadline(p):
-    """캘린더에 넣을 날짜 — 의견 제출 마감일. 없으면 공람 종료일."""
-    return p.get("opinionEnd") or p.get("periodEnd")
+    """캘린더에 넣을 날짜 — 의견 제출 마감일. 없으면 공람 종료일.
+
+    ★ 둘 다 있으면 **늦은 쪽**이다 (2026-11-03에 맞춤). 화면(app.js normalizeProject)은
+      2026-09-04 부터 max(의견 마감, 공람 종료) 를 쓰는데 여기만 EIASS 값을 그대로 써서,
+      EIASS 가 의견 마감을 공람 종료보다 이르게 적은 사업(면목선이 그랬다)은
+      구독 캘린더에만 **지난 날짜**가 들어가 알림이 영영 안 울릴 뻔했다.
+      날짜가 YYYY-MM-DD 라 글자로 견줘도 순서가 맞다."""
+    o, e = p.get("opinionEnd"), p.get("periodEnd")
+    if o and e:
+        return max(o, e)
+    return o or e
 
 
 def ics_body(p):
@@ -1231,9 +1240,12 @@ def build_ics(title, rows):
             f"SUMMARY:[의견 마감] {ics_esc(p.get('name',''))}",
             f"DESCRIPTION:{ics_esc(ics_body(p))}",
             f"LOCATION:{ics_esc(p.get('address',''))}",
-            "BEGIN:VALARM", "ACTION:DISPLAY", "TRIGGER:-P3DT15H",
+            # 미리 알림 — 사흘 전 9시 · 당일 9시. 온종일 일정은 **그날 0시** 기준이다 (2026-11-03에 고침).
+            # 예전 -P3DT15H 는 나흘 전 9시, -PT15H 는 전날 9시였다(전날에 '오늘 마감'이 떴다).
+            # app.js 의 buildIcs() 와 **같은 값**이어야 한다.
+            "BEGIN:VALARM", "ACTION:DISPLAY", "TRIGGER:-P2DT15H",
             f"DESCRIPTION:{ics_esc(p.get('name',''))} 의견 제출 마감 3일 전", "END:VALARM",
-            "BEGIN:VALARM", "ACTION:DISPLAY", "TRIGGER:-PT15H",
+            "BEGIN:VALARM", "ACTION:DISPLAY", "TRIGGER:PT9H",
             f"DESCRIPTION:{ics_esc(p.get('name',''))} 의견 제출 오늘 마감", "END:VALARM",
             "END:VEVENT",
         ]

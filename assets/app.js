@@ -135,10 +135,14 @@ function buildIcs(list){
       `SUMMARY:[의견 마감] ${icsEsc(p.name)}`,
       `DESCRIPTION:${icsEsc(calText(p))}`,
       `LOCATION:${icsEsc(p.where)}`,
-      // 미리 알림 — 사흘 전 아침 9시, 그리고 당일 아침 9시
-      "BEGIN:VALARM", "ACTION:DISPLAY", "TRIGGER:-P3DT15H",
+      // 미리 알림 — 사흘 전 아침 9시, 그리고 당일 아침 9시.
+      // ★ 온종일 일정의 알림은 **그날 0시**를 기준으로 센다 (2026-11-03에 고침).
+      //   예전 값 -P3DT15H 는 0시 −3일 −15시간 = **나흘 전 9시**, -PT15H 는 **전날 9시** 였다 —
+      //   전날에 "오늘 마감" 이 떴다. 사흘 전 9시 = −2일 15시간, 당일 9시 = +9시간.
+      //   build_data.py 의 구독 캘린더도 **같은 값**이어야 한다.
+      "BEGIN:VALARM", "ACTION:DISPLAY", "TRIGGER:-P2DT15H",
       `DESCRIPTION:${icsEsc(p.name)} 의견 제출 마감 3일 전`, "END:VALARM",
-      "BEGIN:VALARM", "ACTION:DISPLAY", "TRIGGER:-PT15H",
+      "BEGIN:VALARM", "ACTION:DISPLAY", "TRIGGER:PT9H",
       `DESCRIPTION:${icsEsc(p.name)} 의견 제출 오늘 마감`, "END:VALARM",
       "END:VEVENT"
     );
@@ -2032,6 +2036,9 @@ function locTagHtml(p){
    형식이 분명한 것만 골라 날짜로 읽어 "지남"을 표시한다.
 
    읽는 형식: 2026년 8월 6일 / 2026.08.06 / 2026-08-06 / 20260806 / 2026 8 6(목)
+              2026. 11. 12. (점 뒤 띄어쓰기) / 2026 11 2, 10시 (괄호 없이 띄어쓰기) — 2026-11-03 추가
+   ★ 2026-11-03 실측: 설명회가 적힌 35건 중 **8건이 날짜를 하나도 못 읽고** 있었다
+     (위 두 꼴 6건 + 연도 없는 '10월 27일' 2건). 오늘 설명회가 있는 사업에도 '오늘' 이 안 붙었다.
    읽고 남은 자리에 날짜 같은 조각이 또 있으면(예: "30일(목)~31일(금), 08월 03일")
    해석을 포기하고 원문만 보여준다. 틀린 안내가 없는 안내보다 나쁘기 때문이다.
    ============================================================ */
@@ -2057,9 +2064,12 @@ const TIME_ONLY_RE = /^[\s\d시:분초오전후~∼\-–()월화수목금토일�
 
 const BRIEF_FULL_RES = [
   /(\d{4})\s*년\s*(\d{1,2})\s*월\s*(\d{1,2})\s*일/,
-  /(\d{4})[.\-/](\d{1,2})[.\-/](\d{1,2})/,
+  // 점·빗금·줄표 앞뒤 띄어쓰기를 받는다 — "2026. 11. 12.(목)" · "2026. 10.29." (예전엔 붙여 쓴 것만 읽었다)
+  /(\d{4})\s*[.\-/]\s*(\d{1,2})\s*[.\-/]\s*(\d{1,2})(?!\d)/,
   /(?<!\d)(\d{4})(\d{2})(\d{2})(?!\d)/,
-  /(\d{4})\s+(\d{1,2})\s+(\d{1,2})\s*\(/
+  // 띄어쓰기로만 가른 꼴 — "2026 11 6(금)" · "2026 11 2, 10시" (예전엔 바로 뒤에 괄호가 있어야 읽었다).
+  // 연도를 20xx 로 묶어 둔다 — 아무 숫자 세 개를 날짜로 읽지 않게
+  /(?<!\d)(20\d{2})\s+(\d{1,2})\s+(\d{1,2})(?!\d)/
 ];
 
 function mkDate(y, m, d){
@@ -2067,9 +2077,23 @@ function mkDate(y, m, d){
   return (v.getFullYear() === y && v.getMonth() === m - 1 && v.getDate() === d) ? v : null;
 }
 
+/* 연도 없이 '10월 27일' 만 적힌 경우 — 공람 시작일에 **가장 가까운 해**로 읽는다 (2026-11-03).
+   설명회는 공람 기간 안팎에 열리므로 앞뒤 1년 중 가장 가까운 것이 맞다
+   (12월 공람에 '1월 5일' 이면 다음 해가 된다). 원문은 그대로 두고 'D-n·지남' 표시에만 쓴다. */
+function nearYearDate(m, d, base){
+  const y0 = base.getFullYear();
+  let best = null;
+  for(const y of [y0 - 1, y0, y0 + 1]){
+    const v = mkDate(y, m, d);
+    if(v && (!best || Math.abs(v - base) < Math.abs(best - base))) best = v;
+  }
+  return best;
+}
+
 /* 조각 하나에서 날짜들을 뽑는다. carry 는 앞 조각에서 물려받은 [연,월] —
-   "08월 03일(월)"처럼 연도를 생략한 경우에 쓴다. */
-function datesInPiece(text, carry){
+   "08월 03일(월)"처럼 연도를 생략한 경우에 쓴다. base 는 공람 시작일(Date) —
+   **첫 조각부터** 연도가 없을 때만 쓴다 (물려받을 앞 조각이 없으므로). */
+function datesInPiece(text, carry, base){
   const got = [];
   let y = null, m = null, mt = null;
   for(const re of BRIEF_FULL_RES){
@@ -2086,10 +2110,15 @@ function datesInPiece(text, carry){
     const v = mkDate(y, m, +mt[3]);
     if(v) got.push(v);
   }
-  if(!got.length && carry[0] && (mt = /(\d{1,2})\s*월\s*(\d{1,2})\s*일/.exec(text))){
-    y = carry[0]; m = +mt[1];
-    const v = mkDate(y, m, +mt[2]);
-    if(v) got.push(v);
+  if(!got.length && (mt = /(\d{1,2})\s*월\s*(\d{1,2})\s*일/.exec(text))){
+    if(carry[0]){
+      y = carry[0]; m = +mt[1];
+      const v = mkDate(y, m, +mt[2]);
+      if(v) got.push(v);
+    }else if(base){
+      const v = nearYearDate(+mt[1], +mt[2], base);
+      if(v){ got.push(v); y = v.getFullYear(); m = +mt[1]; }
+    }
   }
   if(got.length && y && m && (mt = /[~∼]\s*(\d{1,2})\s*일/.exec(text))){      // "30일~31일" 의 끝날
     const v = mkDate(y, m, +mt[1]);
@@ -2157,12 +2186,20 @@ function briefInfo(p){
 
   const items = [];
   let carry = [null, null];
+  let lastDate = null;
+  const base = p.periodStart ? new Date(p.periodStart + "T00:00:00") : null;
   pieces.forEach((text, i) => {
-    const r = datesInPiece(text, carry);
+    const r = datesInPiece(text, carry, base);
     carry = r.carry;
     const pl = matched ? matched[i] : null;
     if(r.dates.length){
       r.dates.forEach((d, k) => items.push({ when:text, place:pl, date:d, extra:k > 0 }));
+      lastDate = r.dates[0];
+    }else if(lastDate && /\d{1,2}\s*:\s*\d{2}|\d{1,2}\s*시/.test(text) && !/\d\s*[월일]/.test(text)){
+      /* 날짜 없이 시각과 장소만 적힌 조각은 **앞 조각과 같은 날**의 다른 회차다 (2026-11-03).
+         예: "2026 11 6(금) 오전 10:00 포항시…, 오후 15:00 경주시…" — 뒤 조각이 날짜 없는 회차로
+         따로 세어져 '지남'·'n회 남음' 계산에서 빠졌다. 시각만 있는 조각은 위에서 이미 앞에 붙였다. */
+      items.push({ when:text, place:pl, date:new Date(lastDate), extra:false });
     }else{
       items.push({ when:text, place:pl, date:null, extra:false });
     }
@@ -2387,6 +2424,19 @@ function renderDashTick(){
    ============================================================ */
 let filter = "all", sortBy = "dist", query = "";
 
+/* 실제로 쓰는 정렬 (2026-11-03).
+   ★ 우리 집이 없으면(전국·시·도만) 거리를 모른다. 그때 '가까운 순'으로 두면 비교가 전부 0 이라
+     **자료 파일 순서가 그대로** 나왔다 — 라벨은 '가까운 순'인데 실측 D-34, 30, 29, 8, 45 … 로 섞였다.
+     그래서 마감 임박 순으로 바꾸고, 단추도 그 사실대로 보여 준다(syncSortBtn). */
+function effectiveSort(){ return (sortBy === "dist" && !hasHome()) ? "dday" : sortBy; }
+function syncSortBtn(){
+  const btn = $("#sortBtn");
+  const noHome = !hasHome();
+  btn.disabled = noHome;
+  btn.title = noHome ? "동네를 고르면 가까운 순으로 볼 수 있습니다" : "";
+  $("#sortLabel").textContent = effectiveSort() === "dist" ? "가까운 순" : "마감 임박 순";
+}
+
 function visibleProjects(){
   let rows = scopedProjects()
     .filter(p => filter === "all" || p.type === filter);
@@ -2394,8 +2444,9 @@ function visibleProjects(){
     const q = query.toLowerCase();
     rows = rows.filter(p => (p.name + p.typeLabel + p.where).toLowerCase().includes(q));
   }
+  const by = effectiveSort();
   rows.sort((a, b) => {
-    if(sortBy === "dist"){
+    if(by === "dist"){
       if(a.nearDist == null && b.nearDist == null) return 0;
       if(a.nearDist == null) return 1;
       if(b.nearDist == null) return -1;
@@ -2503,6 +2554,7 @@ function renderNewBanner(){
 }
 
 function render(){
+  syncSortBtn();
   const rows = visibleProjects();
   const grid = $("#projGrid");
   const cut = pageSlice(rows, PAGER.proj);
@@ -3019,9 +3071,8 @@ $$("[data-filter]").forEach(c => c.addEventListener("click", () => {
 }));
 $("#sortBtn").addEventListener("click", () => {
   sortBy = sortBy === "dist" ? "dday" : "dist";
-  $("#sortLabel").textContent = sortBy === "dist" ? "가까운 순" : "마감 임박 순";
   resetPages();
-  render();
+  render();             // 라벨은 render() 안의 syncSortBtn() 이 맞춘다
 });
 function runSearch(){
   query = $("#q").value.trim();
@@ -3164,6 +3215,8 @@ let selectedId = null;
 
 function gisProjects(){
   const rows = PROJECTS.filter(p => p.lat != null).filter(scopeTest(mapScope));
+  // 우리 집이 없으면 거리가 전부 null 이라 자료 파일 순서가 그대로 나왔다 → 마감 임박 순 (2026-11-03)
+  if(!hasHome()) return rows.sort((a, b) => (a.dday ?? 999) - (b.dday ?? 999));
   return rows.sort((a, b) => (a.nearDist ?? 1e9) - (b.nearDist ?? 1e9));
 }
 
