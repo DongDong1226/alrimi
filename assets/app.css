@@ -425,7 +425,10 @@ button{cursor:pointer}
 .dpill{flex:none;min-width:54px;text-align:center;padding:8px 11px;border-radius:var(--r-pill);
   background:var(--primary-soft);color:var(--p70);font-size:var(--fs-body-s);font-weight:800;
   font-variant-numeric:tabular-nums}
-.dpill.urgent{background:#fdece8;color:var(--danger)}
+/* ★ 3일 이내는 빨간 바탕 · 흰 글자 (2026-11-03). 예전에는 옅은 분홍(#fdece8, 토큰에 없는 색) 위
+   빨간 글자라 대비가 3.98 — 본문 기준(4.5) 미달이었다. 다른 화면의 '3일 이내' 표시(.badge--live)와
+   같은 모양으로 맞췄다 → 대비 4.56. 이 서비스에서 가장 급한 정보라 가장 잘 읽혀야 한다. */
+.dpill.urgent{background:var(--danger);color:#fff}
 .dpill.done{background:#eef0f3;color:var(--ink-3)}
 .row-body{flex:1;min-width:0}
 .row-body .t{font-size:var(--fs-h-xxs);font-weight:700;color:var(--ink);line-height:1.45}
