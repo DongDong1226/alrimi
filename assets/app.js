@@ -1019,8 +1019,12 @@ async function resolveHome(hood, coord){
 
   if(coord){
     HOME.lat = coord.lat; HOME.lon = coord.lon; HOME.exact = true;
-  }else if(isNation(hood)){
+  }else if(isNation(hood) || (!sgg && !dong)){
     // 전국을 보는 중에는 기준점이 뜻을 갖지 않는다. 설정의 기준 좌표를 그대로 둔다.
+    // ★ 시·도만 골랐을 때도 좌표를 묻지 않는다 (2026-11-03).
+    //   시·도에서는 거리·우리 집·반경을 감추므로(hasHome) 이 좌표를 쓰는 곳이 없는데,
+    //   묻고 기다리느라 **지도가 그만큼 늦게 바뀌었다** — 실측 전남광주 2.4초 · 전북 1.0초.
+    //   (축척은 경계 data/sido.json 으로 맞추므로 VWorld 가 없어도 된다)
     HOME.lat = +S.centerLat; HOME.lon = +S.centerLon; HOME.exact = false;
   }else{
     // 동까지 못 찾으면 시군구, 그것도 못 찾으면 시도로 범위를 넓혀가며 찾는다.
@@ -1621,7 +1625,9 @@ $("#btn-hood-apply").addEventListener("click", async () => {
   pushRecent(hood);
   btn.disabled = false;
   btn.textContent = "이 동네로 보기";
-  if(!HOME.exact){
+  // '좌표를 못 찾음'은 **찾아야 했는데 못 찾은** 때만 알린다 — 전국·시·도만은 원래 찾지 않는다
+  // (hasHome 이 false). 예전에는 전국을 골라도 이 말이 뜨고 창이 안 닫혔다.
+  if(hasHome() && !HOME.exact){
     $("#hoodPickMsg").textContent = "이 주소의 좌표를 찾지 못해 기준 위치를 옮기지 못했습니다. 다른 동네를 골라 보세요.";
     return;
   }
@@ -3904,7 +3910,7 @@ $("#btn-map-addr").addEventListener("click", async () => {
   pushRecent(hood);
   btn.disabled = false;
   btn.textContent = "이 주소로 보기";
-  if(!HOME.exact){
+  if(hasHome() && !HOME.exact){   // 찾아야 했는데 못 찾은 때만 (위 동네 변경 창과 같은 기준)
     $("#gisList").insertAdjacentHTML("afterbegin",
       `<p class="gis-empty">주소의 좌표를 찾지 못해 기준 위치를 옮기지 못했습니다.</p>`);
   }
