@@ -1535,9 +1535,23 @@ function rememberScreen(id, push){
 
    ★ `history.back()` 만 부르면 안 된다. 우리가 쌓은 기록이 없을 때(주소에 `?admin=1` 을
      넣어 바로 들어온 경우) **사이트를 벗어난다.** 그래서 깊이(`i`)를 보고 가른다. */
+/* ★ '돌아가기' 단추로 물러날 때는 **한 겹씩 걷지 않는다** (2026-11-03).
+   뒤로가기 처리(popstate)는 겹쳐 놓은 것(상세·시트)부터 한 겹씩 걷어내는데, '돌아가기'도
+   history.back() 을 쓰므로 그 길을 그대로 탔다. 그래서 상세나 목록을 연 채 '돌아가기'를 누르면
+   **한 겹만 닫히고 화면은 그대로**였다 — 데스크톱 지도(상세) · 설명회(상세) · 휴대폰 지도(시트).
+   '돌아가기'는 화면을 나가겠다는 뜻이 분명하므로, 이 표시가 있으면 popstate 가 바로 화면을 옮긴다.
+   (펼친 상세는 show() 가 접고, 휴대폰 시트는 지도에 다시 들어올 때 mobile.js 가 닫는다) */
+let leavingTo = null;
+
 function goBackScreen(fallbackId){
   const i = (history.state && history.state.i) || 0;
-  if(i > 0){ history.back(); return; }   // popstate 가 화면을 바꿔 준다
+  if(i > 0){
+    leavingTo = fallbackId;
+    // popstate 가 어떤 까닭으로 안 오면 표시가 남아 다음 뒤로가기까지 건너뛴다 — 잠깐만 둔다
+    setTimeout(() => { leavingTo = null; }, 1000);
+    history.back();
+    return;
+  }   // popstate 가 화면을 바꿔 준다
   // 기록이 없다 — 기록을 쌓지 말고 지금 자리를 바꾼다
   show(fallbackId, false);
   history.replaceState({ screen:fallbackId, i:0 }, "");
@@ -1585,6 +1599,14 @@ function backOnePane(){
 addEventListener("popstate", e => {
   /* 뒤로가기는 **한 단계씩** 되돌린다 — 겹쳐 있는 것을 먼저 걷어내고,
      걷어낼 것이 없을 때만 화면을 옮긴다. */
+
+  // ⓪ '돌아가기' 단추로 왔으면 걷지 않고 바로 화면을 옮긴다 (goBackScreen 위 설명)
+  if(leavingTo){
+    const to = (e.state && e.state.screen) || leavingTo;
+    leavingTo = null;
+    show(to, false);
+    return;
+  }
 
   // ① 모달 — **가장 나중에 열린 것만** 닫는다 (겹쳐 열리기 때문)
   const top = modalStack[modalStack.length - 1];
@@ -3235,6 +3257,10 @@ const LSDECIS = "wdn.routeDecisions";
 let fileDecisions = {};                    // data/route_decisions.json (모두에게 보이는 것)
 let localDecisions = lsGet(LSDECIS, {});   // 이 브라우저에서 방금 정한 것
 let routeDecisions = Object.assign({}, localDecisions);
+/* 파일 맨 위 설명(_). 내려받는 JSON 에도 그대로 넣는다 — 빠뜨리면 그 파일로 덮어쓸 때 설명이 사라진다.
+   파일을 못 읽었을 때를 위해 같은 글을 여기에도 둔다. */
+let decisionsNote = "노선을 직접 그릴지 말지 정한 기록. 관리자 화면(노선 정리)에서 내려받아 이 파일에 덮어쓰고 커밋한다. "
+  + "status: skip = 안 그리기로 함. '직접 그림'은 data/routes.json 에 노선이 있으면 저절로 알 수 있으므로 여기 적지 않는다.";
 
 async function loadDecisions(){
   try{
@@ -3242,6 +3268,7 @@ async function loadDecisions(){
     if(!res.ok) throw new Error("HTTP " + res.status);
     const json = await res.json();
     fileDecisions = json.decisions || {};
+    if(json._) decisionsNote = json._;
   }catch(e){
     fileDecisions = {};   // 파일이 없는 게 정상이다 (아직 아무도 판단하지 않은 상태)
   }
@@ -3276,7 +3303,7 @@ function decisionsJson(){
     const d = routeDecisions[k];
     if(d && d.status && d.status !== "none") out[k] = d;
   });
-  return JSON.stringify({ decisions: out }, null, 2);
+  return JSON.stringify({ _: decisionsNote, decisions: out }, null, 2);
 }
 
 /* 아직 파일에 반영 안 된 판단이 몇 건인가 — 커밋해야 할 것이 있는지 알려 준다. */
@@ -4574,4 +4601,11 @@ addEventListener("scroll", e => {
 
 /* 주소에 ?admin=1 이 있으면 관리자 화면으로 바로 간다.
    ★ 반드시 시작 코드 **뒤**여야 한다 — 앞에서 부르면 위 줄들이 첫 화면으로 되돌린다. */
-if(new URLSearchParams(location.search).get("admin") === "1") enterAdmin();
+if(new URLSearchParams(location.search).get("admin") === "1"){
+  // ★ 휴대폰 화면(m.html)에는 관리자 화면이 없다 — 예전에는 **빈 페이지**가 됐다 (2026-11-03).
+  //   휴대폰이 index.html?admin=1 을 열면 m.html?admin=1 로 넘어오기 때문이다.
+  //   데스크톱 화면으로 보낸다. pc=1 이 있어 index.html 이 다시 m.html 로 돌려보내지 않는다.
+  //   ($() 대신 getElementById — 없는 칸 로그를 남기지 않으려고)
+  if(!document.getElementById("scr-admin")) location.replace("index.html?pc=1&admin=1");
+  else enterAdmin();
+}

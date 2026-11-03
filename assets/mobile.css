@@ -289,8 +289,11 @@ body.m .pg{min-width:40px;min-height:40px}
    손잡이만 생각하고 높이를 잡으면 이 사고가 다시 난다 — 단추를 기준으로 잡을 것. */
 .m-sheet-hd{flex:none;position:relative;display:flex;align-items:center;justify-content:center;
   min-height:44px;padding:5px 10px}
-.m-sheet-grip{flex:none;padding:2px 26px;background:none;border:0;
-  display:flex;justify-content:center}
+/* ★ 손잡이 단추는 **줄 높이를 다 쓴다** (2026-11-03). 예전에는 위아래 여백이 2px 이라
+   누르는 자리가 **9px** 뿐이었다(손가락 기준 24px 미달) — 줄은 44px 인데 나머지는 눌러도 안 먹었다.
+   보이는 막대(i)는 그대로 두고 누르는 자리만 키운다. */
+.m-sheet-grip{flex:none;align-self:stretch;min-height:34px;padding:0 26px;background:none;border:0;
+  display:flex;align-items:center;justify-content:center}
 .m-sheet-grip i{display:block;width:42px;height:5px;border-radius:3px;background:var(--line-strong)}
 .m-sheet-close{position:absolute;right:8px;top:50%;transform:translateY(-50%);
   display:inline-flex;align-items:center;gap:5px;min-height:34px;padding:6px 12px;
