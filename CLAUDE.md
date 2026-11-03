@@ -1127,8 +1127,16 @@ var phone = shortSide <= 600 && matchMedia("(pointer:coarse)").matches;
 
 > **브라우저가 색을 뒤집는 것도 '깨짐'이다.** 휴대폰이 다크 모드면 삼성 인터넷·크롬이
 > 페이지 색을 제멋대로 반전시키는데, 요소마다 판단이 달라 어떤 칸만 검게 된다.
-> 두 화면 모두 `<meta name="color-scheme" content="light">` 와 `:root{color-scheme:light}` 로 막았다.
+> 두 화면 모두 `<meta name="color-scheme" content="only light">` 와 `:root{color-scheme:only light}` 로 막았다.
 > **이 두 줄을 지우면 안 된다.**
+> **★ `light` 가 아니라 `only light` 여야 한다** (2026-11-03). 웨일 다크 모드로 연 휴대폰 홈이 **검게** 나왔다.
+> 크롬 계열(크롬·엣지·웨일)의 '웹 콘텐츠 강제 다크'는 `light` 만으로는 안 막힌다 — 크롬 문서도 `only light` 를 쓰라고 한다.
+> 실측(설치된 크롬·엣지 156 + 강제 다크): 선언 없음·`light` 는 흰 칸이 `rgb(18,18,18)` 로 뒤집혔고 `only light` 만 흰색 그대로.
+> 우리 사이트(밝은 칸 비율): 휴대폰 30→97% · 데스크톱 2→90% · 노선 도구 19→97%.
+> **보통 브라우저에서는 `light` 와 픽셀 하나까지 같다**(폰 다크/라이트 설정 둘 다 확인).
+> **★ 이 시험은 playwright 기본 Chromium 으로는 안 된다** — 강제 다크가 아예 안 켜져서 '안 뒤집힌다'로 잘못 나온다.
+> 설치된 크롬(`channel="chrome"`)에 `--enable-features=WebContentsForceDark` 를 줘야 재현된다.
+> 웨일 자체로는 재 보지 못했다(같은 엔진이라 같다고 본다) — 실기기 확인은 사람이 한다
 
 ### ★ 화면에 쓰는 이름은 `우리동네 개발 알리미` 다 (2026-09-04)
 
