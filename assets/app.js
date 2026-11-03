@@ -38,6 +38,9 @@ const RADIUS_STEPS = [1, 2, 3, 5, 10, 20];
 /* 동네를 안 정했을 때(전국) 지도가 바라볼 자리 — 남한이 한눈에 들어오는 지점 */
 const KOREA_CENTER = [36.3, 127.8];
 
+/* 지도 축척을 맞출 때는 움직임 없이 한 번에 — 까닭은 fitGisView() 위 설명 */
+const FIT_NOW = { animate:false };
+
 const LSKEY = "wdn.settings";
 const LSRECENT = "wdn.recent";
 /* 주민이 별표로 담아 둔 사업 번호 목록.
@@ -829,8 +832,19 @@ function hoodDong(h){ return (h && h.dong && h.dong !== ANY) ? h.dong : ""; }
    `지금 내 위치로 보기` 가 **좌표는 얻었는데 주소를 못 찾은** 때다(동네가 '전국'으로 남는다).
    그때 `isNation()` 으로 판단하면 진짜 서 있는 자리를 두고도 거리를 안 재서
    **반경 안 사업이 0건**이 되고, 반경 단추가 **선택된 채로 잠기는** 모순까지 생겼다.
-   ★ 거리·반경·지도 마커는 반드시 이것을 쓴다. 라벨·경계·캘린더 지역은 `isNation()` 이 맞다. */
-function hasHome(){ return !isNation(currentHood) || !!HOME.gps; }
+   ★ 거리·반경·지도 마커는 반드시 이것을 쓴다. 라벨·경계·캘린더 지역은 `isNation()` 이 맞다.
+
+   ★ **시·도만 골랐을 때도 '없음'이다** (2026-11-03, 사용자 결정 — "전국처럼 숨기기").
+     시·도의 기준점은 VWorld 가 주는 **도의 대표 지번 한 곳**이라(경기도 → 가평 언저리)
+     거기서 잰 "우리 집에서 27.9km" 는 뜻이 없다. 한가운데로 옮겨도 폭이 100km 넘는 도에서는
+     '우리 집'이 아니다. → 거리·반경·우리 집 표시를 전국처럼 감춘다.
+     **구역 안 보기·경계·축척은 그대로다** — 그것은 `isNation()` 과 경계가 맡는다.
+     그래서 '우리 집이 없다'를 '전국이다'로 읽으면 안 된다 (fitGisView·renderMiniMap·localTest).
+     세종도 같다(시·군·구 단계가 없다). 읍·면·동까지 고르면 거리가 나온다. */
+function hasHome(){
+  const picked = !isNation(currentHood) && !!(hoodSgg(currentHood) || hoodDong(currentHood));
+  return picked || !!HOME.gps;
+}
 
 function hoodLabel(h, short){
   if(isNation(h)) return "전국";
@@ -1037,7 +1051,13 @@ async function resolveHome(hood, coord){
   if($("#scr-map").classList.contains("on")){
     selectedId = null;
     if(gisMap){
-      gisMap.setView([HOME.lat, HOME.lon], 13);
+      // ★ 움직임 없이(FIT_NOW). 바로 뒤에 경계가 와서 축척을 다시 맞추는데,
+      //   이 이동이 애니메이션으로 돌고 있으면 Leaflet 이 그 맞추기를 **버린다**
+      //   (animate:false 로 불러도 '돌고 있는 애니메이션'이 먼저라 버려진다).
+      //   그러면 시·도를 골라도 우리 집 한 점에 줌 13으로 멈춘다 — fitGisView() 위 설명 참고
+      // ★ 우리 집이 없으면(전국·시·도만) 그 점으로 옮기지 않는다 — 뜻 없는 점이다.
+      //   축척은 위 refreshAll() 과 경계가 도착한 뒤의 맞추기가 정한다.
+      if(hasHome()) gisMap.setView([HOME.lat, HOME.lon], 13, FIT_NOW);
       renderGisMarkers(false);
     }
     backToGisList();
@@ -1727,7 +1747,8 @@ function applyAutoScope(){
    행정구역으로 보고 있을 때는 보이는 것이 모두 그 구역 안이므로 붙이지 않고,
    전국을 보는 중이면 반경 자체가 뜻이 없으므로 붙이지 않는다. */
 function outsideBadge(p, scope){
-  if(isNation(currentHood) || scope === "region" || isNearby(p)) return "";
+  // 우리 집이 없으면(시·도만 고름) 반경을 잴 수 없으니 붙이지 않는다 — 안 그러면 모든 카드에 붙는다
+  if(isNation(currentHood) || !hasHome() || scope === "region" || isNearby(p)) return "";
   return `<span class="badge badge--gray">반경 밖</span>`;
 }
 
@@ -1856,12 +1877,17 @@ function eiaSection(p){
      이 경우가 코드에 아예 없어서 "요약문에 내용이 없습니다"로 나갔다 — 사실과 다르다.
      8개 항목이 **전부** 비어 있는 평가서 요약문은 현실에 없다. 만드는 데 실패한 것이다.
      실제로 2026-08-30 에 Anthropic 키가 만료돼 공람 중인 4건이 엿새 동안 이 상태였다.
-     ★ 앞의 두 분기(scanned/none)를 지나온 뒤에 와야 한다 — 못 읽은 것이 먼저다. */
+     ★ 앞의 두 분기(scanned/none)를 지나온 뒤에 와야 한다 — 못 읽은 것이 먼저다.
+     ★ "곧 다시 시도합니다" 라고 약속하지 않는다 (2026-11-03). 저절로 다시 만드는 것은
+       '요약문을 늦게 처음 읽은' 경우뿐이고(build_data.py 의 refresh_cached), 그 밖의 실패
+       (키 만료·잔액·API 오류)는 수집 점검이 메일로 알린 뒤 **사람이** retry_analysis 를 켜야
+       다시 만들어진다. 언제 될지 모르는 일을 약속하면 주민은 기다리다 고장으로 여긴다.
+       그래서 '만들어지면 여기 나온다'는 사실과 '지금 볼 수 있는 길'만 알린다. */
   if(readNothing && p.summaryState === "ok"){
     return { title:"환경영향분석", hint:"만들지 못함", body:`
       <p class="eia-src">요약문은 읽었지만 <b>쉬운 말로 옮기는 데 실패했습니다.</b>
-        <b>내용이 없다는 뜻이 아닙니다.</b> 곧 다시 시도합니다 —
-        그 사이에는 평가서 초안을 EIASS 원문에서 직접 확인해 주세요.</p>` };
+        <b>내용이 없다는 뜻이 아닙니다.</b> 해석이 만들어지면 이 자리에 나옵니다 —
+        지금은 평가서 초안을 EIASS 원문에서 직접 확인해 주세요.</p>` };
   }
 
   const rows = has.map(({ f, v }, i) => {
@@ -2251,6 +2277,11 @@ function updateFilterCounts(){
   });
 }
 
+/* 'D-12' 를 줄이 갈리지 않는 한 덩어리로 (2026-11-03).
+   '-' 뒤는 줄을 바꿀 수 있는 자리라, 칸이 좁으면 'D-' / '2' 로 갈렸다 (홈 숫자 칸에서 실제로 그랬다).
+   마감까지 남은 날은 이 서비스의 핵심 정보다. */
+function ddKeep(n){ return `<span class="dd-keep">D-${esc(n)}</span>`; }
+
 function updateDashboardStats(){
   const rows = scopedProjects();
   const openRows = rows.filter(p => p.dday !== null);
@@ -2260,7 +2291,7 @@ function updateDashboardStats(){
   // 범위 밖 사업 수는 '전국 개발사업' 칸이 없어졌으므로 이 칸 아래에 함께 적는다.
   const outside = PROJECTS.length - rows.length;
   let note = openRows.length
-    ? esc(`가장 빠른 의견 마감 D-${Math.min(...openRows.map(p => p.dday))}`) : "";
+    ? "가장 빠른 의견 마감 " + ddKeep(Math.min(...openRows.map(p => p.dday))) : "";
   // '밖에 N건 더 있음'은 따로 감싼다 — 휴대폰에서는 이 부분만 숨긴다.
   // 좁은 화면에서는 지금 보는 것 말고 다른 것까지 알려 주면 글자만 빽빽해진다.
   if(homeScope !== "all" && outside > 0){
@@ -2284,10 +2315,11 @@ function updateDashboardStats(){
   const nextDdays = briefs.map(b => b.dday).filter(v => v !== null);
   const unknown = briefs.filter(b => b.dday === null && !b.past).length;
   $("#stat-events").dataset.count = events;
-  $("#stat-events-note").textContent = nextDdays.length
-    ? `가장 빠른 설명회 ${Math.min(...nextDdays) === 0 ? "오늘" : "D-" + Math.min(...nextDdays)}`
-      + (unknown ? ` · 일시 미정 ${unknown}건` : "")
-    : (unknown ? `일시가 정해진 설명회가 없습니다` : "남은 설명회가 없습니다");
+  // D-n 을 한 덩어리로 묶으려고 innerHTML 로 넣는다 (ddKeep 참고). 들어가는 값은 전부 숫자다
+  $("#stat-events-note").innerHTML = nextDdays.length
+    ? `가장 빠른 설명회 ${Math.min(...nextDdays) === 0 ? "오늘" : ddKeep(Math.min(...nextDdays))}`
+      + (unknown ? esc(` · 일시 미정 ${unknown}건`) : "")
+    : esc(unknown ? `일시가 정해진 설명회가 없습니다` : "남은 설명회가 없습니다");
   countUp();
 }
 
@@ -2453,9 +2485,10 @@ function render(){
       ? `<div class="proj-empty">
            <p>${scopeWhere(homeScope)}는 지금 공람 중인 사업이 없습니다.</p>
            <p style="margin-top:6px;font-size:var(--fs-body-s)">수집된 사업은 모두 ${outside}건입니다.
-             ${homeScope === "region" ? "반경으로 넓혀 보거나, " : ""}아래 버튼으로 전국 사업을 볼 수 있어요.</p>
+             ${homeScope === "region" && hasHome() ? "반경으로 넓혀 보거나, " : ""}아래 버튼으로 전국 사업을 볼 수 있어요.</p>
            <div class="proj-empty-btns">
-             ${homeScope === "region" && !isNation(currentHood)
+             ${/* 반경은 우리 집이 있어야 뜻이 있다 (시·도만 고르면 없다) */""}
+             ${homeScope === "region" && hasHome()
                ? `<button class="btn btn--ghost btn--sm btn--pill" type="button" id="btnShowNear">반경 ${esc(S.radiusKm)}km로 넓혀 보기</button>` : ""}
              <button class="btn btn--line btn--sm btn--pill" type="button" id="btnShowAll">전국 사업 모두 보기</button>
            </div>
@@ -3416,30 +3449,40 @@ function renderGisMarkers(fit = true){
       검단구 원당동에서도 우리 집이 왼쪽 아래에 치우쳐 찍혔다.)
 
    그래서 **지금 보고 있는 범위 그 자체**에 맞춘다:
-     동네 안 → 경계에            반경 → 우리 집 ± 반경        전국 → 사업 전체 */
+     동네 안 → 경계에            반경 → 우리 집 ± 반경        전국 → 사업 전체
+
+   ★ 축척 맞추기는 **움직임 없이 한 번에** 한다 (`FIT_NOW`, 2026-11-03).
+     Leaflet 은 **확대 애니메이션(0.25초)이 도는 동안 새 확대 요청을 버린다.**
+     그런데 동네를 바꾸면 맞추기가 **두 번** 온다 — 좌표를 먼저 받아 한 번,
+     경계(시·도는 data/sido.json)가 도착해 또 한 번. 실측 간격 **33~43ms** 라
+     두 번째(맞는 것)가 버려지고 첫 번째(엉뚱한 곳)에 멈췄다.
+     실측: 경기도를 고르면 홈 미니지도가 **줌 11 · 도 폭의 17%** 만 보였다(가평 언저리).
+     지도 화면에서 강원→경기도로 바꾸면 **강원도 범위에 멈출 수 있었다.**
+     움직임을 빼면 **나중 요청이 언제나 이긴다.** (FIT_NOW 는 파일 맨 위에 둔다) */
 function fitGisView(rows){
   const nation = !hasHome();
   const home = [HOME.lat, HOME.lon];
 
-  if(!nation && mapScope === "region" && boundLayer){
+  // 구역 안 — 경계에 맞춘다. 경계는 '동네 이름'에서 오므로 우리 집이 없어도(시·도만 고름) 맞춘다.
+  if(mapScope === "region" && boundLayer){
     const b = boundLayer.getBounds();
-    b.extend(home);
-    gisMap.fitBounds(b, { padding:[40, 40] });
+    if(!nation) b.extend(home);
+    gisMap.fitBounds(b, Object.assign({ padding:[40, 40] }, FIT_NOW));
     return;
   }
   if(!nation && mapScope === "near"){
     // 우리 집이 한가운데 오도록 반경만큼만 잡는다. 경계가 있으면 그것까지 담는다.
     const b = L.latLng(HOME.lat, HOME.lon).toBounds(S.radiusKm * 2000);
     if(boundLayer) b.extend(boundLayer.getBounds());
-    gisMap.fitBounds(b, { padding:[30, 30] });
+    gisMap.fitBounds(b, Object.assign({ padding:[30, 30] }, FIT_NOW));
     return;
   }
   // 전국을 보는 중 — 사업들이 다 들어오게. 동네를 정했으면 우리 집도 함께.
   const pts = rows.map(p => [p.lat, p.lon]);
   if(!nation) pts.unshift(home);
-  if(pts.length > 1) gisMap.fitBounds(pts, { padding:[50, 50] });
-  else if(pts.length === 1) gisMap.setView(pts[0], 13);
-  else gisMap.setView(KOREA_CENTER, 7);
+  if(pts.length > 1) gisMap.fitBounds(pts, Object.assign({ padding:[50, 50] }, FIT_NOW));
+  else if(pts.length === 1) gisMap.setView(pts[0], 13, FIT_NOW);
+  else gisMap.setView(KOREA_CENTER, 7, FIT_NOW);
 }
 
 function gisItemHtml(p){
@@ -3450,7 +3493,7 @@ function gisItemHtml(p){
         ${locTagHtml(p)}
       </span>
       <span class="t">${esc(p.name)}</span>
-      <span class="m">${distText(p) ? esc(distText(p)) : "거리 모름"}${p.dday !== null ? ` · D-${p.dday}` : ""}</span>
+      <span class="m">${esc([distText(p), p.dday !== null ? `D-${p.dday}` : ""].filter(Boolean).join(" · "))}</span>
     </button>`;
 }
 
@@ -3458,7 +3501,8 @@ function gisItemHtml(p){
    나누는 기준은 지금 고른 범위를 따른다.
    전국을 보는 중이면 동네가 정해져 있는지에 따라 구역/반경 중 알맞은 쪽으로 나눈다. */
 function localTest(){
-  if(!hasHome()) return null;
+  // 우리 집이 없어도 시·도를 골랐으면 '구역'은 있다 → 그 구역 안 / 밖으로 나눈다
+  if(!hasHome()) return isNation(currentHood) ? null : inHood;
   if(mapScope !== "all") return scopeTest(mapScope);
   return (hoodDong(currentHood) || hoodSgg(currentHood)) ? inHood : isNearby;
 }
@@ -3549,7 +3593,8 @@ function renderGisDetail(){
     </p>
     <p class="ttl">${esc(p.name)}</p>
     <div class="kv"><span class="k">위치</span><span class="v">${esc(p.where)}</span></div>
-    <div class="kv"><span class="k">거리</span><span class="v">${distText(p) ? "우리 집에서 " + esc(distText(p)) : "모름"}</span></div>
+    ${/* 거리를 모르면(전국) 줄째 뺀다 — '거리 모름'을 쓰지 않는다 (gisItemHtml 과 같은 규칙) */""}
+    ${distText(p) ? `<div class="kv"><span class="k">거리</span><span class="v">우리 집에서 ${esc(distText(p))}</span></div>` : ""}
     ${p.bizType ? `<div class="kv"><span class="k">사업구분</span><span class="v">${esc(p.bizType)}</span></div>` : ""}
     <div class="kv"><span class="k">기관</span><span class="v">${esc(p.org)}</span></div>
     ${r ? `<div class="kv"><span class="k">노선</span><span class="v">${esc(ROUTE_SOURCE_TEXT[r.source] || "지도에 표시된 노선입니다.")}</span></div>` : ""}
@@ -3618,6 +3663,10 @@ function renderMapPeek(p){
   const r = routeOf(p);
   const dd = p.dday != null
     ? `<span class="badge ${p.dday <= 3 ? "badge--live" : "badge--dday"}">D-${esc(p.dday)}</span>` : "";
+  // 거리를 모르면(전국을 보는 중) 그 자리를 비운다. "거리 모름"을 쓰지 않는다 (2026-11-03, 사용자 요청)
+  // — 전국에서는 모든 사업이 그렇게 나와 뜻 없는 말이 목록을 채웠다
+  const sub = [distText(p) ? esc(distText(p)) : "", r ? "<b>노선 표시 중</b>" : ""]
+    .filter(Boolean).join(" · ");
   el.innerHTML = `
     <button class="mpeek-x" type="button" aria-label="닫기">✕</button>
     <p class="mpeek-tags">
@@ -3626,8 +3675,7 @@ function renderMapPeek(p){
       ${dd}
     </p>
     <p class="mpeek-nm">${esc(p.name)}</p>
-    <p class="mpeek-sub">${esc(distText(p) || "거리 모름")}
-      ${r ? ` · <b>노선 표시 중</b>` : ""}</p>
+    ${sub ? `<p class="mpeek-sub">${sub}</p>` : ""}
     <button class="btn btn--primary btn--sm btn--block" type="button" data-peek-open>자세히 보기</button>`;
   el.hidden = false;
   el.querySelector(".mpeek-x").addEventListener("click", () => {
@@ -3920,8 +3968,12 @@ function renderMiniMap(){
 
   // 동네를 안 정했으면 전국 사업을 다 찍고, 정했으면 그 범위의 사업만 찍는다.
   // (동네를 정했는데 전국을 보는 중이면, 작은 지도에는 가까운 것만 — 다 찍으면 안 보인다)
-  const shown = nation ? PROJECTS
-    : (homeScope === "all" ? nearbyProjects() : scopedProjects());
+  // ★ '우리 집 없음'(nation)을 '전국'으로 읽지 않는다 — 시·도만 고르면 우리 집은 없어도 구역은 있다.
+  //   그때 '가까운 것'은 잴 수 없으니 그 구역 안 사업을 찍는다.
+  const allKorea = isNation(currentHood) && nation;
+  const shown = allKorea ? PROJECTS
+    : homeScope !== "all" ? scopedProjects()
+    : (nation ? PROJECTS.filter(inHood) : nearbyProjects());
   const pts = [];
   shown.filter(p => p.lat != null).forEach(p => {
     // 미니 지도는 **항상 작은 점**이다. 사업 마커가 핀(25×34)으로 바뀐 뒤로는
@@ -3934,13 +3986,17 @@ function renderMiniMap(){
   // 축척 — ① 동네를 안 정했으면 사업들이 다 들어오게(= 전국)
   //        ② 경계가 있으면 경계에  ③ 없으면 반경 원에 맞춘다.
   // (지도 없이 계산되는 toBounds 를 써서 초기화 순서에 상관없이 안전하게)
-  if(nation){
-    if(pts.length > 1) miniMap.fitBounds(pts, { padding:[10, 10] });
-    else miniMap.setView(KOREA_CENTER, 6);
-  }else if(miniBoundLayer){
-    miniMap.fitBounds(miniBoundLayer.getBounds(), { padding:[6, 6] });
+  // ★ 움직임 없이 맞춘다(FIT_NOW) — 경계가 늦게 오면 두 번째 맞추기가 버려진다 (fitGisView 설명 참고)
+  // ★ 경계가 있으면 **먼저** 경계에 맞춘다 — 시·도만 고르면 우리 집은 없지만 경계는 있다.
+  //   (전국이면 경계가 없으므로 예전 순서와 같다)
+  if(miniBoundLayer){
+    miniMap.fitBounds(miniBoundLayer.getBounds(), Object.assign({ padding:[6, 6] }, FIT_NOW));
+  }else if(nation){
+    if(pts.length > 1) miniMap.fitBounds(pts, Object.assign({ padding:[10, 10] }, FIT_NOW));
+    else miniMap.setView(KOREA_CENTER, 6, FIT_NOW);
   }else{
-    miniMap.fitBounds(L.latLng(HOME.lat, HOME.lon).toBounds(S.radiusKm * 2000), { padding:[6, 6] });
+    miniMap.fitBounds(L.latLng(HOME.lat, HOME.lon).toBounds(S.radiusKm * 2000),
+      Object.assign({ padding:[6, 6] }, FIT_NOW));
   }
 }
 

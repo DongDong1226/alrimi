@@ -300,6 +300,13 @@ button{cursor:pointer}
 .delta{display:inline-flex;align-items:center;gap:3px;font-size:var(--fs-body-xs);font-weight:700;color:var(--ink-3)}
 .delta svg{width:12px;height:12px}
 .delta.up{color:var(--eco)} .delta.hot{color:var(--danger)}
+/* ★ 숫자 칸 아래 설명 줄은 문장처럼 이어 흐르게 한다 (2026-11-03).
+   .delta 는 inline-flex 라 안에 든 조각마다 따로 칸이 된다 — '가장 빠른 의견 마감 D-2' 와
+   '· 이 동네 밖에 29건 더 있음' 이 좌우 두 칸으로 나뉘어 각자 좁게 접히면서 'D-' / '2' 로 갈렸다.
+   (숫자 칸의 .delta 에는 아이콘이 없어 flex 가 할 일이 없다. 휴대폰은 mobile.css 의 .m-stat .delta) */
+.stat .delta{display:block;line-height:1.45}
+/* 'D-n' 이 'D-' / '2' 로 갈리지 않게 — app.js 의 ddKeep() 이 감싼다 */
+.dd-keep{white-space:nowrap}
 .dash-cta{background:var(--primary-deep);color:#fff;display:flex;flex-direction:column;
   justify-content:center;gap:5px;padding:22px;position:relative;overflow:hidden;text-align:left;border:0}
 .dash-cta .pin{position:absolute;right:16px;top:16px;width:38px;height:38px;opacity:.25}
