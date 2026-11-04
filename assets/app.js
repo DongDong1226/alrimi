@@ -2410,25 +2410,21 @@ function renderHoodFoot(){
 
 /* 우리 집이 없으면(전국·시·도만) 반경은 뜻이 없다 → 칸에 '–' 를 보이고 잠근다 (2026-11-04, 사용자 요청).
    거리·반경 원도 그때는 안 그리므로(hasHome) 같은 기준이다. 고른 반경 값(S.radiusKm)은 그대로 두고,
-   동네를 고르면 원래 값으로 돌아온다. */
+   동네를 고르면 원래 값으로 돌아온다.
+   ★ 고르는 상자 안에 '–' 를 넣지 않는다 — 상자 폭이 가장 긴 항목('20km 이내')에 맞춰져 있어
+     '–' 가 그 한가운데에 놓여, 왼쪽 정렬인 PC 에서 옆 칸 '–' 와 자리가 어긋났다.
+     상자를 숨기고 옆 칸과 같은 '–'(V_NONE)를 따로 보인다 (.radius-pick.is-off — app.css) */
 function syncRadiusPick(){
   const sel = $("#v-radius");
   if(!sel || !sel.options) return;
   const noHome = !hasHome();
-  let none = sel.querySelector("option[data-none]");
-  if(noHome){
-    if(!none){
-      sel.insertAdjacentHTML("afterbegin", `<option value="" data-none>–</option>`);
-      none = sel.querySelector("option[data-none]");
-    }
-    none.selected = true;
-  }else if(none){
-    none.remove();
-    sel.value = String(S.radiusKm);
-  }
   sel.disabled = noHome;
   const pick = sel.closest(".radius-pick");
-  if(pick) pick.classList.toggle("is-off", noHome);
+  if(!pick) return;
+  pick.classList.toggle("is-off", noHome);
+  let none = pick.querySelector(".v-none");
+  if(noHome && !none) pick.insertAdjacentHTML("beforeend", V_NONE);
+  else if(!noHome && none) none.remove();
 }
 
 function renderDashTick(){
