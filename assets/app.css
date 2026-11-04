@@ -286,6 +286,11 @@ button{cursor:pointer}
 .radius-pick::after{content:"";position:absolute;right:3px;top:50%;width:6px;height:6px;
   margin-top:-5px;border-right:1.8px solid var(--ink-3);border-bottom:1.8px solid var(--ink-3);
   transform:rotate(45deg);pointer-events:none}
+/* 우리 집이 없을 때(전국·시·도만) — 반경 칸은 '–' 로 잠근다 (app.js syncRadiusPick) */
+.radius-pick.is-off::after{display:none}
+.radius-pick select:disabled{cursor:default;opacity:1;color:var(--ink-4);padding-right:0;text-align:center}
+/* 값이 없을 때의 짧은 줄표 — 굵은 남색 '—' 는 칸이 빈 막대처럼 보였다 */
+.v-none{color:var(--ink-4);font-weight:600}
 .radius-pick select:focus-visible{outline:3px solid color-mix(in srgb,var(--primary) 55%,#fff);
   outline-offset:2px;border-radius:4px}
 .hood-foot .k label{cursor:pointer}

@@ -133,20 +133,23 @@
          밀 수 있다는 것을 모르면 세 번째는 영영 안 보이고 첫 칸도 잘려 보였다.
          '전국 협의 진행 중'은 우리 동네 이야기가 아니라 전국 통계라 여기서 뺐다
          (그 숫자는 첫 화면 아래 nation 줄에 그대로 있다). -->
+    <!-- 누르면 옮겨 간다 (2026-11-04) — 사업 칸은 아래 사업 카드로, 설명회 칸은 설명회 화면으로 (mobile.js) -->
     <div class="m-stats" id="mStats">
-      <div class="m-stat feat">
+      <div class="m-stat feat" role="button" tabindex="0" data-go="projects" aria-label="의견 낼 수 있는 사업 목록으로 가기">
         <span class="lab" id="stat-open-lab">의견 낼 수 있는 사업</span>
         <span class="num"><span data-count="0" id="stat-open">0</span><small>건</small></span>
         <span class="delta hot" id="stat-open-note"></span>
       </div>
-      <div class="m-stat">
+      <div class="m-stat" role="button" tabindex="0" data-go="brief" aria-label="주민 설명회 안내 화면으로 가기">
         <span class="lab">예정 설명회</span>
         <span class="num"><span data-count="0" id="stat-events">0</span><small>회</small></span>
         <span class="delta" id="stat-events-note"></span>
       </div>
     </div>
 
-    <div class="m-tick" id="dashTick"></div>
+    <!-- 홈 알림 줄(#dashTick, 'D-0 ○○ — 의견 제출 마감까지…')은 휴대폰에서 뺐다 (2026-11-04, 사용자 요청).
+         잘 안 보였고, 같은 것을 위 숫자 칸과 아래 사업 카드가 이미 보여 준다.
+         app.js 는 없는 칸을 만나도 죽지 않는다(NO_EL). 데스크톱(index.html)은 그대로 둔다. -->
 
     <!-- 내 동네 카드 -->
     <section class="m-hoodcard">
@@ -164,8 +167,8 @@
       <div class="hood-foot m-hoodfoot">
         <div><p class="k"><label for="v-radius">반경</label></p>
           <p class="v radius-pick"><select id="v-radius"></select></p></div>
-        <div><p class="k">가장 가까운 사업</p><p class="v" id="v-nearest">—</p></div>
-        <div><p class="k">가장 빠른 마감</p><p class="v" id="v-soonest">—</p></div>
+        <div><p class="k">가장 가까운 사업</p><p class="v" id="v-nearest"><span class="v-none">–</span></p></div>
+        <div><p class="k">가장 빠른 마감</p><p class="v" id="v-soonest"><span class="v-none">–</span></p></div>
       </div>
     </section>
 

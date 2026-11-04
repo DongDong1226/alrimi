@@ -155,6 +155,28 @@
     q("#btnLegend").classList.toggle("on", !lg.hidden);
   });
 
+  /* ---------- 홈 숫자 칸 누르기 (2026-11-04) ----------
+     '의견 낼 수 있는 사업' → 아래 사업 카드로 내려간다.
+     '예정 설명회'        → 설명회 화면으로 간다 (아래 탭 '설명회'와 같은 길 — app.js 의 openBriefScreen). */
+  qa(".m-stat[data-go]").forEach(el => {
+    const go = () => {
+      if(el.dataset.go === "brief"){
+        if(typeof openBriefScreen === "function") openBriefScreen();
+        syncTabs();
+        return;
+      }
+      const target = q("#" + el.dataset.go);
+      if(target){
+        const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+        target.scrollIntoView({ behavior: calm ? "auto" : "smooth", block:"start" });
+      }
+    };
+    el.addEventListener("click", go);
+    el.addEventListener("keydown", e => {
+      if(e.key === "Enter" || e.key === " "){ e.preventDefault(); go(); }
+    });
+  });
+
   /* 숫자 카드는 이제 **두 칸이 한 화면에 딱** 들어간다 (2026-08-16).
      예전에는 세 칸을 옆으로 밀어 보게 하고 점으로 위치를 알렸는데,
      밀 수 있다는 걸 모르면 세 번째는 영영 안 보였다. 그래서 스크롤도 점도 없앴다. */

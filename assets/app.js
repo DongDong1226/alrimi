@@ -1466,6 +1466,7 @@ function fillRadiusPick(){
     ? RADIUS_STEPS : RADIUS_STEPS.concat([+S.radiusKm]).sort((a, b) => a - b);
   sel.innerHTML = steps.map(v =>
     `<option value="${v}"${v === +S.radiusKm ? " selected" : ""}>${v}km 이내</option>`).join("");
+  syncRadiusPick();   // 다시 채웠으니 '우리 집 없음(–)' 표시를 다시 맞춘다
 }
 
 $("#v-radius").addEventListener("change", e => {
@@ -2391,14 +2392,43 @@ function updateDashboardStats(){
 
 /* 내 동네 카드 아래 숫자 세 개.
    EIASS에서 오지 않는 값(주민 의견 수 등)은 넣지 않고, 수집한 것만 계산해 보여준다. */
+/* 값이 없을 때 쓰는 짧은 줄표 (2026-11-04, 사용자 요청).
+   예전 '—'(긴 줄표)는 굵은 남색 글자 칸에서 길쭉한 막대처럼 보여 **칸이 빈 것 같았다.**
+   짧은 줄표(–)를 옅은 색으로 써서 '값 없음' 으로 읽히게 한다 (.v-none) */
+const V_NONE = `<span class="v-none" aria-label="없음">–</span>`;
+
 function renderHoodFoot(){
   const dists = PROJECTS.map(p => p.nearDist).filter(d => d != null);
   $("#v-nearest").innerHTML = dists.length
-    ? `${Math.min(...dists).toFixed(1)}<small>km</small>` : "—";
+    ? `${Math.min(...dists).toFixed(1)}<small>km</small>` : V_NONE;
 
   const ddays = PROJECTS.map(p => p.dday).filter(d => d !== null);
   $("#v-soonest").innerHTML = ddays.length
-    ? `${Math.min(...ddays)}<small>일 뒤</small>` : "—";
+    ? `${Math.min(...ddays)}<small>일 뒤</small>` : V_NONE;
+  syncRadiusPick();
+}
+
+/* 우리 집이 없으면(전국·시·도만) 반경은 뜻이 없다 → 칸에 '–' 를 보이고 잠근다 (2026-11-04, 사용자 요청).
+   거리·반경 원도 그때는 안 그리므로(hasHome) 같은 기준이다. 고른 반경 값(S.radiusKm)은 그대로 두고,
+   동네를 고르면 원래 값으로 돌아온다. */
+function syncRadiusPick(){
+  const sel = $("#v-radius");
+  if(!sel || !sel.options) return;
+  const noHome = !hasHome();
+  let none = sel.querySelector("option[data-none]");
+  if(noHome){
+    if(!none){
+      sel.insertAdjacentHTML("afterbegin", `<option value="" data-none>–</option>`);
+      none = sel.querySelector("option[data-none]");
+    }
+    none.selected = true;
+  }else if(none){
+    none.remove();
+    sel.value = String(S.radiusKm);
+  }
+  sel.disabled = noHome;
+  const pick = sel.closest(".radius-pick");
+  if(pick) pick.classList.toggle("is-off", noHome);
 }
 
 function renderDashTick(){
