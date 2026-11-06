@@ -8,6 +8,32 @@ X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
 BEGIN:VEVENT
+UID:ND20260272-106107@alrimi
+DTSTAMP:20261106T000000Z
+DTSTART;VALUE=DATE:20261211
+DTEND;VALUE=DATE:20261212
+SUMMARY:[의견 마감] 수산천 하천기본계획(재수립)
+DESCRIPTION:사업: 수산천 하천기본계획(재수립)\n유형: 전략
+ 환경영향평가\n위치: 경상남도 밀양시 하남읍 귀명리 (
+ 양명길 999-16)\n기관: 낙동강유역환경청\n공람기간: 2026-11
+ -06 ~ 2026-12-04\n의견 제출 마감: 2026-12-11\n\n의견은 EIASS 에
+ 서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리
+ 동네 개발사업 알리미
+LOCATION:경상남도 밀양시 하남읍 귀명리 (양명길 999-16)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P2DT15H
+DESCRIPTION:수산천 하천기본계획(재수립) 의견 제출 마감 3
+ 일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:PT9H
+DESCRIPTION:수산천 하천기본계획(재수립) 의견 제출 오늘 
+ 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:ND20260241-105873@alrimi
 DTSTAMP:20261105T000000Z
 DTSTART;VALUE=DATE:20261210
