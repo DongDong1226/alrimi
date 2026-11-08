@@ -2423,9 +2423,10 @@ function renderHoodFoot(){
     ? `${Math.min(...dists).toFixed(1)}<small>km</small>` : V_NONE;
 
   // 가장 빠른 마감 — 홈 숫자 칸과 **같은 범위·같은 계산**이다 (soonestDday 위 설명)
+  // 마감 당일은 '0일 뒤' 가 아니라 '오늘' (2026-11-08, 사용자 결정) — 설명회 칸·알약도 0 이면 '오늘' 이다
   const soonest = soonestDday(scopedProjects());
-  $("#v-soonest").innerHTML = soonest !== null
-    ? `${soonest}<small>일 뒤</small>` : V_NONE;
+  $("#v-soonest").innerHTML = soonest === null ? V_NONE
+    : soonest === 0 ? "오늘" : `${soonest}<small>일 뒤</small>`;
   syncRadiusPick();
 }
 
