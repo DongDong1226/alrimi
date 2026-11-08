@@ -1841,6 +1841,7 @@ function setScope(scope){
   renderScope();
   updateFilterCounts();
   updateDashboardStats();
+  renderHoodFoot();      // '내 동네' 카드의 '가장 빠른 마감'도 범위를 따른다 — 숫자 칸과 같이 바꿔야 한다
   renderDashTick();
   render();
   renderOpenList();
@@ -2349,6 +2350,16 @@ function updateFilterCounts(){
    마감까지 남은 날은 이 서비스의 핵심 정보다. */
 function ddKeep(n){ return `<span class="dd-keep">D-${esc(n)}</span>`; }
 
+/* 가장 빠른 의견 마감까지 남은 날. 없으면 null.
+   ★ 홈 숫자 칸('가장 빠른 의견 마감 D-n')과 '내 동네' 카드('가장 빠른 마감')가 **함께 쓴다** (2026-11-08).
+     예전에는 카드만 전국(PROJECTS)에서 골라서, 포곡읍을 고르면 숫자 칸은 D-40(동네 사업)인데
+     바로 옆 카드는 '3일 뒤'(다른 지역 사업)로 **한 화면 안에서 서로 다른 사업**을 가리켰다.
+     부르는 쪽은 둘 다 scopedProjects() 를 넘긴다 — 범위 판정을 따로 만들지 않는다. */
+function soonestDday(rows){
+  const ds = rows.map(p => p.dday).filter(d => d !== null);
+  return ds.length ? Math.min(...ds) : null;
+}
+
 function updateDashboardStats(){
   const rows = scopedProjects();
   const openRows = rows.filter(p => p.dday !== null);
@@ -2357,8 +2368,8 @@ function updateDashboardStats(){
 
   // 범위 밖 사업 수는 '전국 개발사업' 칸이 없어졌으므로 이 칸 아래에 함께 적는다.
   const outside = PROJECTS.length - rows.length;
-  let note = openRows.length
-    ? "가장 빠른 의견 마감 " + ddKeep(Math.min(...openRows.map(p => p.dday))) : "";
+  const soonest = soonestDday(rows);
+  let note = soonest !== null ? "가장 빠른 의견 마감 " + ddKeep(soonest) : "";
   // '밖에 N건 더 있음'은 따로 감싼다 — 휴대폰에서는 이 부분만 숨긴다.
   // 좁은 화면에서는 지금 보는 것 말고 다른 것까지 알려 주면 글자만 빽빽해진다.
   if(homeScope !== "all" && outside > 0){
@@ -2398,13 +2409,23 @@ function updateDashboardStats(){
 const V_NONE = `<span class="v-none" aria-label="없음">–</span>`;
 
 function renderHoodFoot(){
+  /* 가장 가까운 사업 — ★ 일부러 보는 범위(homeScope)로 거르지 않는다 (2026-11-08 판단).
+     거리는 '우리 집에서' 잰 값이라 전국에서 가장 작은 값이 곧 '우리 집에서 가장 가까운 사업'이다 —
+     아래 마감처럼 먼 지역 사업을 끌어올 수가 없다. 반경 안에 한 건이라도 있으면 걸러도 같은 값이다.
+     값이 갈리는 것은 둘뿐인데, 둘 다 거르는 쪽이 나쁘다:
+       ① 반경 안이 0건 — 거르면 '–' 만 남는다. 지금은 옆 반경 칸과 견줘 '얼마나 넓혀야 하나'로 읽힌다
+          (실측 포곡읍 반경 1·2km: 0건인데 카드는 2.5km → 3km 로 넓히면 그 사업이 나온다)
+       ② '구역 안'으로 볼 때 경계 바로 밖이 더 가깝다 — 거르면 더 가까운 사업을 두고 먼 것을
+          '가장 가깝다'고 하게 된다 (이 서비스는 '경계를 넘어도 가까우면 우리 동네'로 본다)
+     우리 집이 없으면(전국·시·도만) nearDist 가 전부 null 이라 '–' 다 (recomputeDistances). */
   const dists = PROJECTS.map(p => p.nearDist).filter(d => d != null);
   $("#v-nearest").innerHTML = dists.length
     ? `${Math.min(...dists).toFixed(1)}<small>km</small>` : V_NONE;
 
-  const ddays = PROJECTS.map(p => p.dday).filter(d => d !== null);
-  $("#v-soonest").innerHTML = ddays.length
-    ? `${Math.min(...ddays)}<small>일 뒤</small>` : V_NONE;
+  // 가장 빠른 마감 — 홈 숫자 칸과 **같은 범위·같은 계산**이다 (soonestDday 위 설명)
+  const soonest = soonestDday(scopedProjects());
+  $("#v-soonest").innerHTML = soonest !== null
+    ? `${soonest}<small>일 뒤</small>` : V_NONE;
   syncRadiusPick();
 }
 
