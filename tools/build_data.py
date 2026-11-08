@@ -867,19 +867,22 @@ def fetch_river_routes(names, lat, lon, key, domain, stats=None):
 # ============================================================
 # 3) PDF에서 글자만 뽑기
 # ============================================================
-def extract_pdf_text(pdf_bytes, max_pages=25):
-    """글자를 뽑아 (글자, 읽은 쪽수) 로 돌려준다.
-    쪽수를 함께 주는 이유는 '스캔본이라 못 읽었다'를 가리기 위해서다 (아래 참고)."""
+def extract_pdf_pages(pdf_bytes):
+    """쪽마다 뽑은 글자를 목록으로 돌려준다 (글자가 없는 쪽은 빈 문자열)."""
     import pdfplumber
-    parts = []
-    read = 0
     with pdfplumber.open(io.BytesIO(pdf_bytes)) as pdf:
-        for i, page in enumerate(pdf.pages):
-            if i >= max_pages:
-                break
-            parts.append(page.extract_text() or "")
-            read += 1
-    return "\n".join(parts).strip(), read
+        return [page.extract_text() or "" for page in pdf.pages]
+
+
+def extract_pdf_text(pdf_bytes):
+    """**모든 쪽**의 글자를 뽑아 (글자, 쪽수) 로 돌려준다.
+    쪽수를 함께 주는 이유는 '스캔본이라 못 읽었다'를 가리기 위해서다 (아래 참고).
+
+    ★ 쪽 수를 자르지 않는다 (2026-11-08). 예전에는 앞 25쪽만 읽었는데, 공람 중 요약문
+      31건 중 14건이 25쪽을 넘었다(가장 긴 것 46쪽). 주민이 알고 싶은 대기질·소음·폐기물은
+      요약문 **뒷부분**에 나오므로 그대로 잘려 나갔다 (아래 ANALYSIS_MAX_CHARS 참고)."""
+    pages = extract_pdf_pages(pdf_bytes)
+    return "\n".join(pages).strip(), len(pages)
 
 
 # 스캔본(글자가 아니라 사진으로 만들어진 문서)을 가려내는 기준 — **쪽당 글자 수**.
@@ -984,14 +987,49 @@ EIA_FIELDS = [
     ("etc", "위 항목에 안 들어가지만 주민 생활에 영향을 주는 내용"),
 ]
 
+# AI 에 한 번에 보내는 요약문 글자 수의 상한.
+#
+# ■ 예전에는 12,000자였다 — 요약문 **앞부분만** 읽혔다 (2026-11-08 에 고침)
+#   요약문은 대개 '사업 개요 → 지역 현황 → 항목별 영향과 저감 대책' 순서라,
+#   주민이 알고 싶은 대기질·소음·폐기물이 **뒤쪽**에 나온다. 실측(공람 중 요약문 31건):
+#     · 27건이 12,000자를 넘었다 (중앙값 17,952자 · 가장 긴 것 39,730자)
+#     · 빈 항목이 있는 12건이 **전부** 잘린 사업이었다. 안 잘린 4건은 빈 항목 0개
+#     · 용인~충주 고속도로는 40쪽 중 18쪽(30%)까지만 읽혀 대기·소음·폐기물이 비었는데,
+#       원문 25쪽에 대기질, 27쪽에 소음·진동 예측값이 그대로 있었다
+#   그런데 화면은 그것을 "요약문에 내용이 없습니다"라고 말했다 — **못 읽은 것을 없다고 한 것**이다.
+#
+# ■ 12만 자로 둔 까닭
+#   claude-haiku-4-5 는 한 번에 20만 토큰까지 받는다(응답 자리 max_tokens 까지 합쳐서).
+#   한글 요약문은 거의 한 글자 = 한 토큰이다 (실측 39,730자 → 40,855 토큰, 머리말 포함).
+#   12만 자면 글자당 토큰이 1.5배로 늘어도 머리말·응답(6000)까지 들어간다.
+#   지금 가장 긴 요약문의 3배라 실제로 잘릴 일은 거의 없다.
+#   비용: 사업 1건당 평균 $0.021 → $0.028, 가장 긴 것 약 $0.05 (2026-11-08 실측).
+#
+# ■ 그래도 넘으면 **조용히 자르지 않는다** — `analysisCut` 으로 자료에 밝히고, 화면
+#   (app.js 의 eiaSection)이 "앞부분만 읽었다"고 말한다. 빈 항목을 '내용 없음'이라 하면 안 되므로.
+#
+# ★ 모델을 바꾸면 이 값도 다시 볼 것 — 한 번에 받는 양이 모델마다 다르다.
+ANALYSIS_MAX_CHARS = 120_000
+
+# 2026-11-08 이전 코드가 AI 에 보내던 양 (앞 25쪽에서 뽑은 글자의 앞 12,000자).
+# **되받기가 '그때 잘렸나'를 가리는 데만** 쓴다 — refresh_cached 의 '끝까지 읽기 되받기' 참고.
+OLD_ANALYSIS_PAGES = 25
+OLD_ANALYSIS_CHARS = 12_000
+
 
 def analyze_environment(name, address, raw_text, anthropic_key):
     """요약문 원문에서 항목별로 뽑아 쉬운 말로 옮긴 dict 를 돌려준다.
-    원문에 해당 내용이 없으면 그 항목은 None 으로 남긴다."""
+    원문에 해당 내용이 없으면 그 항목은 None 으로 남긴다.
+
+    요약문은 ANALYSIS_MAX_CHARS 까지 **통째로** 보낸다. 넘으면 앞부분만 보내는데, 그때는
+    부르는 쪽이 analysisCut=True 를 적어 화면이 '앞부분만 읽음'이라고 밝히게 한다."""
     if not anthropic_key or not raw_text:
         return None
     import anthropic
 
+    if len(raw_text) > ANALYSIS_MAX_CHARS:
+        log(f"    [요약문 잘림] {name} — {len(raw_text):,}자 중 앞 {ANALYSIS_MAX_CHARS:,}자만"
+            " AI 에 보냅니다. 화면에 '앞부분만 읽음'으로 밝힙니다 (analysisCut)")
     field_lines = "\n".join(f'  "{k}": {desc}' for k, desc in EIA_FIELDS)
     client = anthropic.Anthropic(api_key=anthropic_key)
     prompt = (
@@ -1014,7 +1052,7 @@ def analyze_environment(name, address, raw_text, anthropic_key):
         f"사업명: {name}\n"
         f"위치: {address or '정보 없음'}\n\n"
         "요약문 원문(이 안에 있는 내용만 사용할 것):\n"
-        f"{raw_text[:12000]}\n"
+        f"{raw_text[:ANALYSIS_MAX_CHARS]}\n"
     )
     try:
         msg = client.messages.create(
@@ -1371,6 +1409,8 @@ def refresh_cached(cached, item, vworld_key, skip_geocode, category_key, delay,
       매일 다시 부르면 그만큼 비용이 계속 나간다. 전부 다시 받으려면 --full 을 쓴다.
       **단 요약문을 이번에 처음 읽은 사업은 한 번 만든다** — 처음 수집 때 PDF 를 못 받아
       해석을 시도조차 못 한 사업이다. 새 사업이 받는 것과 같은 한 번이라 되풀이되지 않는다.
+      **요약문 앞부분만 읽고 만든 옛 해석(2026-11-08 전)도 사업마다 한 번 다시 만든다** —
+      아래 '끝까지 읽기 되받기' 참고.
 
     ★ anthropic_key 는 이름을 붙여 **반드시** 넘긴다(빠뜨리면 바로 오류가 난다).
       기본값을 두면 빠뜨려도 아무 말 없이 해석만 안 만들어진다.
@@ -1528,6 +1568,7 @@ def refresh_cached(cached, item, vworld_key, skip_geocode, category_key, delay,
                                                    text, anthropic_key)
                     if analysis:
                         cached["analysis"] = analysis
+                        cached["analysisCut"] = len(text) > ANALYSIS_MAX_CHARS
                         filled = sum(1 for v in analysis.values() if v)
                         log(f"    (재사용) 요약문을 처음 읽어 환경영향분석도 만들었습니다"
                             f" — {filled}/{len(EIA_FIELDS)}개 항목 채움")
@@ -1537,6 +1578,57 @@ def refresh_cached(cached, item, vworld_key, skip_geocode, category_key, delay,
             except Exception as e:
                 # 못 받았으면 '모름'으로 둔다. 다음 수집에서 다시 시도한다.
                 log(f"    [요약문 재확인 실패 — 다음에 다시 해 봅니다] {e}")
+
+    # ★ '끝까지 읽기' 되받기 — 사업마다 한 번 (2026-11-08)
+    #
+    # 2026-11-08 전에는 요약문을 앞 25쪽 · 앞 12,000자만 AI 에 보냈다 (ANALYSIS_MAX_CHARS 참고).
+    # 읽는 양을 늘려도 **이미 만든 해석은 그대로 남는다** — 증분 수집이 건너뛰기 때문이다.
+    # (판정 규칙을 고칠 때마다 겪은 함정이다. CLAUDE.md '되받기' 참고)
+    #
+    # 그래서 그때 만든 해석(analysisCut 값이 아직 없는 것)을 **사업마다 한 번** 다시 본다.
+    #   · 요약문을 다시 받아 모든 쪽을 읽는다 (PDF 는 돈이 들지 않는다)
+    #   · 예전 코드도 다 읽었던 짧은 요약문이면 → AI 를 부르지 않고 표시만 한다 (False)
+    #   · 잘렸던 것이면 → 끝까지 읽혀 해석을 **한 번** 다시 만든다
+    #     (2026-11-08 실측: 공람 중 27건, 약 $0.85 — 사람이 허락했다)
+    #   · 다시 만들다 실패하면 → 옛 해석을 **지우지 않고** True 로 둔다. 옛 해석은 실제로
+    #     앞부분만 읽고 만든 것이라, 화면이 그렇게 밝히는 것이 사실 그대로다.
+    #     자동으로 되풀이하지 않는다(실패가 이어지면 매번 돈이 나간다) — retry_analysis 가 다시 받는다
+    #   · 요약문을 못 받았으면 → 아무것도 안 바꾸고 다음 수집에서 다시 해 본다
+    #   · 공람이 끝난 사업은 건너뛴다 — 해석은 저장 직전에 지워지고 요약문도 안 받아진다 (규칙 7)
+    #   · 키가 없으면 건너뛴다 — 다시 만들 수 없는데 PDF 만 매번 받게 된다
+    if (not skip_summary and anthropic_key and cached.get("analysis")
+            and cached.get("summaryState") == "ok"
+            and cached.get("analysisCut") is None
+            and cached.get("summaryFileSeq")
+            and not view_closed(cached.get("periodEnd"), today)):
+        try:
+            pages = extract_pdf_pages(download_file(cached["summaryFileSeq"]))
+        except Exception as e:
+            log(f"    [끝까지 읽기 되받기 실패 — 요약문을 못 받았습니다. 다음에 다시 해 봅니다] {e}")
+            pages = None
+        if pages is not None:
+            text = "\n".join(pages).strip()
+            old_seen = "\n".join(pages[:OLD_ANALYSIS_PAGES]).strip()[:OLD_ANALYSIS_CHARS]
+            if text == old_seen:
+                cached["analysisCut"] = False
+                log(f"    (재사용) 요약문이 짧아({len(text):,}자) 예전에도 끝까지 읽었습니다 — 해석 그대로")
+            else:
+                before = sum(1 for v in cached["analysis"].values() if v)
+                pct = round(100 * len(old_seen) / len(text)) if text else 0
+                analysis = analyze_environment(cached.get("name"), cached.get("address"),
+                                               text, anthropic_key)
+                if analysis:
+                    cached["analysis"] = analysis
+                    cached["analysisCut"] = len(text) > ANALYSIS_MAX_CHARS
+                    after = sum(1 for v in analysis.values() if v)
+                    log(f"    (재사용) 요약문을 끝까지 읽어 환경영향분석을 다시 만들었습니다 —"
+                        f" {len(pages)}쪽 {len(text):,}자 중 예전에는 {pct}%만 읽었음 ·"
+                        f" 항목 {before} → {after}/{len(EIA_FIELDS)}개 채움")
+                else:
+                    cached["analysisCut"] = True
+                    log("    [환경영향분석을 다시 만들지 못했습니다 — 옛 해석(앞부분만 읽고 만든 것)을"
+                        " 그대로 두고 화면에 '앞부분만 읽음'으로 밝힙니다."
+                        " Actions 에서 retry_analysis 를 켜고 돌리면 다시 받습니다]")
     return cached
 
 
@@ -1594,6 +1686,8 @@ def build(args):
 
             # --retry-analysis: AI 해석이 비어 있는 사업만 골라 다시 받는다.
             # (응답이 잘리거나 형식이 깨져 실패했던 것들. 전체를 다시 받을 필요는 없다)
+            # **요약문 앞부분만 읽고 만든 해석(analysisCut)도 다시 받는다** (2026-11-08) —
+            # '끝까지 읽기 되받기'가 다시 만들다 실패한 사업을 사람이 고치는 길이다.
             #
             # ★ 단 **공람이 끝난 사업은 다시 받지 않는다.** 저장 직전에 해석을 지우므로
             #   (아래 '공람이 끝난 사업의 해석은 파일에서 지운다' 참고) 여기서 다시 받으면
@@ -1601,10 +1695,12 @@ def build(args):
             #   내려서 받아지지도 않는다 — 돈만 쓰고 빈손으로 끝난다.
             #   ★ 사진으로 된 요약문(scanned)도 다시 받지 않는다. 몇 번을 받아도 글자가
             #     없는 문서라 결과가 같은데, 1.85MB~10MB 를 매번 새로 내려받게 된다.
-            if (cached and args.retry_analysis and not cached.get("analysis")
+            if (cached and args.retry_analysis
+                    and (not cached.get("analysis") or cached.get("analysisCut"))
                     and cached.get("summaryState") != "scanned"
                     and not view_closed(it["period_end"], today)):
-                log(f"  ! {it['name']} (해석이 비어 있어 다시 받습니다)")
+                why = "앞부분만 읽고 만든 해석이라" if cached.get("analysis") else "해석이 비어 있어"
+                log(f"  ! {it['name']} ({why} 다시 받습니다)")
                 cached = None
 
             if cached:
@@ -1718,6 +1814,9 @@ def build(args):
                 # 해석이 비었을 때 **왜 비었는지**를 화면이 갈라 말하기 위한 값
                 "summaryState": summary_state,
                 "analysis": analysis,
+                # 요약문을 다 못 읽고(ANALYSIS_MAX_CHARS 넘음) 만든 해석인가. 해석이 없으면 None.
+                # 화면이 빈 항목을 '내용 없음'이 아니라 '앞부분만 읽음'으로 말하게 하는 값이다
+                "analysisCut": (len(raw_text) > ANALYSIS_MAX_CHARS) if analysis else None,
                 # 노선 도형. 자동으로 못 찾은 사업은 관리자 화면에서 직접 그려 넣을 수 있다.
                 "riverNames": river_names,
                 "routeGeom": routes or None,
@@ -1859,7 +1958,8 @@ def main():
                         help="이미 받아 둔 결과를 무시하고 전부 다시 받는다 "
                              "(EIA_FIELDS 를 바꿨을 때는 반드시 이걸로 돌려야 한다)")
     parser.add_argument("--retry-analysis", action="store_true",
-                        help="AI 해석이 비어 있는 사업만 골라 다시 받는다 "
+                        help="AI 해석이 비었거나 요약문 앞부분만 읽고 만든(analysisCut) "
+                             "공람 중 사업만 골라 다시 받는다 "
                              "(전체를 다시 받지 않으므로 비용이 적다)")
     args = parser.parse_args()
 

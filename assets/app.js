@@ -612,6 +612,10 @@ function normalizeProject(p){
     lat: hasCoord ? p.lat : null,
     lon: hasCoord ? p.lon : null,
     analysis: p.analysis || null,      // 정형화된 환경영향분석
+    /* 요약문을 **다 못 읽고** 만든 해석인가 (2026-11-08). true 일 때만 eiaSection() 이
+       빈 항목을 '내용 없음'이 아니라 '읽은 앞부분에 없음'으로 말한다.
+       값이 없는 옛 해석은 예전 문구 그대로 둔다 — 없다고 '잘렸다'로 몰지 않는다. */
+    analysisCut: p.analysisCut === true,
     summaryEasy: p.summaryEasy || null, // 예전 방식(자유 문장) — 아직 남아있으면 같이 보여준다
     routeGeom: p.routeGeom || null,     // 하천 사업의 실제 도형
     routeSource: p.routeSource || null,
@@ -1933,9 +1937,19 @@ function eiaSection(p){
     </section>`;
   }).join("");
 
-  const missingRow = missing.length
-    ? `<p class="eia-missing"><b>요약문에 내용이 없는 항목</b>
-        ${missing.map(f => esc(f.label)).join(" · ")}</p>` : "";
+  /* ★ 요약문을 **다 못 읽고** 만든 해석이면(analysisCut, 2026-11-08) 빈 항목을 '내용 없음'이라 하지 않는다.
+     읽은 앞부분에 없었을 뿐 뒷부분에는 있을 수 있다. 예전 12,000자 한도에서 실제로 그랬다 —
+     용인~충주 고속도로의 대기·소음·폐기물이 "요약문에 내용이 없는 항목"으로 나갔는데
+     원문 25·27쪽에 그대로 있었다. 지금은 build_data.py 가 끝까지 읽으므로, 이 표시는
+     아주 긴 요약문(ANALYSIS_MAX_CHARS 넘음)이나 다시 만들기에 실패한 옛 해석에만 붙는다. */
+  const cut = p.analysisCut === true;
+  const missingList = missing.map(f => esc(f.label)).join(" · ");
+  const missingRow = !missing.length ? ""
+    : cut
+      ? `<p class="eia-missing"><b>읽은 앞부분에 내용이 없는 항목</b>
+          ${missingList} — 요약문 전체에 없다는 뜻은 아닙니다.</p>`
+      : `<p class="eia-missing"><b>요약문에 내용이 없는 항목</b>
+          ${missingList}</p>`;
 
   const legacy = (!p.analysis && p.summaryEasy)
     ? `<section class="eia-row">${sentenceListHtml(p.summaryEasy)}</section>` : "";
@@ -1943,9 +1957,15 @@ function eiaSection(p){
   const filled = p.analysis ? Object.values(p.analysis).filter(Boolean).length : 0;
   const hint = p.analysis ? `${filled}/${EIA_FIELDS.length}개 항목` : (p.summaryEasy ? "요약" : "없음");
 
+  const srcNote = cut
+    ? `사업자가 낸 평가서 초안의 <b>요약문</b>에 적힌 내용만 쉬운 말로 옮긴 것입니다.
+      판단이나 의견은 담지 않았습니다. <b>요약문이 길어 앞부분만 읽고 옮겼습니다</b> —
+      뒷부분 내용은 EIASS 원문에서 확인해 주세요.`
+    : `사업자가 낸 평가서 초안의 <b>요약문</b>에 적힌 내용만 쉬운 말로 옮긴 것입니다.
+      판단이나 의견은 담지 않았고, 요약문에 없는 항목은 비워 둡니다.`;
+
   return { title:"환경영향분석", hint, body:`
-    <p class="eia-src">사업자가 낸 평가서 초안의 <b>요약문</b>에 적힌 내용만 쉬운 말로 옮긴 것입니다.
-      판단이나 의견은 담지 않았고, 요약문에 없는 항목은 비워 둡니다.</p>
+    <p class="eia-src">${srcNote}</p>
     <div class="eia-list">${legacy || rows}${legacy ? "" : missingRow}</div>` };
 }
 

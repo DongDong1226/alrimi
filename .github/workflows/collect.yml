@@ -40,7 +40,7 @@ on:
         type: boolean
         default: false
       retry_analysis:
-        description: "AI 해석이 비어 있는 공람 중 사업만 다시 받기"
+        description: "AI 해석이 비었거나 요약문 앞부분만 읽고 만든 공람 중 사업만 다시 받기"
         type: boolean
         default: false
       limit:
