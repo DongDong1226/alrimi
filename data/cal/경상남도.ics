@@ -34,6 +34,37 @@ DESCRIPTION:수산천 하천기본계획(재수립) 의견 제출 오늘
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
+UID:ND20260275-106165@alrimi
+DTSTAMP:20261105T000000Z
+DTSTART;VALUE=DATE:20261119
+DTEND;VALUE=DATE:20261120
+SUMMARY:[의견 마감] 함안동부권 화물자동차 공영차고지 조
+ 성을 위한 군관리계획(용도지역\, 시설:자동차정류장) 
+ 결정(변경)
+DESCRIPTION:사업: 함안동부권 화물자동차 공영차고지 조성
+ 을 위한 군관리계획(용도지역\, 시설:자동차정류장) 결
+ 정(변경)\n유형: 전략환경영향평가\n위치: 경상남도 함안
+ 군 칠서면 청계리 (삼칠로 440)\n기관: 낙동강유역환경청\
+ n공람기간: 2026-11-05 ~ 2026-11-19\n의견 제출 마감: 2026-11-19\n
+ \n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.ei
+ ass.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:경상남도 함안군 칠서면 청계리 (삼칠로 440)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P2DT15H
+DESCRIPTION:함안동부권 화물자동차 공영차고지 조성을 위
+ 한 군관리계획(용도지역\, 시설:자동차정류장) 결정(변
+ 경) 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:PT9H
+DESCRIPTION:함안동부권 화물자동차 공영차고지 조성을 위
+ 한 군관리계획(용도지역\, 시설:자동차정류장) 결정(변
+ 경) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:ND20260241-105873@alrimi
 DTSTAMP:20261105T000000Z
 DTSTART;VALUE=DATE:20261210
@@ -87,6 +118,32 @@ ACTION:DISPLAY
 TRIGGER:PT9H
 DESCRIPTION:산청 군관리계획(용도지역\, 관광.휴양형 지구
  단위계획:우사1지구) 결정(변경)(안) 의견 제출 오늘 마
+ 감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:ME2026M002-45856@alrimi
+DTSTAMP:20261112T000000Z
+DTSTART;VALUE=DATE:20261223
+DTEND;VALUE=DATE:20261224
+SUMMARY:[의견 마감] 거제 기업혁신파크 선도사업
+DESCRIPTION:사업: 거제 기업혁신파크 선도사업\n유형: 환경
+ 영향평가\n위치: 경상남도 거제시 장목면 (황포1길 96)\n
+ 기관: 국토교통부\n공람기간: 2026-11-12 ~ 2026-12-14\n의견 제
+ 출 마감: 2026-12-23\n\n의견은 EIASS 에서 본인인증 후 제출
+ 합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알리
+ 미
+LOCATION:경상남도 거제시 장목면 (황포1길 96)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P2DT15H
+DESCRIPTION:거제 기업혁신파크 선도사업 의견 제출 마감 3
+ 일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:PT9H
+DESCRIPTION:거제 기업혁신파크 선도사업 의견 제출 오늘 마
  감
 END:VALARM
 END:VEVENT

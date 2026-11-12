@@ -7,4 +7,35 @@ X-WR-CALNAME:경상남도 함안군 칠서면 개발사업 의견 마감
 X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:ND20260275-106165@alrimi
+DTSTAMP:20261105T000000Z
+DTSTART;VALUE=DATE:20261119
+DTEND;VALUE=DATE:20261120
+SUMMARY:[의견 마감] 함안동부권 화물자동차 공영차고지 조
+ 성을 위한 군관리계획(용도지역\, 시설:자동차정류장) 
+ 결정(변경)
+DESCRIPTION:사업: 함안동부권 화물자동차 공영차고지 조성
+ 을 위한 군관리계획(용도지역\, 시설:자동차정류장) 결
+ 정(변경)\n유형: 전략환경영향평가\n위치: 경상남도 함안
+ 군 칠서면 청계리 (삼칠로 440)\n기관: 낙동강유역환경청\
+ n공람기간: 2026-11-05 ~ 2026-11-19\n의견 제출 마감: 2026-11-19\n
+ \n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.ei
+ ass.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:경상남도 함안군 칠서면 청계리 (삼칠로 440)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P2DT15H
+DESCRIPTION:함안동부권 화물자동차 공영차고지 조성을 위
+ 한 군관리계획(용도지역\, 시설:자동차정류장) 결정(변
+ 경) 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:PT9H
+DESCRIPTION:함안동부권 화물자동차 공영차고지 조성을 위
+ 한 군관리계획(용도지역\, 시설:자동차정류장) 결정(변
+ 경) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
 END:VCALENDAR

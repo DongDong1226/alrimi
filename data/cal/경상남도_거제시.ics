@@ -7,4 +7,30 @@ X-WR-CALNAME:경상남도 거제시 개발사업 의견 마감
 X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:ME2026M002-45856@alrimi
+DTSTAMP:20261112T000000Z
+DTSTART;VALUE=DATE:20261223
+DTEND;VALUE=DATE:20261224
+SUMMARY:[의견 마감] 거제 기업혁신파크 선도사업
+DESCRIPTION:사업: 거제 기업혁신파크 선도사업\n유형: 환경
+ 영향평가\n위치: 경상남도 거제시 장목면 (황포1길 96)\n
+ 기관: 국토교통부\n공람기간: 2026-11-12 ~ 2026-12-14\n의견 제
+ 출 마감: 2026-12-23\n\n의견은 EIASS 에서 본인인증 후 제출
+ 합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개발사업 알리
+ 미
+LOCATION:경상남도 거제시 장목면 (황포1길 96)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P2DT15H
+DESCRIPTION:거제 기업혁신파크 선도사업 의견 제출 마감 3
+ 일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:PT9H
+DESCRIPTION:거제 기업혁신파크 선도사업 의견 제출 오늘 마
+ 감
+END:VALARM
+END:VEVENT
 END:VCALENDAR
