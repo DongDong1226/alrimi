@@ -8,6 +8,33 @@ X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
 BEGIN:VEVENT
+UID:DG20260397-106224@alrimi
+DTSTAMP:20261113T000000Z
+DTSTART;VALUE=DATE:20261221
+DTEND;VALUE=DATE:20261222
+SUMMARY:[의견 마감] 포항 남구 대종천권역 하천기본계획
+DESCRIPTION:사업: 포항 남구 대종천권역 하천기본계획\n유
+ 형: 전략환경영향평가\n위치: 경상북도 포항시 남구 오
+ 천읍 항사리 (오어로154번길 437)\n기관: 대구지방환경청\n
+ 공람기간: 2026-11-13 ~ 2026-12-14\n의견 제출 마감: 2026-12-21\n\
+ n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eia
+ ss.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:경상북도 포항시 남구 오천읍 항사리 (오어로154번
+ 길 437)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P2DT15H
+DESCRIPTION:포항 남구 대종천권역 하천기본계획 의견 제출 
+ 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:PT9H
+DESCRIPTION:포항 남구 대종천권역 하천기본계획 의견 제출 
+ 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:DG20260344-105912@alrimi
 DTSTAMP:20261020T000000Z
 DTSTART;VALUE=DATE:20261125

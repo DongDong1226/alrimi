@@ -8,6 +8,191 @@ X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
 BEGIN:VEVENT
+UID:HG20260721-106255@alrimi
+DTSTAMP:20261113T000000Z
+DTSTART;VALUE=DATE:20261210
+DTEND;VALUE=DATE:20261211
+SUMMARY:[의견 마감] 중점개발예정지(화성시청역지구) 도시
+ 관리계획(지구단위계획) 결정(변경)(안)
+DESCRIPTION:사업: 중점개발예정지(화성시청역지구) 도시관
+ 리계획(지구단위계획) 결정(변경)(안)\n유형: 전략환경영
+ 향평가\n위치: 경기도 화성시 만세구 남양읍 신남리 (남
+ 양로 600-2)\n기관: 한강유역환경청\n공람기간: 2026-11-13 ~ 2
+ 026-12-10\n의견 제출 마감: 2026-12-10\n\n의견은 EIASS 에서 본
+ 인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 
+ 개발사업 알리미
+LOCATION:경기도 화성시 만세구 남양읍 신남리 (남양로 600-2
+ )
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P2DT15H
+DESCRIPTION:중점개발예정지(화성시청역지구) 도시관리계획
+ (지구단위계획) 결정(변경)(안) 의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:PT9H
+DESCRIPTION:중점개발예정지(화성시청역지구) 도시관리계획
+ (지구단위계획) 결정(변경)(안) 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:GG20260468-106226@alrimi
+DTSTAMP:20261113T000000Z
+DTSTART;VALUE=DATE:20261218
+DTEND;VALUE=DATE:20261219
+SUMMARY:[의견 마감] 공주시 농어촌도로 기본(정비)계획
+DESCRIPTION:사업: 공주시 농어촌도로 기본(정비)계획\n유형:
+  전략환경영향평가\n위치: 충청남도 공주시 봉황동 (봉
+ 황로 1)\n기관: 금강유역환경청\n공람기간: 2026-11-13 ~ 2026-
+ 12-11\n의견 제출 마감: 2026-12-18\n\n의견은 EIASS 에서 본인
+ 인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동네 개
+ 발사업 알리미
+LOCATION:충청남도 공주시 봉황동 (봉황로 1)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P2DT15H
+DESCRIPTION:공주시 농어촌도로 기본(정비)계획 의견 제출 
+ 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:PT9H
+DESCRIPTION:공주시 농어촌도로 기본(정비)계획 의견 제출 
+ 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:DG20260397-106224@alrimi
+DTSTAMP:20261113T000000Z
+DTSTART;VALUE=DATE:20261221
+DTEND;VALUE=DATE:20261222
+SUMMARY:[의견 마감] 포항 남구 대종천권역 하천기본계획
+DESCRIPTION:사업: 포항 남구 대종천권역 하천기본계획\n유
+ 형: 전략환경영향평가\n위치: 경상북도 포항시 남구 오
+ 천읍 항사리 (오어로154번길 437)\n기관: 대구지방환경청\n
+ 공람기간: 2026-11-13 ~ 2026-12-14\n의견 제출 마감: 2026-12-21\n\
+ n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eia
+ ss.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:경상북도 포항시 남구 오천읍 항사리 (오어로154번
+ 길 437)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P2DT15H
+DESCRIPTION:포항 남구 대종천권역 하천기본계획 의견 제출 
+ 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:PT9H
+DESCRIPTION:포항 남구 대종천권역 하천기본계획 의견 제출 
+ 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:DG20260395-106220@alrimi
+DTSTAMP:20261113T000000Z
+DTSTART;VALUE=DATE:20261221
+DTEND;VALUE=DATE:20261222
+SUMMARY:[의견 마감] 영덕오십천권역 하천기본계획
+DESCRIPTION:사업: 영덕오십천권역 하천기본계획\n유형: 전
+ 략환경영향평가\n위치: 경상북도 영덕군 지품면 기사리 
+ (기사길 229-91)\n기관: 대구지방환경청\n공람기간: 2026-11-1
+ 3 ~ 2026-12-14\n의견 제출 마감: 2026-12-21\n\n의견은 EIASS 에서
+  본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동
+ 네 개발사업 알리미
+LOCATION:경상북도 영덕군 지품면 기사리 (기사길 229-91)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P2DT15H
+DESCRIPTION:영덕오십천권역 하천기본계획 의견 제출 마감 3
+ 일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:PT9H
+DESCRIPTION:영덕오십천권역 하천기본계획 의견 제출 오늘 
+ 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:DG20260391-106200@alrimi
+DTSTAMP:20261113T000000Z
+DTSTART;VALUE=DATE:20261218
+DTEND;VALUE=DATE:20261219
+SUMMARY:[의견 마감] 왕피천권역 하천기본계획(2권역)
+DESCRIPTION:사업: 왕피천권역 하천기본계획(2권역)\n유형: 
+ 전략환경영향평가\n위치: 경상북도 울진군 기성면 삼산
+ 리 (삼산신흥로 663-3)\n기관: 대구지방환경청\n공람기간: 
+ 2026-11-13 ~ 2026-12-11\n의견 제출 마감: 2026-12-18\n\n의견은 EIA
+ SS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n
+ 우리동네 개발사업 알리미
+LOCATION:경상북도 울진군 기성면 삼산리 (삼산신흥로 663-3)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P2DT15H
+DESCRIPTION:왕피천권역 하천기본계획(2권역) 의견 제출 마
+ 감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:PT9H
+DESCRIPTION:왕피천권역 하천기본계획(2권역) 의견 제출 오
+ 늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:DG20260384-106164@alrimi
+DTSTAMP:20261113T000000Z
+DTSTART;VALUE=DATE:20261218
+DTEND;VALUE=DATE:20261219
+SUMMARY:[의견 마감] 왕피천권역 하천기본계획(1권역)
+DESCRIPTION:사업: 왕피천권역 하천기본계획(1권역)\n유형: 
+ 전략환경영향평가\n위치: 경상북도 울진군 북면 덕구리 
+ (덕구온천로 518-1)\n기관: 대구지방환경청\n공람기간: 2026
+ -11-13 ~ 2026-12-11\n의견 제출 마감: 2026-12-18\n\n의견은 EIASS 
+ 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우
+ 리동네 개발사업 알리미
+LOCATION:경상북도 울진군 북면 덕구리 (덕구온천로 518-1)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P2DT15H
+DESCRIPTION:왕피천권역 하천기본계획(1권역) 의견 제출 마
+ 감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:PT9H
+DESCRIPTION:왕피천권역 하천기본계획(1권역) 의견 제출 오
+ 늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:DG20260379-106127@alrimi
+DTSTAMP:20261112T000000Z
+DTSTART;VALUE=DATE:20261221
+DTEND;VALUE=DATE:20261222
+SUMMARY:[의견 마감] 반변천권역 하천기본계획
+DESCRIPTION:사업: 반변천권역 하천기본계획\n유형: 전략환
+ 경영향평가\n위치: 경상북도 안동시 북후면 도진리 (태
+ 리금산로 339)\n기관: 대구지방환경청\n공람기간: 2026-11-12
+  ~ 2026-12-10\n의견 제출 마감: 2026-12-21\n\n의견은 EIASS 에서 
+ 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동
+ 네 개발사업 알리미
+LOCATION:경상북도 안동시 북후면 도진리 (태리금산로 339)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P2DT15H
+DESCRIPTION:반변천권역 하천기본계획 의견 제출 마감 3일 
+ 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:PT9H
+DESCRIPTION:반변천권역 하천기본계획 의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:HG20260517-105350@alrimi
 DTSTAMP:20261111T000000Z
 DTSTART;VALUE=DATE:20261209
@@ -86,37 +271,6 @@ ACTION:DISPLAY
 TRIGGER:PT9H
 DESCRIPTION:수산천 하천기본계획(재수립) 의견 제출 오늘 
  마감
-END:VALARM
-END:VEVENT
-BEGIN:VEVENT
-UID:ND20260275-106165@alrimi
-DTSTAMP:20261105T000000Z
-DTSTART;VALUE=DATE:20261119
-DTEND;VALUE=DATE:20261120
-SUMMARY:[의견 마감] 함안동부권 화물자동차 공영차고지 조
- 성을 위한 군관리계획(용도지역\, 시설:자동차정류장) 
- 결정(변경)
-DESCRIPTION:사업: 함안동부권 화물자동차 공영차고지 조성
- 을 위한 군관리계획(용도지역\, 시설:자동차정류장) 결
- 정(변경)\n유형: 전략환경영향평가\n위치: 경상남도 함안
- 군 칠서면 청계리 (삼칠로 440)\n기관: 낙동강유역환경청\
- n공람기간: 2026-11-05 ~ 2026-11-19\n의견 제출 마감: 2026-11-19\n
- \n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.ei
- ass.go.kr/\n\n우리동네 개발사업 알리미
-LOCATION:경상남도 함안군 칠서면 청계리 (삼칠로 440)
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:-P2DT15H
-DESCRIPTION:함안동부권 화물자동차 공영차고지 조성을 위
- 한 군관리계획(용도지역\, 시설:자동차정류장) 결정(변
- 경) 의견 제출 마감 3일 전
-END:VALARM
-BEGIN:VALARM
-ACTION:DISPLAY
-TRIGGER:PT9H
-DESCRIPTION:함안동부권 화물자동차 공영차고지 조성을 위
- 한 군관리계획(용도지역\, 시설:자동차정류장) 결정(변
- 경) 의견 제출 오늘 마감
 END:VALARM
 END:VEVENT
 BEGIN:VEVENT
