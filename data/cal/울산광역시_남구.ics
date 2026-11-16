@@ -33,4 +33,30 @@ DESCRIPTION:두왕천 하천기본계획(변경) 의견 제출 오늘 마
  감
 END:VALARM
 END:VEVENT
+BEGIN:VEVENT
+UID:ND2026G002-45858@alrimi
+DTSTAMP:20261116T000000Z
+DTSTART;VALUE=DATE:20270104
+DTEND;VALUE=DATE:20270105
+SUMMARY:[의견 마감] 울산도시철도 1호선 건설공사
+DESCRIPTION:사업: 울산도시철도 1호선 건설공사\n유형: 환경
+ 영향평가\n위치: 울산광역시 남구 삼산동 (산업로 646)\n
+ 기관: 국토교통부 대도시권광역교통위원회\n공람기간: 2
+ 026-11-16 ~ 2026-12-28\n의견 제출 마감: 2027-01-04\n\n의견은 EIAS
+ S 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n
+ 우리동네 개발사업 알리미
+LOCATION:울산광역시 남구 삼산동 (산업로 646)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P2DT15H
+DESCRIPTION:울산도시철도 1호선 건설공사 의견 제출 마감 3
+ 일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:PT9H
+DESCRIPTION:울산도시철도 1호선 건설공사 의견 제출 오늘 
+ 마감
+END:VALARM
+END:VEVENT
 END:VCALENDAR

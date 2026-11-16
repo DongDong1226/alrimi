@@ -8,6 +8,33 @@ X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
 BEGIN:VEVENT
+UID:GG20260464-106190@alrimi
+DTSTAMP:20261116T000000Z
+DTSTART;VALUE=DATE:20261221
+DTEND;VALUE=DATE:20261222
+SUMMARY:[의견 마감] 소하천정비종합계획(소소골·큰말천) 
+ 변경 수립
+DESCRIPTION:사업: 소하천정비종합계획(소소골·큰말천) 변
+ 경 수립\n유형: 전략환경영향평가\n위치: 충청남도 당진
+ 시 합덕읍 소소리 (소소정착길 10)\n기관: 금강유역환경
+ 청\n공람기간: 2026-11-16 ~ 2026-12-14\n의견 제출 마감: 2026-12-
+ 21\n\n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://ww
+ w.eiass.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:충청남도 당진시 합덕읍 소소리 (소소정착길 10)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P2DT15H
+DESCRIPTION:소하천정비종합계획(소소골·큰말천) 변경 수립
+  의견 제출 마감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:PT9H
+DESCRIPTION:소하천정비종합계획(소소골·큰말천) 변경 수립
+  의견 제출 오늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:GG2026Q004-45839@alrimi
 DTSTAMP:20261022T000000Z
 DTSTART;VALUE=DATE:20261127

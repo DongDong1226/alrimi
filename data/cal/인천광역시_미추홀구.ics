@@ -7,4 +7,30 @@ X-WR-CALNAME:인천광역시 미추홀구 개발사업 의견 마감
 X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
+BEGIN:VEVENT
+UID:HG20260708-106186@alrimi
+DTSTAMP:20261116T000000Z
+DTSTART;VALUE=DATE:20261221
+DTEND;VALUE=DATE:20261222
+SUMMARY:[의견 마감] 제4경인 고속화도로 민간투자사업
+DESCRIPTION:사업: 제4경인 고속화도로 민간투자사업\n유형: 
+ 전략환경영향평가\n위치: 인천광역시 미추홀구 용현동 (
+ 경인북길 131)\n기관: 한강유역환경청\n공람기간: 2026-11-16
+  ~ 2026-12-14\n의견 제출 마감: 2026-12-21\n\n의견은 EIASS 에서 
+ 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리동
+ 네 개발사업 알리미
+LOCATION:인천광역시 미추홀구 용현동 (경인북길 131)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P2DT15H
+DESCRIPTION:제4경인 고속화도로 민간투자사업 의견 제출 마
+ 감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:PT9H
+DESCRIPTION:제4경인 고속화도로 민간투자사업 의견 제출 오
+ 늘 마감
+END:VALARM
+END:VEVENT
 END:VCALENDAR
