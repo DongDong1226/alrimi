@@ -8,6 +8,140 @@ X-WR-CALDESC:공람 중인 개발사업의 의견 제출 마감일
 REFRESH-INTERVAL;VALUE=DURATION:PT12H
 X-PUBLISHED-TTL:PT12H
 BEGIN:VEVENT
+UID:ME20260142-106223@alrimi
+DTSTAMP:20261117T000000Z
+DTSTART;VALUE=DATE:20261222
+DTEND;VALUE=DATE:20261223
+SUMMARY:[의견 마감] 봉암지구 농업용수 수질개선사업
+DESCRIPTION:사업: 봉암지구 농업용수 수질개선사업\n유형: 
+ 전략환경영향평가\n위치: 전남광주통합특별시 진도군 
+ 지산면 가치리 (상봉암길 8)\n기관: 기후에너지환경부\n
+ 공람기간: 2026-11-17 ~ 2026-12-15\n의견 제출 마감: 2026-12-22\n\
+ n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eia
+ ss.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:전남광주통합특별시 진도군 지산면 가치리 (상봉
+ 암길 8)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P2DT15H
+DESCRIPTION:봉암지구 농업용수 수질개선사업 의견 제출 마
+ 감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:PT9H
+DESCRIPTION:봉암지구 농업용수 수질개선사업 의견 제출 오
+ 늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:ME20260141-106221@alrimi
+DTSTAMP:20261117T000000Z
+DTSTART;VALUE=DATE:20261222
+DTEND;VALUE=DATE:20261223
+SUMMARY:[의견 마감] 송정지구 농업용수 수질개선사업
+DESCRIPTION:사업: 송정지구 농업용수 수질개선사업\n유형: 
+ 전략환경영향평가\n위치: 전남광주통합특별시 진도군 
+ 의신면 송정리 (의신송정길 10)\n기관: 기후에너지환경부
+ \n공람기간: 2026-11-17 ~ 2026-12-15\n의견 제출 마감: 2026-12-22\
+ n\n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.e
+ iass.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:전남광주통합특별시 진도군 의신면 송정리 (의신
+ 송정길 10)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P2DT15H
+DESCRIPTION:송정지구 농업용수 수질개선사업 의견 제출 마
+ 감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:PT9H
+DESCRIPTION:송정지구 농업용수 수질개선사업 의견 제출 오
+ 늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:ME20260140-106215@alrimi
+DTSTAMP:20261117T000000Z
+DTSTART;VALUE=DATE:20261222
+DTEND;VALUE=DATE:20261223
+SUMMARY:[의견 마감] 완도지구 농업용수 수질개선사업
+DESCRIPTION:사업: 완도지구 농업용수 수질개선사업\n유형: 
+ 전략환경영향평가\n위치: 전남광주통합특별시 완도군 
+ 완도읍 정도리 (화흥포길 63)\n기관: 기후에너지환경부\n
+ 공람기간: 2026-11-17 ~ 2026-12-15\n의견 제출 마감: 2026-12-22\n\
+ n의견은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eia
+ ss.go.kr/\n\n우리동네 개발사업 알리미
+LOCATION:전남광주통합특별시 완도군 완도읍 정도리 (화흥
+ 포길 63)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P2DT15H
+DESCRIPTION:완도지구 농업용수 수질개선사업 의견 제출 마
+ 감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:PT9H
+DESCRIPTION:완도지구 농업용수 수질개선사업 의견 제출 오
+ 늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:ME20260139-106214@alrimi
+DTSTAMP:20261117T000000Z
+DTSTART;VALUE=DATE:20261222
+DTEND;VALUE=DATE:20261223
+SUMMARY:[의견 마감] 사곡지구 농업용수 수질개선사업
+DESCRIPTION:사업: 사곡지구 농업용수 수질개선사업\n유형: 
+ 전략환경영향평가\n위치: 경상북도 의성군 사곡면 공정
+ 리 (공정길 14)\n기관: 기후에너지환경부\n공람기간: 2026-1
+ 1-17 ~ 2026-12-15\n의견 제출 마감: 2026-12-22\n\n의견은 EIASS 에
+ 서 본인인증 후 제출합니다.\nhttps://www.eiass.go.kr/\n\n우리
+ 동네 개발사업 알리미
+LOCATION:경상북도 의성군 사곡면 공정리 (공정길 14)
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P2DT15H
+DESCRIPTION:사곡지구 농업용수 수질개선사업 의견 제출 마
+ 감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:PT9H
+DESCRIPTION:사곡지구 농업용수 수질개선사업 의견 제출 오
+ 늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
+UID:ME20260137-106207@alrimi
+DTSTAMP:20261117T000000Z
+DTSTART;VALUE=DATE:20261222
+DTEND;VALUE=DATE:20261223
+SUMMARY:[의견 마감] 지선지구 농업용수 수질개선사업
+DESCRIPTION:사업: 지선지구 농업용수 수질개선사업\n유형: 
+ 전략환경영향평가\n위치: 전북특별자치도 정읍시 입암
+ 면 지선리 (입고로 138)\n기관: 기후에너지환경부\n공람기
+ 간: 2026-11-17 ~ 2026-12-15\n의견 제출 마감: 2026-12-22\n\n의견
+ 은 EIASS 에서 본인인증 후 제출합니다.\nhttps://www.eiass.go.k
+ r/\n\n우리동네 개발사업 알리미
+LOCATION:전북특별자치도 정읍시 입암면 지선리 (입고로 138
+ )
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:-P2DT15H
+DESCRIPTION:지선지구 농업용수 수질개선사업 의견 제출 마
+ 감 3일 전
+END:VALARM
+BEGIN:VALARM
+ACTION:DISPLAY
+TRIGGER:PT9H
+DESCRIPTION:지선지구 농업용수 수질개선사업 의견 제출 오
+ 늘 마감
+END:VALARM
+END:VEVENT
+BEGIN:VEVENT
 UID:GG20260464-106190@alrimi
 DTSTAMP:20261116T000000Z
 DTSTART;VALUE=DATE:20261221
