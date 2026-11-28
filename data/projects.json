@@ -10,10 +10,10 @@
   },
   "stats": {
     "underReview": {
-      "strat": 161,
+      "strat": 164,
       "main": 89,
       "small": 419,
-      "total": 669
+      "total": 672
     }
   },
   "projects": [
@@ -31988,6 +31988,43 @@
       "opinionEnd": "2026-12-03",
       "firstSeen": "2026-10-29",
       "analysisCut": false
+    },
+    {
+      "id": "GG2026Q004-45839",
+      "category": "main",
+      "categoryLabel": "환경영향평가",
+      "name": "(주)하룡 석산개발사업 환경영향평가(재협의) 용역",
+      "org": "충청남도",
+      "tel": "041-350-4171",
+      "address": "충청남도 당진시 구룡동 (큰골길 179)",
+      "locationTypes": [],
+      "segments": [],
+      "bizType": "토석모래자갈광물 등의 채취",
+      "isRiver": false,
+      "lat": 36.819745405861156,
+      "lon": 126.62242961949511,
+      "periodStart": "2026-10-22",
+      "periodEnd": "2026-11-27",
+      "viewPlace": "당진시 산림자원과, 당진시 당진2동 행정복지센터, 면천면 행정복지센터, 서산시 산림공원과, 서산시 운산면 행정복지센터",
+      "briefPlace": "원구룡 진흥회관",
+      "briefWhen": "2026.10.29",
+      "opinionPeriod": "2026.10.22 ~ 2026.12.04",
+      "deptName": "당진시 산림자원과, 서산시 산림공원과",
+      "deptTel": "041-350-4171",
+      "summaryFileSeq": null,
+      "summaryState": "none",
+      "analysis": null,
+      "analysisCut": null,
+      "riverNames": [],
+      "routeGeom": null,
+      "routeSource": null,
+      "routeNamesAsked": null,
+      "sourceBizCd": "GG2026Q004",
+      "sourceBizSeq": "45839",
+      "sourceStepCd": null,
+      "sourceViewPath": "/partcptn/choan/choanEiassView.do",
+      "opinionEnd": "2026-12-04",
+      "firstSeen": "2026-11-28"
     },
     {
       "id": "GW2026K002-45835",
